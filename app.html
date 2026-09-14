@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Signal — App</title>
+<style>
+  :root{
+    --font-display:"SF Pro Display","Segoe UI Semibold",Inter,system-ui,sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+    --bg:#f5f7fb; --surface:#ffffff; --surface-2:#eef1f7; --line:#e3e8f0;
+    --text:#152038; --muted:#586074; --accent:#4f6bff; --accent-ink:#ffffff; --accent-soft:#eef1ff;
+    --open:#b06f00; --open-bg:#fff2d9; --prog:#2b3fd6; --prog-bg:#e6ebff;
+    --shipped:#0a7a58; --shipped-bg:#d7f5ea; --closed:#5b667a; --closed-bg:#eef1f7;
+    --barOpen:#f59e0b; --barProg:#4f6bff; --barShipped:#12b981; --barClosed:#9aa6b8;
+    --radius:16px; --shadow:0 1px 2px rgba(20,30,60,.05),0 10px 30px rgba(20,30,60,.07);
+  }
+  html[data-theme="dark"]{
+    --bg:#0c0f16; --surface:#151a23; --surface-2:#1c222e; --line:#28303d;
+    --text:#eef2f8; --muted:#9aa6b8; --accent:#7c93ff; --accent-ink:#0b1020; --accent-soft:#1b2233;
+    --open:#f0b64d; --open-bg:#2a2213; --prog:#9db0ff; --prog-bg:#1a2136;
+    --shipped:#4bd6a6; --shipped-bg:#0f2a22; --closed:#9aa6b8; --closed-bg:#1c222e;
+    --barOpen:#f0b64d; --barProg:#7c93ff; --barShipped:#3ecf8e; --barClosed:#5b667a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;
+       transition:background .3s ease,color .3s ease}
+  h1,h2,h3,.brandname{font-family:var(--font-display);letter-spacing:-.02em}
+  button,input,select{font:inherit;color:inherit} button{cursor:pointer;border:0;border-radius:10px}
+  a{color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+  .hidden{display:none !important}
+  .reveal{opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}.reveal{opacity:1;transform:none}}
+
+  /* label */
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;
+           text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--accent)}
+
+  /* Auth */
+  .auth{min-height:100dvh;display:grid;place-items:center;padding:24px;
+        background:radial-gradient(1000px 500px at 50% -10%,var(--accent-soft),transparent),var(--bg)}
+  .auth-card{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);
+             border-radius:22px;box-shadow:var(--shadow);padding:30px}
+  .brand{display:flex;align-items:center;gap:10px} .brandname{font-weight:700;font-size:18px}
+  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#4f6bff,#8b5cf6);
+        display:grid;place-items:center;color:#fff;font-weight:800}
+  .auth h1{margin:20px 0 4px;font-size:21px} .auth .sub{margin:0 0 18px;color:var(--muted);font-size:14px}
+  .field{margin-bottom:12px} .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text)}
+  .primary{background:var(--accent);color:var(--accent-ink);padding:13px;width:100%;font-weight:700;transition:filter .15s,transform .05s}
+  .primary:hover{filter:brightness(1.06)} .primary:active{transform:translateY(1px)}
+  .switch{margin-top:14px;font-size:13px;color:var(--muted);text-align:center}
+  .switch a{cursor:pointer;font-weight:700} .hint{margin-top:10px;font-size:12px;color:var(--muted);text-align:center}
+
+  /* Shell */
+  .shell{display:none;min-height:100dvh;grid-template-columns:240px 1fr}
+  .side{border-right:1px solid var(--line);background:var(--surface);padding:18px 14px;
+        display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100dvh}
+  .side .brand{padding:6px 8px 14px}
+  nav.main{display:flex;flex-direction:column;gap:3px}
+  nav.main button{display:flex;align-items:center;gap:11px;padding:11px 12px;background:transparent;color:var(--muted);
+                  font-weight:600;text-align:left;border-radius:11px;width:100%;transition:background .15s,color .15s}
+  nav.main button:hover{background:var(--surface-2);color:var(--text)}
+  nav.main button[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+  .ic{width:18px;text-align:center}
+  .side .foot{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+  .who b{display:block;font-size:13px} .who span{color:var(--muted);font-size:12px}
+  .ghost{background:var(--surface-2);color:var(--text);padding:9px;width:100%;font-weight:600;border:1px solid var(--line)}
+
+  main{padding:24px 30px 96px;max-width:1040px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .topbar h1{margin:0;font-size:23px} .topbar p{margin:3px 0 0;color:var(--muted);font-size:13px}
+  .themebtn{background:var(--surface);border:1px solid var(--line);color:var(--text);padding:9px 12px;
+            border-radius:11px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  .stat .n{font-family:var(--font-display);font-size:27px;font-weight:800;letter-spacing:-.5px}
+  .stat .l{color:var(--muted);font-size:13px;margin-top:3px} .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .ph{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--line)}
+  .ph h2,.ph h3{margin:0;font-size:15px}
+  .bar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin:15px 16px;background:var(--surface-2)}
+  .bar i{display:block;height:100%;transition:width .5s ease}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;padding:0 16px 15px;font-size:12px;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:12px 16px;font-size:14px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  tr:last-child td{border-bottom:0}
+  .pill{font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+  button.pill{cursor:pointer;transition:transform .05s} button.pill:active{transform:translateY(1px)}
+  .pill.open{color:var(--open);background:var(--open-bg)} .pill.prog{color:var(--prog);background:var(--prog-bg)}
+  .pill.shipped{color:var(--shipped);background:var(--shipped-bg)} .pill.closed{color:var(--closed);background:var(--closed-bg)}
+  .muted{color:var(--muted)} .rt{text-align:right} .votes{font-variant-numeric:tabular-nums;font-weight:700}
+  .iconbtn{background:transparent;color:var(--muted);padding:7px 9px;font-size:15px;border-radius:9px}
+  .iconbtn:hover{color:#e5484d;background:var(--surface-2)}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .chip{background:var(--surface);border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600}
+  .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .addbar{display:flex;gap:8px;margin-left:auto}
+  .addbar input{padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);min-width:170px}
+  .addbar .primary{width:auto;padding:9px 16px}
+
+  .tabbar{display:none}
+  @media (max-width:840px){
+    .shell{grid-template-columns:1fr} .side{display:none} main{padding:18px 15px 92px}
+    .stats{grid-template-columns:1fr 1fr} .addbar{width:100%;margin:12px 0 0} .addbar input{flex:1;min-width:0}
+    .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);
+            padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:5}
+    .tabbar button{flex:1;background:transparent;color:var(--muted);font-size:11px;font-weight:700;display:flex;
+                   flex-direction:column;align-items:center;gap:3px;padding:6px}
+    .tabbar button[aria-current="page"]{color:var(--accent)} .tabbar .ic{font-size:18px}
+    .hide-sm{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth" id="authScreen">
+  <div class="auth-card reveal in">
+    <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
+    <h1 id="authTitle">Sign in to your workspace</h1>
+    <p class="sub">Collect, prioritise and ship what your users actually ask for.</p>
+    <form id="authForm" novalidate>
+      <div class="field" id="nameField" style="display:none">
+        <label for="nameInput">Full name</label><input id="nameInput" autocomplete="name" placeholder="Alex Rivera" />
+      </div>
+      <div class="field"><label for="emailInput">Work email</label>
+        <input id="emailInput" type="email" autocomplete="email" placeholder="you@startup.com" /></div>
+      <div class="field"><label for="passInput">Password</label>
+        <input id="passInput" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <button class="primary" type="submit" id="authBtn">Sign in</button>
+    </form>
+    <p class="switch" id="authSwitch">New here? <a id="toSignup" role="button" tabindex="0">Create an account</a></p>
+    <p class="hint">Demo — enter any email &amp; password to explore. Data is saved in your browser only.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="shell" id="appShell">
+  <aside class="side">
+    <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
+    <nav class="main" id="navDesktop" aria-label="Primary">
+      <button data-view="dashboard" aria-current="page"><span class="ic" aria-hidden="true">▤</span> Dashboard</button>
+      <button data-view="submissions"><span class="ic" aria-hidden="true">✎</span> Submissions</button>
+      <button data-view="admin"><span class="ic" aria-hidden="true">⚙</span> Admin</button>
+    </nav>
+    <div class="foot">
+      <button class="themebtn" id="themeBtn" aria-label="Toggle colour theme"><span id="themeIc" aria-hidden="true">🌙</span> <span id="themeLbl">Dark</span></button>
+      <div class="who"><b id="whoName">Alex Rivera</b><span id="whoEmail">you@startup.com</span></div>
+      <button class="ghost" id="logoutBtn">Log out</button>
+    </div>
+  </aside>
+
+  <main>
+    <section id="view-dashboard">
+      <div class="topbar">
+        <div><h1>Dashboard</h1><p>Your workspace at a glance — updates live as requests change.</p></div>
+        <button class="themebtn hide-sm" id="themeBtn2" aria-label="Toggle colour theme"><span aria-hidden="true">◑</span> Theme</button>
+      </div>
+      <div class="stats" id="statCards" aria-live="polite"></div>
+      <div class="panel reveal">
+        <div class="ph"><h2>Requests by status</h2><span class="muted" id="totalNote"></span></div>
+        <div class="bar" id="statusBar" role="img" aria-label="Status breakdown"></div>
+        <div class="legend" id="statusLegend"></div>
+      </div>
+      <div class="panel reveal" style="margin-top:16px">
+        <div class="ph"><h2>Recent activity</h2></div>
+        <table><tbody id="recentBody"></tbody></table>
+      </div>
+    </section>
+
+    <section id="view-submissions" class="hidden">
+      <div class="topbar"><div><h1>Submissions</h1><p>Click a status to advance it. Everything persists locally.</p></div></div>
+      <div class="toolbar" id="filterChips" role="group" aria-label="Filter by status"></div>
+      <div class="addbar">
+        <label class="hidden" for="newTitle">New request title</label>
+        <input id="newTitle" placeholder="New request title…" />
+        <label class="hidden" for="newBy">Requester</label>
+        <input id="newBy" placeholder="Requester" style="max-width:150px" />
+        <button class="primary" id="addBtn">Add request</button>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <table>
+          <thead><tr><th scope="col">Request</th><th scope="col" class="hide-sm">Added</th><th scope="col">Votes</th><th scope="col">Status</th><th scope="col" class="rt"><span class="hidden">Actions</span></th></tr></thead>
+          <tbody id="subBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-admin" class="hidden">
+      <div class="topbar"><div><h1>Admin</h1><p>Manage workspace members and content.</p></div></div>
+      <div class="stats" id="adminStats"></div>
+      <div class="panel">
+        <div class="ph"><h2>Members</h2><span class="muted">Toggle access</span></div>
+        <table>
+          <thead><tr><th scope="col">Name</th><th scope="col" class="hide-sm">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col" class="rt"><span class="hidden">Actions</span></th></tr></thead>
+          <tbody id="userBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="navMobile" aria-label="Primary mobile">
+    <button data-view="dashboard" aria-current="page"><span class="ic" aria-hidden="true">▤</span> Dashboard</button>
+    <button data-view="submissions"><span class="ic" aria-hidden="true">✎</span> Requests</button>
+    <button data-view="admin"><span class="ic" aria-hidden="true">⚙</span> Admin</button>
+  </nav>
+</div>
+
+<script type="module">
+  import { STATUSES, ORDER, advance, remove, addSubmission, counts, toggleUser, relativeTime } from "./logic.js";
+  const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+  const KEY="signal_mvp_v2", SESS="signal_sess_v1", THEME="signal_theme";
+  const now = Date.now(), DAY=86_400_000;
+
+  /* theme */
+  function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.setItem(THEME,t);
+    const dark=t==="dark"; const ic=$("#themeIc"),lbl=$("#themeLbl"); if(ic)ic.textContent=dark?"☀️":"🌙"; if(lbl)lbl.textContent=dark?"Light":"Dark";}
+  applyTheme(localStorage.getItem(THEME) || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+  const toggle=()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
+  $("#themeBtn").onclick=toggle; $("#themeBtn2").onclick=toggle;
+
+  /* seed */
+  const seedSubs=[
+    {id:1,title:"Slack notifications for new feedback",by:"Priya (Acme)",votes:42,status:"prog",createdAt:iso(0.2)},
+    {id:2,title:"Export requests to CSV",by:"Daniel M.",votes:28,status:"open",createdAt:iso(1)},
+    {id:3,title:"Dark mode for the dashboard",by:"Lucia R.",votes:19,status:"shipped",createdAt:iso(2)},
+    {id:4,title:"Public roadmap page",by:"Tomás (Beta)",votes:37,status:"open",createdAt:iso(4)},
+    {id:5,title:"Merge duplicate requests",by:"Priya (Acme)",votes:15,status:"prog",createdAt:iso(6)},
+    {id:6,title:"Weekly digest email",by:"Sofia K.",votes:23,status:"open",createdAt:iso(9)},
+    {id:7,title:"SSO / Google login",by:"Marco (Enterprise)",votes:31,status:"closed",createdAt:iso(14)},
+    {id:8,title:"Tag & categorise submissions",by:"Daniel M.",votes:12,status:"shipped",createdAt:iso(21)},
+  ];
+  function iso(daysAgo){return new Date(now-daysAgo*DAY).toISOString();}
+  const seedUsers=[
+    {id:1,name:"Alex Rivera",email:"alex@startup.com",role:"Owner",active:true},
+    {id:2,name:"Priya Nair",email:"priya@acme.io",role:"Member",active:true},
+    {id:3,name:"Daniel Moreno",email:"daniel@startup.com",role:"Member",active:true},
+    {id:4,name:"Lucia Rossi",email:"lucia@beta.co",role:"Viewer",active:false},
+  ];
+  const load=()=>JSON.parse(localStorage.getItem(KEY)||"null")||{subs:seedSubs,users:seedUsers};
+  const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
+  let state=load(), filter="all";
+  const colors={open:"var(--barOpen)",prog:"var(--barProg)",shipped:"var(--barShipped)",closed:"var(--barClosed)"};
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  /* auth */
+  let signup=false;
+  function toggleSignup(){signup=!signup;
+    $("#authTitle").textContent=signup?"Create your workspace":"Sign in to your workspace";
+    $("#authBtn").textContent=signup?"Create account":"Sign in";
+    $("#nameField").style.display=signup?"block":"none";
+    $("#authSwitch").innerHTML=signup?'Have an account? <a id="toSignup" role="button" tabindex="0">Sign in</a>':'New here? <a id="toSignup" role="button" tabindex="0">Create an account</a>';
+    $("#toSignup").onclick=toggleSignup; $("#toSignup").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")toggleSignup();};
+  }
+  $("#toSignup").onclick=toggleSignup; $("#toSignup").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")toggleSignup();};
+  $("#authForm").onsubmit=e=>{e.preventDefault();
+    const email=$("#emailInput").value.trim()||"you@startup.com";
+    const name=(signup&&$("#nameInput").value.trim())||"Alex Rivera";
+    localStorage.setItem(SESS,JSON.stringify({email,name})); enterApp(name,email);};
+  function enterApp(name,email){$("#authScreen").style.display="none";$("#appShell").style.display="grid";
+    $("#whoName").textContent=name;$("#whoEmail").textContent=email;render();observe();}
+  $("#logoutBtn").onclick=()=>{localStorage.removeItem(SESS);location.reload();};
+
+  /* nav */
+  function setView(v){["dashboard","submissions","admin"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
+    $$("nav.main button,.tabbar button").forEach(b=>{const on=b.dataset.view===v;on?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current");});
+    window.scrollTo(0,0);observe();}
+  $$("#navDesktop button,#navMobile button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+  /* render */
+  function render(){renderDash();renderSubs();renderAdmin();}
+  function renderDash(){
+    const c=counts(state.subs), total=c.total;
+    $("#statCards").innerHTML=[
+      {n:total,l:"Total requests",col:"var(--text)"},{n:c.open,l:"Open",col:"var(--barOpen)"},
+      {n:c.prog,l:"In progress",col:"var(--barProg)"},{n:c.shipped,l:"Shipped",col:"var(--barShipped)"},
+    ].map(s=>`<div class="stat"><div class="n">${s.n}</div><div class="l"><span class="dot" style="background:${s.col}"></span>${s.l}</div></div>`).join("");
+    $("#totalNote").textContent=total+" total";
+    $("#statusBar").innerHTML=ORDER.map(k=>{const w=total?(c[k]/total*100):0;return w?`<i style="width:${w}%;background:${colors[k]}"></i>`:"";}).join("");
+    $("#statusLegend").innerHTML=ORDER.map(k=>`<span><span class="dot" style="background:${colors[k]}"></span>${STATUSES[k]} · ${c[k]}</span>`).join("");
+    $("#recentBody").innerHTML=[...state.subs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5)
+      .map(s=>`<tr><td><b>${esc(s.title)}</b><div class="muted" style="font-size:12px">${esc(s.by)} · ${relativeTime(s.createdAt,Date.now())}</div></td>
+      <td class="rt"><span class="pill ${s.status}">${STATUSES[s.status]}</span></td></tr>`).join("");
+  }
+  function renderSubs(){
+    $("#filterChips").innerHTML=`<button class="chip" aria-pressed="${filter==='all'}" data-f="all">All</button>`+
+      ORDER.map(k=>`<button class="chip" aria-pressed="${filter===k}" data-f="${k}">${STATUSES[k]}</button>`).join("");
+    $$("#filterChips .chip").forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderSubs();});
+    const rows=state.subs.filter(s=>filter==="all"||s.status===filter);
+    $("#subBody").innerHTML=rows.length?rows.map(s=>`<tr>
+      <td><b>${esc(s.title)}</b><div class="muted hide-sm" style="font-size:12px">${esc(s.by)}</div></td>
+      <td class="hide-sm muted">${relativeTime(s.createdAt,Date.now())}</td>
+      <td><span class="votes">▲ ${s.votes}</span></td>
+      <td><button class="pill ${s.status}" data-adv="${s.id}" aria-label="Status ${STATUSES[s.status]} — advance">${STATUSES[s.status]}</button></td>
+      <td class="rt"><button class="iconbtn" data-del="${s.id}" aria-label="Delete ${esc(s.title)}">🗑</button></td></tr>`).join("")
+      :`<tr><td colspan="5" class="muted" style="padding:22px">No requests in “${filter==='all'?'any':STATUSES[filter]}”. Add one above.</td></tr>`;
+    $$("[data-adv]").forEach(el=>el.onclick=()=>{state.subs=advance(state.subs,+el.dataset.adv);save(state);render();});
+    $$("[data-del]").forEach(el=>el.onclick=()=>{state.subs=remove(state.subs,+el.dataset.del);save(state);render();});
+  }
+  function renderAdmin(){
+    const c=counts(state.subs), active=state.users.filter(u=>u.active).length;
+    $("#adminStats").innerHTML=[{n:state.users.length,l:"Members"},{n:active,l:"Active"},{n:c.total,l:"Requests"},{n:c.shipped,l:"Shipped"}]
+      .map(s=>`<div class="stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
+    $("#userBody").innerHTML=state.users.map(u=>`<tr>
+      <td><b>${esc(u.name)}</b></td><td class="hide-sm muted">${esc(u.email)}</td><td>${esc(u.role)}</td>
+      <td><span class="pill ${u.active?'shipped':'closed'}">${u.active?'Active':'Disabled'}</span></td>
+      <td class="rt"><button class="chip" data-tog="${u.id}" aria-label="${u.active?'Disable':'Enable'} ${esc(u.name)}">${u.active?'Disable':'Enable'}</button></td></tr>`).join("");
+    $$("[data-tog]").forEach(el=>el.onclick=()=>{state.users=toggleUser(state.users,+el.dataset.tog);save(state);renderAdmin();});
+  }
+  $("#addBtn").onclick=()=>{const t=$("#newTitle").value, by=$("#newBy").value;
+    const next=addSubmission(state.subs,{title:t,by,now:Date.now()}); if(next===state.subs)return;
+    state.subs=next;$("#newTitle").value="";$("#newBy").value="";save(state);setView("submissions");render();};
+
+  /* motion */
+  function observe(){const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.08});
+    $$(".reveal:not(.in)").forEach(el=>io.observe(el));}
+
+  /* boot */
+  const sess=JSON.parse(localStorage.getItem(SESS)||"null"); if(sess)enterApp(sess.name,sess.email);
+</script>
+</body>
+</html>

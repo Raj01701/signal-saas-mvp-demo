@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Signal — Feedback & feature-request tracker (demo)</title>
+<meta name="description" content="A working SaaS MVP demo: email auth, dashboard, CRUD with a status workflow, and an admin view. Front-end proof-of-concept." />
+<style>
+  :root{
+    --font-display:"SF Pro Display","Segoe UI Semibold",Inter,system-ui,sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+    --ink:#0b0e15; --ink-2:#11151f; --ink-3:#0e121b; --surface:#161c28; --line:#26303f;
+    --text:#eef2f8; --muted:#9aa7ba; --accent:#7c93ff; --accent-2:#8b5cf6; --accent-ink:#0b1020;
+    --cream:#f5f6fb;
+  }
+  @media (prefers-color-scheme:light){
+    :root{--ink:#f4f6fb;--ink-2:#ffffff;--ink-3:#eef1f7;--surface:#ffffff;--line:#e3e8f0;
+          --text:#152038;--muted:#586074;--accent:#4f6bff;--accent-ink:#ffffff;--cream:#ffffff}
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;line-height:1.55}
+  h1,h2,h3,.brandname{font-family:var(--font-display);letter-spacing:-.02em;line-height:1.1;margin:0}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;color:var(--accent);font-size:12px;font-weight:800;
+           text-transform:uppercase;letter-spacing:.1em}
+  .eyebrow::before{content:"";width:28px;height:2px;background:var(--accent)}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:700;border-radius:12px;padding:13px 20px;cursor:pointer;border:0;
+       transition:transform .06s,filter .15s} .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--accent);color:var(--accent-ink)} .btn-primary:hover{filter:brightness(1.07)}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line)} .btn-ghost:hover{border-color:var(--accent)}
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+  /* nav */
+  header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--ink) 82%,transparent);
+         backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px} .brandname{font-weight:800;font-size:19px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+        display:grid;place-items:center;color:#fff;font-weight:900}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 3s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.25)}}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;padding:70px 0 40px;
+        background:radial-gradient(900px 460px at 78% -10%,color-mix(in srgb,var(--accent) 26%,transparent),transparent)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:44px;align-items:center}
+  .hero h1{font-size:clamp(32px,5vw,52px);font-weight:850;margin:16px 0 14px}
+  .hero p.lead{font-size:18px;color:var(--muted);max-width:46ch;margin:0 0 24px}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+  .tag{font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--ink-2)}
+
+  /* device frame with live app */
+  .device{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:0 30px 70px rgba(0,0,0,.45)}
+  .device .barrow{display:flex;align-items:center;gap:7px;padding:11px 13px;border-bottom:1px solid var(--line);background:var(--ink-2)}
+  .device .d{width:11px;height:11px;border-radius:50%;background:#ff5f57} .device .d:nth-child(2){background:#febc2e} .device .d:nth-child(3){background:#28c840}
+  .device .url{margin-left:10px;font-size:12px;color:var(--muted);background:var(--ink-3);border:1px solid var(--line);
+               border-radius:7px;padding:4px 10px}
+  .device iframe{display:block;width:100%;height:520px;border:0;background:var(--surface)}
+  .liveping{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:10px}
+  .liveping .dot{background:#28c840}
+
+  /* sections */
+  section{padding:60px 0} .sec-ink{background:var(--ink-2)} .sec-line{border-top:1px solid var(--line)}
+  .sh{max-width:640px;margin-bottom:34px} .sh h2{font-size:clamp(24px,3.2vw,34px);font-weight:800;margin:14px 0 10px} .sh p{color:var(--muted);margin:0}
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;transition:transform .2s,border-color .2s}
+  .card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .card .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:20px;
+            background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);margin-bottom:14px}
+  .card h3{font-size:17px;margin-bottom:7px} .card p{color:var(--muted);font-size:14px;margin:0}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;position:relative}
+  .step::before{counter-increment:s;content:"0" counter(s);font-family:var(--font-display);font-weight:850;font-size:34px;color:color-mix(in srgb,var(--accent) 55%,transparent);display:block;margin-bottom:8px}
+  .step h3{font-size:16px;margin-bottom:6px} .step p{color:var(--muted);font-size:14px;margin:0}
+
+  .stack{display:flex;flex-wrap:wrap;gap:10px} .stack .tag{background:var(--surface)}
+
+  .cta{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,var(--ink-2)),var(--ink-2));
+       border:1px solid var(--line);border-radius:22px;padding:44px;text-align:center}
+  .cta h2{font-size:clamp(24px,3.4vw,34px);font-weight:850;margin-bottom:12px}
+  .cta p{color:var(--muted);max-width:52ch;margin:0 auto 22px}
+
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-size:13px}
+  .foot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
+
+  @media (max-width:860px){
+    .hero-grid,.feat,.steps{grid-template-columns:1fr} .hero{padding:44px 0 24px}
+    .device iframe{height:460px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top"><span class="dot" aria-hidden="true"></span><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></a>
+    <a class="btn btn-primary" href="app.html">Open the live demo →</a>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="reveal in">
+        <span class="eyebrow">SaaS MVP · Proof of concept</span>
+        <h1>Turn user feedback into a shipping roadmap.</h1>
+        <p class="lead">Signal is a lightweight feedback &amp; feature-request tracker — email login, a live dashboard, full CRUD with a status workflow, and an admin view. This is a working demo you can click through right now.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="app.html">Open the live demo →</a>
+          <a class="btn btn-ghost" href="#features">See what's inside</a>
+        </div>
+        <div class="tags">
+          <span class="tag">Email auth</span><span class="tag">Dashboard</span><span class="tag">CRUD + status flow</span>
+          <span class="tag">Admin view</span><span class="tag">Light / dark</span><span class="tag">Mobile + desktop</span>
+        </div>
+      </div>
+      <div class="reveal in">
+        <div class="device">
+          <div class="barrow"><span class="d"></span><span class="d"></span><span class="d"></span><span class="url">signal.app / dashboard</span></div>
+          <iframe src="app.html" title="Live Signal app preview" loading="lazy"></iframe>
+        </div>
+        <div class="liveping"><span class="dot" aria-hidden="true"></span> Live app embedded above — not a screenshot. Try it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="sec-ink sec-line">
+    <div class="wrap">
+      <div class="sh reveal"><span class="eyebrow">What's inside</span><h2>Everything an early-user MVP needs — nothing it doesn't.</h2>
+        <p>The full spine of a single-workspace SaaS, built to validate the idea, not to over-engineer it.</p></div>
+      <div class="feat">
+        <div class="card reveal"><div class="ic" aria-hidden="true">🔑</div><h3>Email sign-in</h3><p>Register or sign in and land in your workspace. Sessions persist between visits.</p></div>
+        <div class="card reveal"><div class="ic" aria-hidden="true">▤</div><h3>Live dashboard</h3><p>Totals, a status breakdown bar, and recent activity — all recomputed as data changes.</p></div>
+        <div class="card reveal"><div class="ic" aria-hidden="true">✎</div><h3>CRUD + status flow</h3><p>Add, delete and advance requests through Open → In progress → Shipped → Closed. Filter by status.</p></div>
+        <div class="card reveal"><div class="ic" aria-hidden="true">⚙</div><h3>Admin view</h3><p>Manage members and content — enable or disable access, see workspace stats at a glance.</p></div>
+        <div class="card reveal"><div class="ic" aria-hidden="true">◑</div><h3>Light &amp; dark themes</h3><p>A consistent colour system in both themes, meeting WCAG AA contrast, with a persisted toggle.</p></div>
+        <div class="card reveal"><div class="ic" aria-hidden="true">📱</div><h3>Mobile &amp; desktop</h3><p>A proper desktop layout and a mobile layout with a bottom tab bar — responsive from 390px up.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="sec-line">
+    <div class="wrap">
+      <div class="sh reveal"><span class="eyebrow">How a real build would run</span><h2>From idea to a link your testers can use.</h2>
+        <p>The same approach behind this demo, scaled to your actual product.</p></div>
+      <div class="steps">
+        <div class="step reveal"><h3>Scope</h3><p>A short call to lock the core entity, the one workflow that matters, and what to simplify to hit budget.</p></div>
+        <div class="step reveal"><h3>Build</h3><p>Auth, dashboard, CRUD and admin on Next.js + Supabase (Postgres, REST) — shipped iteratively so you see real screens within days.</p></div>
+        <div class="step reveal"><h3>Ship</h3><p>Deployed to a live link, ready to share with early testers — clean, tested code, not a throwaway.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STACK (honest) -->
+  <section class="sec-ink sec-line">
+    <div class="wrap">
+      <div class="sh reveal"><span class="eyebrow">About this demo</span><h2>An honest note on what you're looking at.</h2>
+        <p>This is a front-end proof-of-concept. Data is stored in your browser (localStorage), and sign-in is simulated so you can explore without an account. A production build would use real Supabase auth and a Postgres backend — the stack below.</p></div>
+      <div class="stack reveal">
+        <span class="tag">React / Next.js</span><span class="tag">TypeScript</span><span class="tag">Node.js</span>
+        <span class="tag">Supabase</span><span class="tag">PostgreSQL</span><span class="tag">REST API</span>
+        <span class="tag">Responsive design</span><span class="tag">WCAG AA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="sec-line">
+    <div class="wrap">
+      <div class="cta reveal">
+        <h2>Click through the whole thing in 60 seconds.</h2>
+        <p>Sign in with any email, add a request, advance its status, switch to dark mode, open the admin view. It all works.</p>
+        <a class="btn btn-primary" href="app.html">Open the live demo →</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
+    <div>Demo build — feedback &amp; feature-request tracker. Data stored locally in your browser.</div>
+  </div>
+</footer>
+
+<script>
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.12});
+  document.querySelectorAll(".reveal:not(.in)").forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
