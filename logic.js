@@ -2,6 +2,49 @@
 export const STATUSES = { open: "Open", prog: "In progress", shipped: "Shipped", closed: "Closed" };
 export const ORDER = ["open", "prog", "shipped", "closed"];
 export const ROLES = ["Owner", "Admin", "Member", "Viewer"];
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// What a workspace role may do. Enforced by the API; the UI mirrors it.
+export function permissions(role) {
+  return {
+    write: ["Owner", "Admin", "Member"].includes(role),
+    manage: role === "Owner" || role === "Admin",
+  };
+}
+
+// Input validation shared by the API and the forms. Returns { value } or { error }.
+export function parseSubmission({ title, by } = {}) {
+  const t = String(title ?? "").trim();
+  const r = String(by ?? "").trim() || "You";
+  if (!t) return { error: "Give the request a title" };
+  if (t.length > 200) return { error: "Title must be 200 characters or fewer" };
+  if (r.length > 80) return { error: "Requester must be 80 characters or fewer" };
+  return { value: { title: t, requester: r } };
+}
+export function parseInvite({ name, email, role = "Member" } = {}) {
+  const n = String(name ?? "").trim();
+  const e = String(email ?? "").trim().toLowerCase();
+  if (!n || !e) return { error: "Name and email are required" };
+  if (n.length > 80) return { error: "Name must be 80 characters or fewer" };
+  if (!EMAIL.test(e) || e.length > 254) return { error: "Enter a valid email address" };
+  if (!ROLES.includes(role) || role === "Owner") return { error: "Invite as Admin, Member or Viewer" };
+  return { value: { name: n, email: e, role } };
+}
+
+// Why `actor` may not apply `change` ({ op: "toggle" } or { op: "role", role }) to `target`; null if allowed.
+export function memberChangeError(actor, target, change) {
+  if (!permissions(actor.role).manage) return "Only owners and admins can manage members";
+  if (target.id === actor.id) return "You can't change your own access";
+  if (target.role === "Owner") return "The workspace owner can't be changed";
+  if (target.role === "Admin" && actor.role !== "Owner") return "Only the owner can change an admin";
+  if (change.op === "role") {
+    if (!ROLES.includes(change.role)) return "Unknown role";
+    if (change.role === "Owner") return "Ownership transfer isn't supported";
+  } else if (change.op !== "toggle") {
+    return "Unknown change";
+  }
+  return null;
+}
 
 export function nextStatus(status) {
   const i = ORDER.indexOf(status);
@@ -15,15 +58,6 @@ export function upvote(subs, id) {
 }
 export function remove(subs, id) {
   return subs.filter(s => s.id !== id);
-}
-export function addSubmission(subs, { title, by, id, now }) {
-  const clean = String(title || "").trim();
-  if (!clean) return subs;
-  return [{
-    id: id ?? now, title: clean,
-    by: (String(by || "").trim()) || "You",
-    votes: 1, status: "open", createdAt: new Date(now).toISOString(),
-  }, ...subs];
 }
 export function counts(subs) {
   const c = { open: 0, prog: 0, shipped: 0, closed: 0 };
@@ -70,13 +104,6 @@ export function changeRole(users, id, role) {
   if (!ROLES.includes(role)) return users;
   return users.map(u => (u.id === id ? { ...u, role } : u));
 }
-export function addUser(users, { name, email, role = "Member", id, now }) {
-  const nm = String(name || "").trim();
-  const em = String(email || "").trim();
-  if (!nm || !em) return users;
-  return [...users, { id: id ?? now, name: nm, email: em, role: ROLES.includes(role) ? role : "Member", active: true }];
-}
-
 // Relative time — guarded against negative/zero edge cases.
 export function relativeTime(fromISO, nowMs) {
   const then = new Date(fromISO).getTime();

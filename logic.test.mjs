@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  nextStatus, advance, upvote, remove, addSubmission, counts,
-  searchSort, topVoted, weeklyTrend, toggleUser, changeRole, addUser,
-  relativeTime, ORDER, ROLES,
+  nextStatus, advance, upvote, counts, searchSort, topVoted, weeklyTrend,
+  toggleUser, changeRole, relativeTime, permissions, parseSubmission, parseInvite,
+  memberChangeError, ORDER, ROLES,
 } from "./logic.js";
 
 const now = Date.UTC(2026, 0, 30, 12, 0, 0), DAY = 86_400_000;
@@ -31,10 +31,11 @@ test("counts + total", () => {
   const c = counts(sample());
   assert.equal(c.open, 1); assert.equal(c.prog, 1); assert.equal(c.shipped, 1); assert.equal(c.total, 3);
 });
-test("addSubmission trims, defaults, ignores empty", () => {
-  const o = addSubmission(sample(), { title: "  New  ", by: "", id: 99, now });
-  assert.equal(o[0].title, "New"); assert.equal(o[0].by, "You"); assert.equal(o[0].status, "open");
-  assert.equal(addSubmission(sample(), { title: "  ", now }).length, 3);
+test("parseSubmission trims, defaults requester, rejects empty/too long", () => {
+  assert.deepEqual(parseSubmission({ title: "  New  ", by: "" }), { value: { title: "New", requester: "You" } });
+  assert.ok(parseSubmission({ title: "   " }).error);
+  assert.ok(parseSubmission({ title: "x".repeat(201) }).error);
+  assert.ok(parseSubmission({ title: "ok", by: "y".repeat(81) }).error);
 });
 test("searchSort filters by title/requester and sorts", () => {
   assert.equal(searchSort(sample(), { q: "csv" }).length, 1);
@@ -58,11 +59,33 @@ test("changeRole validates role", () => {
   assert.equal(changeRole(users, 1, "Admin")[0].role, "Admin");
   assert.equal(changeRole(users, 1, "Wizard")[0].role, "Member"); // rejected
 });
-test("addUser requires name+email, defaults role", () => {
-  const users = [];
-  assert.equal(addUser(users, { name: "Sam", email: "s@x.co", id: 5 }).length, 1);
-  assert.equal(addUser(users, { name: "Sam", email: "s@x.co", id: 5 })[0].role, "Member");
-  assert.equal(addUser(users, { name: "", email: "s@x.co" }).length, 0);
+test("parseInvite requires name + valid email, normalises, refuses Owner", () => {
+  assert.deepEqual(parseInvite({ name: " Sam ", email: " Sam@X.co " }), { value: { name: "Sam", email: "sam@x.co", role: "Member" } });
+  assert.ok(parseInvite({ name: "", email: "s@x.co" }).error);
+  assert.ok(parseInvite({ name: "Sam", email: "not-an-email" }).error);
+  assert.ok(parseInvite({ name: "Sam", email: "s@x.co", role: "Owner" }).error);
+  assert.equal(parseInvite({ name: "Sam", email: "s@x.co", role: "Viewer" }).value.role, "Viewer");
+});
+test("permissions per role", () => {
+  assert.deepEqual(permissions("Owner"), { write: true, manage: true });
+  assert.deepEqual(permissions("Admin"), { write: true, manage: true });
+  assert.deepEqual(permissions("Member"), { write: true, manage: false });
+  assert.deepEqual(permissions("Viewer"), { write: false, manage: false });
+  assert.deepEqual(permissions("Wizard"), { write: false, manage: false });
+});
+test("memberChangeError guards owner, self, admins and bad input", () => {
+  const owner = { id: 1, role: "Owner" }, admin = { id: 2, role: "Admin" };
+  const member = { id: 3, role: "Member" }, admin2 = { id: 4, role: "Admin" };
+  assert.equal(memberChangeError(owner, member, { op: "role", role: "Admin" }), null);
+  assert.equal(memberChangeError(admin, member, { op: "toggle" }), null);
+  assert.equal(memberChangeError(owner, admin, { op: "toggle" }), null);
+  assert.ok(memberChangeError(member, admin, { op: "toggle" }));               // members can't manage
+  assert.ok(memberChangeError(admin, admin, { op: "toggle" }));                // not yourself
+  assert.ok(memberChangeError(admin, owner, { op: "role", role: "Viewer" }));  // owner is fixed
+  assert.ok(memberChangeError(admin, admin2, { op: "toggle" }));               // only owner changes admins
+  assert.ok(memberChangeError(owner, member, { op: "role", role: "Owner" }));  // no ownership transfer
+  assert.ok(memberChangeError(owner, member, { op: "role", role: "Wizard" }));
+  assert.ok(memberChangeError(owner, member, { op: "delete" }));
 });
 test("toggleUser flips target only", () => {
   const u = toggleUser([{ id: 1, active: true }, { id: 2, active: false }], 2);

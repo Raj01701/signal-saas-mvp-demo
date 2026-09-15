@@ -1,0 +1,14 @@
+{
+  "name": "signal-saas-mvp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0"
+  }
+}

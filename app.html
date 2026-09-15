@@ -28,7 +28,7 @@
   h1,h2,h3,.brandname{font-family:var(--font-display);letter-spacing:-.02em;margin:0}
   button,input,select{font:inherit;color:inherit} button{cursor:pointer;border:0;border-radius:10px}
   a{color:var(--accent)} :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
-  .hidden{display:none!important}
+  .hidden,[hidden]{display:none!important}
   .reveal{opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s} .reveal.in{opacity:1;transform:none}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
   .eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
@@ -46,6 +46,15 @@
   .primary:hover{filter:brightness(1.06)} .primary:active{transform:translateY(1px)}
   .switch{margin-top:14px;font-size:13px;color:var(--muted);text-align:center} .switch a{cursor:pointer;font-weight:700}
   .hint{margin-top:10px;font-size:12px;color:var(--muted);text-align:center}
+  .error{margin:0 0 12px;padding:10px 12px;border-radius:11px;font-size:13px;font-weight:600;color:#b4232a;background:#fde8e8}
+  html[data-theme="dark"] .error{color:#ffb4b4;background:#3a1618}
+  .or{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:12px}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+  .secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--line);padding:12px;width:100%;font-weight:700}
+  .secondary:hover{border-color:var(--accent)}
+  button:disabled,select:disabled{cursor:not-allowed;opacity:.55;filter:none}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:20;max-width:min(92vw,440px);padding:12px 16px;border-radius:12px;background:var(--text);color:var(--bg);font-size:14px;font-weight:600;box-shadow:var(--shadow)}
+  .you{margin-left:6px;font-size:11px;font-weight:700;color:var(--accent)}
 
   /* Shell */
   .shell{display:none;min-height:100dvh;grid-template-columns:240px 1fr}
@@ -109,6 +118,7 @@
 
   .tabbar{display:none}
   @media (max-width:900px){
+    .toast{bottom:84px}
     .shell{grid-template-columns:1fr} .side{display:none} main{padding:18px 15px 92px}
     .stats{grid-template-columns:1fr 1fr} .grid2{grid-template-columns:1fr} .hide-sm{display:none}
     .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:5}
@@ -119,26 +129,29 @@
 </head>
 <body>
 
-<div class="auth" id="authScreen">
+<div class="auth" id="authScreen" style="display:none">
   <div class="auth-card reveal in">
     <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
     <h1 id="authTitle">Sign in to your workspace</h1>
     <p class="sub">Collect, prioritise and ship what your users actually ask for.</p>
+    <p class="error" id="authError" role="alert" hidden></p>
     <form id="authForm" novalidate>
       <div class="field" id="nameField" style="display:none"><label for="nameInput">Full name</label><input id="nameInput" autocomplete="name" placeholder="Alex Rivera" /></div>
       <div class="field"><label for="emailInput">Work email</label><input id="emailInput" type="email" autocomplete="email" placeholder="you@startup.com" /></div>
-      <div class="field"><label for="passInput">Password</label><input id="passInput" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <div class="field"><label for="passInput">Password</label><input id="passInput" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" /></div>
       <button class="primary" type="submit" id="authBtn">Sign in</button>
     </form>
     <p class="switch" id="authSwitch">New here? <a id="toSignup" role="button" tabindex="0">Create an account</a></p>
-    <p class="hint">Demo — enter any email &amp; password. Data loads from a live REST API; your edits save in this browser.</p>
+    <div class="or">or</div>
+    <button class="secondary" type="button" id="guestBtn">Explore as a guest</button>
+    <p class="hint">Real accounts on Supabase. Every account and guest gets a private workspace with sample data, saved in Postgres.</p>
   </div>
 </div>
 
 <div class="shell" id="appShell">
   <aside class="side">
     <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
-    <div class="apihealth"><span class="hdot" id="hdot"></span> <span id="hlabel">API: connecting…</span></div>
+    <div class="apihealth"><span class="hdot" id="hdot"></span> <span id="hlabel">Database: connecting…</span></div>
     <nav class="main" id="navDesktop" aria-label="Primary">
       <button data-view="dashboard" aria-current="page"><span class="ic" aria-hidden="true">▤</span> Dashboard</button>
       <button data-view="submissions"><span class="ic" aria-hidden="true">✎</span> Submissions</button>
@@ -146,7 +159,7 @@
     </nav>
     <div class="foot">
       <button class="themebtn" id="themeBtn" aria-label="Toggle colour theme"><span id="themeIc" aria-hidden="true">🌙</span> <span id="themeLbl">Dark</span></button>
-      <div class="who"><b id="whoName">Alex Rivera</b><span id="whoEmail">you@startup.com</span></div>
+      <div class="who"><b id="whoName"></b><span id="whoEmail"></span></div>
       <button class="ghost" id="logoutBtn">Log out</button>
     </div>
   </aside>
@@ -154,7 +167,7 @@
   <main>
     <!-- DASHBOARD -->
     <section id="view-dashboard">
-      <div class="topbar"><div><h1>Dashboard</h1><p>Live workspace overview — data served from the REST API.</p></div>
+      <div class="topbar"><div><h1>Dashboard</h1><p id="wsName">Live workspace overview.</p></div>
         <button class="themebtn hide-sm" id="themeBtn2" aria-label="Toggle colour theme"><span aria-hidden="true">◑</span> Theme</button></div>
       <div class="stats" id="statCards" aria-live="polite"></div>
       <div class="grid2">
@@ -184,7 +197,7 @@
         <select class="mini" id="sortSel" aria-label="Sort"><option value="votes">Most voted</option><option value="new">Newest</option><option value="status">By status</option></select>
       </div>
       <div class="toolbar" id="filterChips" role="group" aria-label="Filter by status"></div>
-      <div class="addbar">
+      <div class="addbar" id="addBar">
         <label class="hidden" for="newTitle">New request title</label><input id="newTitle" class="grow" placeholder="New request title…" />
         <label class="hidden" for="newBy">Requester</label><input id="newBy" placeholder="Requester" style="width:150px" />
         <button class="primary" id="addBtn">Add request</button>
@@ -201,7 +214,7 @@
     <section id="view-admin" class="hidden">
       <div class="topbar"><div><h1>Admin</h1><p>Manage members, roles and access.</p></div></div>
       <div class="stats" id="adminStats"></div>
-      <div class="addbar">
+      <div class="addbar" id="inviteBar">
         <label class="hidden" for="invName">Name</label><input id="invName" class="grow" placeholder="Invite — full name" />
         <label class="hidden" for="invEmail">Email</label><input id="invEmail" placeholder="email@company.com" style="width:200px" />
         <label class="hidden" for="invRole">Role</label><select class="mini" id="invRole"></select>
@@ -224,13 +237,16 @@
   </nav>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
 <script type="module">
-  import { STATUSES, ORDER, ROLES, advance, upvote, remove, addSubmission, counts,
-           searchSort, topVoted, weeklyTrend, toggleUser, changeRole, addUser, relativeTime } from "./logic.js";
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm";
+  import { STATUSES, ORDER, ROLES, advance, upvote, remove, counts, searchSort, topVoted, weeklyTrend,
+           toggleUser, changeRole, relativeTime, permissions, parseSubmission, parseInvite, memberChangeError } from "./logic.js";
   const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-  const KEY="signal_v3", SESS="signal_sess_v1", THEME="signal_theme";
+  const THEME="signal_theme";
   const colors={open:"var(--barOpen)",prog:"var(--barProg)",shipped:"var(--barShipped)",closed:"var(--barClosed)"};
-  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
   /* theme */
   function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.setItem(THEME,t);
@@ -239,53 +255,103 @@
   const tog=()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
   $("#themeBtn").onclick=tog; $("#themeBtn2").onclick=tog;
 
-  /* API */
-  const API={
-    health:()=>fetch("/api/health").then(r=>r.json()),
-    subs:()=>fetch("/api/submissions").then(r=>r.json()),
-    users:()=>fetch("/api/users").then(r=>r.json()),
-    createSub:b=>send("/api/submissions","POST",b),
-    patchSub:b=>send("/api/submissions","PATCH",b),
-    delSub:id=>send("/api/submissions","DELETE",{id}),
-    createUser:b=>send("/api/users","POST",b),
-    patchUser:b=>send("/api/users","PATCH",b),
-  };
-  const send=(u,m,b)=>fetch(u,{method:m,headers:{"content-type":"application/json"},body:JSON.stringify(b)}).then(r=>r.json()).catch(()=>null);
+  /* feedback */
+  let toastTimer;
+  function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},4000);}
+  function authError(msg){const e=$("#authError");e.textContent=msg||"";e.hidden=!msg;}
 
-  let state={subs:[],users:[]}, filter="all", q="", sort="votes";
-  const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+  /* Supabase auth + API */
+  const config=await fetch("/api/config").then(r=>r.json()).catch(()=>({}));
+  if(!config.supabaseUrl){
+    $("#authScreen").style.display="grid"; $$("#authForm button,#guestBtn").forEach(b=>b.disabled=true);
+    authError("Signal can't reach its backend right now. Please try again shortly.");
+    throw new Error("Missing Supabase config");
+  }
+  const supabase=createClient(config.supabaseUrl,config.supabaseAnonKey);
 
-  async function boot(){
-    // API health badge
-    try{const h=await API.health(); if(h&&h.ok){$("#hdot").classList.add("on");$("#hlabel").textContent="API: live";}else throw 0;}
-    catch{$("#hlabel").textContent="API: offline";}
-    // load: localStorage first (persists edits), else seed from the live API
-    const cached=JSON.parse(localStorage.getItem(KEY)||"null");
-    if(cached&&cached.subs&&cached.subs.length){state=cached;}
-    else{
-      const [s,u]=await Promise.all([API.subs().catch(()=>({submissions:[]})),API.users().catch(()=>({users:[]}))]);
-      state={subs:s.submissions||[],users:u.users||[]}; save();
-    }
-    render();
+  async function api(path,method="GET",payload){
+    const {data:{session}}=await supabase.auth.getSession();
+    const res=await fetch("/api/"+path,{method,
+      headers:{authorization:`Bearer ${session?.access_token??""}`,...(payload&&{"content-type":"application/json"})},
+      body:payload&&JSON.stringify(payload)});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(data.error||`Request failed (${res.status})`);
+    return data;
   }
 
-  /* auth */
+  let state={subs:[],users:[]}, me=null, perm=permissions(null), filter="all", q="", sort="votes";
+  const replaceById=(list,item)=>list.map(x=>x.id===item.id?item:x);
+
+  // Optimistic update: apply locally, confirm with the server, reload from the database if it refuses.
+  async function mutate(apply,request,confirm){
+    state=apply(state); render();
+    try{const r=await request(); if(confirm){state=confirm(state,r);render();}}
+    catch(e){toast(e.message); await load().catch(()=>{});}
+  }
+
+  async function load(){
+    const [s,u]=await Promise.all([api("submissions"),api("users")]);
+    state={subs:s.submissions,users:u.users}; render();
+  }
+
+  /* auth screen */
   let signup=false;
-  function toggleSignup(){signup=!signup;
+  function toggleSignup(){signup=!signup; authError("");
     $("#authTitle").textContent=signup?"Create your workspace":"Sign in to your workspace";
     $("#authBtn").textContent=signup?"Create account":"Sign in";
     $("#nameField").style.display=signup?"block":"none";
+    $("#passInput").autocomplete=signup?"new-password":"current-password";
     $("#authSwitch").innerHTML=signup?'Have an account? <a id="toSignup" role="button" tabindex="0">Sign in</a>':'New here? <a id="toSignup" role="button" tabindex="0">Create an account</a>';
     bindSwitch();}
-  function bindSwitch(){const a=$("#toSignup"); a.onclick=toggleSignup; a.onkeydown=e=>{if(e.key==="Enter"||e.key===" ")toggleSignup();};}
+  function bindSwitch(){const a=$("#toSignup"); a.onclick=toggleSignup; a.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();toggleSignup();}};}
   bindSwitch();
-  $("#authForm").onsubmit=e=>{e.preventDefault();
-    const email=$("#emailInput").value.trim()||"you@startup.com";
-    const name=(signup&&$("#nameInput").value.trim())||"Alex Rivera";
-    localStorage.setItem(SESS,JSON.stringify({email,name})); enterApp(name,email);};
-  function enterApp(name,email){$("#authScreen").style.display="none";$("#appShell").style.display="grid";
-    $("#whoName").textContent=name;$("#whoEmail").textContent=email;boot();}
-  $("#logoutBtn").onclick=()=>{localStorage.removeItem(SESS);location.reload();};
+
+  async function withBusy(btn,fn){const label=btn.textContent;btn.disabled=true;btn.textContent="Please wait…";
+    try{await fn();}finally{btn.disabled=false;btn.textContent=label;}}
+
+  $("#authForm").onsubmit=e=>{e.preventDefault(); authError("");
+    const email=$("#emailInput").value.trim(), password=$("#passInput").value, name=$("#nameInput").value.trim();
+    if(!email||!password)return authError("Enter your email and password.");
+    if(signup&&!name)return authError("Enter your full name.");
+    if(signup&&password.length<8)return authError("Use a password of at least 8 characters.");
+    withBusy($("#authBtn"),async()=>{
+      const {error}=signup
+        ?await supabase.auth.signUp({email,password,options:{data:{name}}})
+        :await supabase.auth.signInWithPassword({email,password});
+      if(error)authError(error.message);
+    });
+  };
+  $("#guestBtn").onclick=()=>{authError("");
+    withBusy($("#guestBtn"),async()=>{const {error}=await supabase.auth.signInAnonymously(); if(error)authError(error.message);});};
+  $("#logoutBtn").onclick=()=>supabase.auth.signOut();
+
+  // Supabase callbacks must not await other Supabase calls, so app entry is deferred a tick.
+  let entered=false;
+  supabase.auth.onAuthStateChange((event,session)=>{
+    if(session&&!entered){entered=true;setTimeout(enterApp,0);}
+    else if(!session&&entered){location.reload();}
+    else if(!session){$("#authScreen").style.display="grid";}
+  });
+
+  async function enterApp(){
+    try{
+      const [info]=await Promise.all([api("me"),load()]);
+      me=info.member; perm=permissions(me.role);
+      $("#whoName").textContent=me.name;
+      $("#whoEmail").textContent=info.isGuest?"Guest session":`${me.email} · ${me.role}`;
+      $("#wsName").textContent=`${info.workspace.name} — live from Postgres.`;
+      $("#addBar").hidden=!perm.write; $("#inviteBar").hidden=!perm.manage;
+      $("#authScreen").style.display="none"; $("#appShell").style.display="grid";
+      render();
+    }catch(e){
+      entered=false; await supabase.auth.signOut({scope:"local"});
+      $("#authScreen").style.display="grid"; authError(e.message);
+      return;
+    }
+    fetch("/api/health").then(r=>r.json()).then(h=>{
+      $("#hdot").classList.toggle("on",h.ok); $("#hlabel").textContent=h.ok?"Database: live":"Database: offline";
+    }).catch(()=>{$("#hlabel").textContent="Database: offline";});
+  }
 
   /* nav */
   function setView(v){["dashboard","submissions","admin"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
@@ -336,46 +402,63 @@
     $("#subBody").innerHTML=rows.length?rows.map(s=>`<tr>
       <td><b>${esc(s.title)}</b><div class="muted hide-sm" style="font-size:12px">${esc(s.by)}</div></td>
       <td class="hide-sm muted">${relativeTime(s.createdAt,Date.now())}</td>
-      <td><button class="up" data-vote="${s.id}" aria-label="Upvote ${esc(s.title)}">▲ ${s.votes}</button></td>
-      <td><button class="pill ${s.status}" data-adv="${s.id}" aria-label="Status ${STATUSES[s.status]} — advance">${STATUSES[s.status]}</button></td>
-      <td class="rt"><button class="iconbtn" data-del="${s.id}" aria-label="Delete ${esc(s.title)}">🗑</button></td></tr>`).join("")
+      <td><button class="up" data-vote="${s.id}" aria-label="Upvote ${esc(s.title)}" ${perm.write?"":"disabled"}>▲ ${s.votes}</button></td>
+      <td>${perm.manage
+        ?`<button class="pill ${s.status}" data-adv="${s.id}" aria-label="Status ${STATUSES[s.status]}, advance">${STATUSES[s.status]}</button>`
+        :`<span class="pill ${s.status}">${STATUSES[s.status]}</span>`}</td>
+      <td class="rt">${perm.manage?`<button class="iconbtn" data-del="${s.id}" aria-label="Delete ${esc(s.title)}">🗑</button>`:""}</td></tr>`).join("")
       :`<tr><td colspan="5" class="muted" style="padding:22px">No matching requests.</td></tr>`;
-    $$("[data-vote]").forEach(el=>el.onclick=()=>{const id=+el.dataset.vote;state.subs=upvote(state.subs,id);save();renderSubs();renderDash();API.patchSub({id,op:"upvote"});});
-    $$("[data-adv]").forEach(el=>el.onclick=()=>{const id=+el.dataset.adv;state.subs=advance(state.subs,id);save();renderSubs();renderDash();API.patchSub({id,op:"advance"});});
-    $$("[data-del]").forEach(el=>el.onclick=()=>{const id=+el.dataset.del;state.subs=remove(state.subs,id);save();renderSubs();renderDash();API.delSub(id);});
+    const confirmSub=(st,r)=>({...st,subs:replaceById(st.subs,r.submission)});
+    $$("[data-vote]").forEach(el=>el.onclick=()=>{const id=+el.dataset.vote;
+      mutate(st=>({...st,subs:upvote(st.subs,id)}),()=>api("submissions","PATCH",{id,op:"upvote"}),confirmSub);});
+    $$("[data-adv]").forEach(el=>el.onclick=()=>{const id=+el.dataset.adv;
+      mutate(st=>({...st,subs:advance(st.subs,id)}),()=>api("submissions","PATCH",{id,op:"advance"}),confirmSub);});
+    $$("[data-del]").forEach(el=>el.onclick=()=>{const id=+el.dataset.del;
+      mutate(st=>({...st,subs:remove(st.subs,id)}),()=>api("submissions","DELETE",{id}));});
   }
   $("#searchInput").oninput=e=>{q=e.target.value;renderSubs();};
   $("#sortSel").onchange=e=>{sort=e.target.value;renderSubs();};
-  $("#addBtn").onclick=async()=>{
-    const title=$("#newTitle").value, by=$("#newBy").value; if(!title.trim())return;
-    const r=await API.createSub({title,by});                      // backend mints the record
-    const item=(r&&r.submission)||{id:Date.now(),title:title.trim(),by:by.trim()||"You",votes:1,status:"open",createdAt:new Date().toISOString()};
-    state.subs=[item,...state.subs]; $("#newTitle").value="";$("#newBy").value="";save();setView("submissions");render();};
+  $("#addBtn").onclick=()=>{
+    const input={title:$("#newTitle").value,by:$("#newBy").value}, {error}=parseSubmission(input);
+    if(error)return toast(error);
+    withBusy($("#addBtn"),async()=>{
+      try{const r=await api("submissions","POST",input);
+        state={...state,subs:[r.submission,...state.subs]}; $("#newTitle").value="";$("#newBy").value="";render();}
+      catch(e){toast(e.message);}
+    });
+  };
 
   function renderAdmin(){
     const c=counts(state.subs), active=state.users.filter(u=>u.active).length;
     $("#adminStats").innerHTML=[{n:state.users.length,l:"Members"},{n:active,l:"Active"},{n:c.total,l:"Requests"},{n:c.shipped,l:"Shipped"}]
       .map(s=>`<div class="stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
-    if(!$("#invRole").options.length)$("#invRole").innerHTML=ROLES.map(r=>`<option>${r}</option>`).join("");
-    $("#userBody").innerHTML=state.users.map(u=>`<tr>
-      <td><b>${esc(u.name)}</b></td><td class="hide-sm muted">${esc(u.email)}</td>
-      <td><select class="mini" data-role="${u.id}" aria-label="Role for ${esc(u.name)}">${ROLES.map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select></td>
+    if(!$("#invRole").options.length)$("#invRole").innerHTML=ROLES.filter(r=>r!=="Owner").map(r=>`<option ${r==="Member"?"selected":""}>${r}</option>`).join("");
+    $("#userBody").innerHTML=state.users.map(u=>{
+      const locked=!me||Boolean(memberChangeError(me,u,{op:"toggle"})), dis=locked?"disabled":"";
+      return `<tr>
+      <td><b>${esc(u.name)}</b>${u.isYou?'<span class="you">you</span>':""}</td><td class="hide-sm muted">${esc(u.email||"—")}</td>
+      <td><select class="mini" data-role="${u.id}" aria-label="Role for ${esc(u.name)}" ${dis}>${ROLES.filter(r=>r!=="Owner"||u.role==="Owner").map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select></td>
       <td><span class="pill ${u.active?'shipped':'closed'}">${u.active?'Active':'Disabled'}</span></td>
-      <td class="rt"><button class="chip" data-tog="${u.id}" aria-label="${u.active?'Disable':'Enable'} ${esc(u.name)}">${u.active?'Disable':'Enable'}</button></td></tr>`).join("");
-    $$("[data-tog]").forEach(el=>el.onclick=()=>{const id=+el.dataset.tog;state.users=toggleUser(state.users,id);save();renderAdmin();API.patchUser({id,op:"toggle"});});
-    $$("[data-role]").forEach(el=>el.onchange=()=>{const id=+el.dataset.role;state.users=changeRole(state.users,id,el.value);save();renderAdmin();API.patchUser({id,op:"role",role:el.value});});
+      <td class="rt">${locked?"":`<button class="chip" data-tog="${u.id}" aria-label="${u.active?'Disable':'Enable'} ${esc(u.name)}">${u.active?'Disable':'Enable'}</button>`}</td></tr>`;}).join("");
+    const confirmUser=(st,r)=>({...st,users:replaceById(st.users,r.user)});
+    $$("[data-tog]").forEach(el=>el.onclick=()=>{const id=+el.dataset.tog;
+      mutate(st=>({...st,users:toggleUser(st.users,id)}),()=>api("users","PATCH",{id,op:"toggle"}),confirmUser);});
+    $$("[data-role]").forEach(el=>el.onchange=()=>{const id=+el.dataset.role, role=el.value;
+      mutate(st=>({...st,users:changeRole(st.users,id,role)}),()=>api("users","PATCH",{id,op:"role",role}),confirmUser);});
   }
-  $("#inviteBtn").onclick=async()=>{
-    const name=$("#invName").value,email=$("#invEmail").value,role=$("#invRole").value; if(!name.trim()||!email.trim())return;
-    const r=await API.createUser({name,email,role});
-    const u=(r&&r.user)||{id:Date.now(),name:name.trim(),email:email.trim(),role,active:true};
-    state.users=[...state.users,u]; $("#invName").value="";$("#invEmail").value="";save();renderAdmin();};
+  $("#inviteBtn").onclick=()=>{
+    const input={name:$("#invName").value,email:$("#invEmail").value,role:$("#invRole").value}, {error}=parseInvite(input);
+    if(error)return toast(error);
+    withBusy($("#inviteBtn"),async()=>{
+      try{const r=await api("users","POST",input);
+        state={...state,users:[...state.users,r.user]}; $("#invName").value="";$("#invEmail").value="";renderAdmin();toast(`${r.user.name} added as ${r.user.role}`);}
+      catch(e){toast(e.message);}
+    });
+  };
 
   /* motion */
   let io; function observe(){io=io||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.08});
     $$(".reveal:not(.in)").forEach(el=>io.observe(el));}
-
-  const sess=JSON.parse(localStorage.getItem(SESS)||"null"); if(sess)enterApp(sess.name,sess.email);
 </script>
 </body>
 </html>

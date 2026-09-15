@@ -1,6 +1,8 @@
-const { cors } = require("./_data");
-module.exports = (req, res) => {
-  cors(res);
-  if (req.method === "OPTIONS") return res.status(204).end();
-  res.status(200).json({ ok: true, service: "signal-api", time: new Date().toISOString() });
-};
+import { db, route } from "./_lib.js";
+
+export default route({
+  async GET({ res }) {
+    const { error } = await db().from("workspaces").select("id").limit(1);
+    res.status(error ? 503 : 200).json({ ok: !error, database: error ? "down" : "up", time: new Date().toISOString() });
+  },
+}, { requireAuth: false });

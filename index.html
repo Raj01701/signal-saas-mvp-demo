@@ -163,7 +163,7 @@
   <section class="sec-ink sec-line">
     <div class="wrap">
       <div class="sh reveal"><span class="eyebrow">About this demo</span><h2>An honest note on what you're looking at.</h2>
-        <p>The app loads its data from a live REST API (Node serverless functions at <code>/api</code>). Sign-in is simulated and your edits persist in this browser, so you can explore without an account. A production build would swap in real Supabase auth and Postgres persistence — the stack below.</p></div>
+        <p>Everything is real: Supabase Auth for accounts (or one-click guest access), Postgres for storage, and Node serverless functions at <code>/api</code> that verify each session and enforce roles on the server. Every account gets its own private workspace seeded with sample data, so nothing you change affects anyone else. The front end is deliberately framework-free to keep the demo small; a client build would use React / Next.js on the same backend.</p></div>
       <div class="stack reveal">
         <span class="tag">React / Next.js</span><span class="tag">TypeScript</span><span class="tag">Node.js</span>
         <span class="tag">Supabase</span><span class="tag">PostgreSQL</span><span class="tag">REST API</span>
@@ -177,7 +177,7 @@
     <div class="wrap">
       <div class="cta reveal">
         <h2>Click through the whole thing in 60 seconds.</h2>
-        <p>Sign in with any email, add a request, advance its status, switch to dark mode, open the admin view. It all works.</p>
+        <p>Create an account or explore as a guest, add a request, advance its status, invite a teammate, switch to dark mode. Refresh — it's all saved.</p>
         <a class="btn btn-primary" href="app.html">Open the live demo →</a>
       </div>
     </div>
@@ -187,7 +187,7 @@
 <footer>
   <div class="wrap foot">
     <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
-    <div>Demo build — feedback &amp; feature-request tracker. Data stored locally in your browser.</div>
+    <div>Demo build — feedback &amp; feature-request tracker on Supabase (Auth + Postgres).</div>
   </div>
 </footer>
 
