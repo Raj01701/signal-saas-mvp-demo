@@ -9,145 +9,136 @@
     --font-display:"SF Pro Display","Segoe UI Semibold",Inter,system-ui,sans-serif;
     --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
     --bg:#f5f7fb; --surface:#ffffff; --surface-2:#eef1f7; --line:#e3e8f0;
-    --text:#152038; --muted:#586074; --accent:#4f6bff; --accent-ink:#ffffff; --accent-soft:#eef1ff;
+    --text:#152038; --muted:#586074; --accent:#4f6bff; --accent-2:#8b5cf6; --accent-ink:#fff; --accent-soft:#eef1ff;
     --open:#b06f00; --open-bg:#fff2d9; --prog:#2b3fd6; --prog-bg:#e6ebff;
     --shipped:#0a7a58; --shipped-bg:#d7f5ea; --closed:#5b667a; --closed-bg:#eef1f7;
-    --barOpen:#f59e0b; --barProg:#4f6bff; --barShipped:#12b981; --barClosed:#9aa6b8;
+    --barOpen:#f59e0b; --barProg:#4f6bff; --barShipped:#12b981; --barClosed:#9aa6b8; --ok:#12b981;
     --radius:16px; --shadow:0 1px 2px rgba(20,30,60,.05),0 10px 30px rgba(20,30,60,.07);
   }
   html[data-theme="dark"]{
     --bg:#0c0f16; --surface:#151a23; --surface-2:#1c222e; --line:#28303d;
-    --text:#eef2f8; --muted:#9aa6b8; --accent:#7c93ff; --accent-ink:#0b1020; --accent-soft:#1b2233;
+    --text:#eef2f8; --muted:#9aa6b8; --accent:#7c93ff; --accent-2:#a684ff; --accent-ink:#0b1020; --accent-soft:#1b2233;
     --open:#f0b64d; --open-bg:#2a2213; --prog:#9db0ff; --prog-bg:#1a2136;
     --shipped:#4bd6a6; --shipped-bg:#0f2a22; --closed:#9aa6b8; --closed-bg:#1c222e;
-    --barOpen:#f0b64d; --barProg:#7c93ff; --barShipped:#3ecf8e; --barClosed:#5b667a;
+    --barOpen:#f0b64d; --barProg:#7c93ff; --barShipped:#3ecf8e; --barClosed:#5b667a; --ok:#3ecf8e;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 30px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box} html,body{margin:0;height:100%}
-  body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;
-       transition:background .3s ease,color .3s ease}
-  h1,h2,h3,.brandname{font-family:var(--font-display);letter-spacing:-.02em}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+  h1,h2,h3,.brandname{font-family:var(--font-display);letter-spacing:-.02em;margin:0}
   button,input,select{font:inherit;color:inherit} button{cursor:pointer;border:0;border-radius:10px}
-  a{color:var(--accent)}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
-  .hidden{display:none !important}
-  .reveal{opacity:0;transform:translateY(8px);transition:opacity .5s ease,transform .5s ease}
-  .reveal.in{opacity:1;transform:none}
-  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}.reveal{opacity:1;transform:none}}
-
-  /* label */
-  .eyebrow{display:inline-flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;
-           text-transform:uppercase;letter-spacing:.08em;font-weight:700}
-  .eyebrow::before{content:"";width:26px;height:2px;background:var(--accent)}
+  a{color:var(--accent)} :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+  .hidden{display:none!important}
+  .reveal{opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s} .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--accent)}
 
   /* Auth */
-  .auth{min-height:100dvh;display:grid;place-items:center;padding:24px;
-        background:radial-gradient(1000px 500px at 50% -10%,var(--accent-soft),transparent),var(--bg)}
-  .auth-card{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);
-             border-radius:22px;box-shadow:var(--shadow);padding:30px}
+  .auth{min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(1000px 500px at 50% -10%,var(--accent-soft),transparent),var(--bg)}
+  .auth-card{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:30px}
   .brand{display:flex;align-items:center;gap:10px} .brandname{font-weight:700;font-size:18px}
-  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#4f6bff,#8b5cf6);
-        display:grid;place-items:center;color:#fff;font-weight:800}
+  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#4f6bff,#8b5cf6);display:grid;place-items:center;color:#fff;font-weight:800}
   .auth h1{margin:20px 0 4px;font-size:21px} .auth .sub{margin:0 0 18px;color:var(--muted);font-size:14px}
   .field{margin-bottom:12px} .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
-  .field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text)}
+  .field input,.field select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text)}
   .primary{background:var(--accent);color:var(--accent-ink);padding:13px;width:100%;font-weight:700;transition:filter .15s,transform .05s}
   .primary:hover{filter:brightness(1.06)} .primary:active{transform:translateY(1px)}
-  .switch{margin-top:14px;font-size:13px;color:var(--muted);text-align:center}
-  .switch a{cursor:pointer;font-weight:700} .hint{margin-top:10px;font-size:12px;color:var(--muted);text-align:center}
+  .switch{margin-top:14px;font-size:13px;color:var(--muted);text-align:center} .switch a{cursor:pointer;font-weight:700}
+  .hint{margin-top:10px;font-size:12px;color:var(--muted);text-align:center}
 
   /* Shell */
   .shell{display:none;min-height:100dvh;grid-template-columns:240px 1fr}
-  .side{border-right:1px solid var(--line);background:var(--surface);padding:18px 14px;
-        display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100dvh}
-  .side .brand{padding:6px 8px 14px}
+  .side{border-right:1px solid var(--line);background:var(--surface);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100dvh}
+  .side .brand{padding:6px 8px 12px}
+  .apihealth{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:2px 8px 12px}
+  .hdot{width:8px;height:8px;border-radius:50%;background:var(--closed)} .hdot.on{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 22%,transparent)}
   nav.main{display:flex;flex-direction:column;gap:3px}
-  nav.main button{display:flex;align-items:center;gap:11px;padding:11px 12px;background:transparent;color:var(--muted);
-                  font-weight:600;text-align:left;border-radius:11px;width:100%;transition:background .15s,color .15s}
+  nav.main button{display:flex;align-items:center;gap:11px;padding:11px 12px;background:transparent;color:var(--muted);font-weight:600;text-align:left;border-radius:11px;width:100%;transition:background .15s,color .15s}
   nav.main button:hover{background:var(--surface-2);color:var(--text)}
   nav.main button[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
   .ic{width:18px;text-align:center}
   .side .foot{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
   .who b{display:block;font-size:13px} .who span{color:var(--muted);font-size:12px}
   .ghost{background:var(--surface-2);color:var(--text);padding:9px;width:100%;font-weight:600;border:1px solid var(--line)}
+  .themebtn{background:var(--surface);border:1px solid var(--line);color:var(--text);padding:9px 12px;border-radius:11px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
 
-  main{padding:24px 30px 96px;max-width:1040px}
+  main{padding:24px 30px 96px;max-width:1120px}
   .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-  .topbar h1{margin:0;font-size:23px} .topbar p{margin:3px 0 0;color:var(--muted);font-size:13px}
-  .themebtn{background:var(--surface);border:1px solid var(--line);color:var(--text);padding:9px 12px;
-            border-radius:11px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
+  .topbar h1{font-size:23px} .topbar p{margin:3px 0 0;color:var(--muted);font-size:13px}
 
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
   .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
   .stat .n{font-family:var(--font-display);font-size:27px;font-weight:800;letter-spacing:-.5px}
   .stat .l{color:var(--muted);font-size:13px;margin-top:3px} .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px}
 
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
   .ph{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--line)}
-  .ph h2,.ph h3{margin:0;font-size:15px}
-  .bar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin:15px 16px;background:var(--surface-2)}
-  .bar i{display:block;height:100%;transition:width .5s ease}
+  .ph h2,.ph h3{font-size:15px}
+  .chartwrap{padding:10px 8px 4px} svg{display:block;width:100%;height:auto}
+  .xlabels{display:flex;justify-content:space-between;padding:2px 14px 12px;color:var(--muted);font-size:11px}
+  .toplist{padding:6px 8px 12px} .toprow{display:flex;align-items:center;gap:10px;padding:8px 10px}
+  .toprow .rank{width:20px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+  .toprow .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600}
+  .vbar{height:6px;border-radius:999px;background:var(--surface-2);flex:0 0 84px;overflow:hidden} .vbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .toprow .vn{width:34px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px}
+  .bar{display:flex;height:12px;border-radius:999px;overflow:hidden;margin:15px 16px;background:var(--surface-2)} .bar i{display:block;height:100%;transition:width .5s}
   .legend{display:flex;flex-wrap:wrap;gap:14px;padding:0 16px 15px;font-size:12px;color:var(--muted)}
 
   table{width:100%;border-collapse:collapse}
-  th,td{text-align:left;padding:12px 16px;font-size:14px;border-bottom:1px solid var(--line)}
-  th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  th,td{text-align:left;padding:12px 16px;font-size:14px;border-bottom:1px solid var(--line)} th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
   tr:last-child td{border-bottom:0}
   .pill{font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
-  button.pill{cursor:pointer;transition:transform .05s} button.pill:active{transform:translateY(1px)}
-  .pill.open{color:var(--open);background:var(--open-bg)} .pill.prog{color:var(--prog);background:var(--prog-bg)}
+  button.pill{cursor:pointer} .pill.open{color:var(--open);background:var(--open-bg)} .pill.prog{color:var(--prog);background:var(--prog-bg)}
   .pill.shipped{color:var(--shipped);background:var(--shipped-bg)} .pill.closed{color:var(--closed);background:var(--closed-bg)}
-  .muted{color:var(--muted)} .rt{text-align:right} .votes{font-variant-numeric:tabular-nums;font-weight:700}
-  .iconbtn{background:transparent;color:var(--muted);padding:7px 9px;font-size:15px;border-radius:9px}
-  .iconbtn:hover{color:#e5484d;background:var(--surface-2)}
+  .muted{color:var(--muted)} .rt{text-align:right}
+  .up{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-weight:700;font-variant-numeric:tabular-nums}
+  .up:hover{border-color:var(--accent);color:var(--accent)}
+  .iconbtn{background:transparent;color:var(--muted);padding:7px 9px;font-size:15px;border-radius:9px} .iconbtn:hover{color:#e5484d;background:var(--surface-2)}
+  select.mini{padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:13px;font-weight:600}
 
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-  .chip{background:var(--surface);border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600}
+  .search{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:0 12px}
+  .search input{border:0;background:transparent;padding:11px 0;width:100%}
+  .chip{background:var(--surface);border:1px solid var(--line);color:var(--muted);padding:9px 13px;border-radius:999px;font-size:13px;font-weight:600}
   .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-  .addbar{display:flex;gap:8px;margin-left:auto}
-  .addbar input{padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);min-width:170px}
-  .addbar .primary{width:auto;padding:9px 16px}
+  .addbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .addbar input,.addbar select{padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  .addbar input.grow{flex:1;min-width:160px} .addbar .primary{width:auto;padding:10px 16px}
 
   .tabbar{display:none}
-  @media (max-width:840px){
+  @media (max-width:900px){
     .shell{grid-template-columns:1fr} .side{display:none} main{padding:18px 15px 92px}
-    .stats{grid-template-columns:1fr 1fr} .addbar{width:100%;margin:12px 0 0} .addbar input{flex:1;min-width:0}
-    .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);
-            padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:5}
-    .tabbar button{flex:1;background:transparent;color:var(--muted);font-size:11px;font-weight:700;display:flex;
-                   flex-direction:column;align-items:center;gap:3px;padding:6px}
+    .stats{grid-template-columns:1fr 1fr} .grid2{grid-template-columns:1fr} .hide-sm{display:none}
+    .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:5}
+    .tabbar button{flex:1;background:transparent;color:var(--muted);font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px}
     .tabbar button[aria-current="page"]{color:var(--accent)} .tabbar .ic{font-size:18px}
-    .hide-sm{display:none}
   }
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
 <div class="auth" id="authScreen">
   <div class="auth-card reveal in">
     <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
     <h1 id="authTitle">Sign in to your workspace</h1>
     <p class="sub">Collect, prioritise and ship what your users actually ask for.</p>
     <form id="authForm" novalidate>
-      <div class="field" id="nameField" style="display:none">
-        <label for="nameInput">Full name</label><input id="nameInput" autocomplete="name" placeholder="Alex Rivera" />
-      </div>
-      <div class="field"><label for="emailInput">Work email</label>
-        <input id="emailInput" type="email" autocomplete="email" placeholder="you@startup.com" /></div>
-      <div class="field"><label for="passInput">Password</label>
-        <input id="passInput" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <div class="field" id="nameField" style="display:none"><label for="nameInput">Full name</label><input id="nameInput" autocomplete="name" placeholder="Alex Rivera" /></div>
+      <div class="field"><label for="emailInput">Work email</label><input id="emailInput" type="email" autocomplete="email" placeholder="you@startup.com" /></div>
+      <div class="field"><label for="passInput">Password</label><input id="passInput" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
       <button class="primary" type="submit" id="authBtn">Sign in</button>
     </form>
     <p class="switch" id="authSwitch">New here? <a id="toSignup" role="button" tabindex="0">Create an account</a></p>
-    <p class="hint">Demo — enter any email &amp; password to explore. Data is saved in your browser only.</p>
+    <p class="hint">Demo — enter any email &amp; password. Data loads from a live REST API; your edits save in this browser.</p>
   </div>
 </div>
 
-<!-- APP -->
 <div class="shell" id="appShell">
   <aside class="side">
     <div class="brand"><span class="logo" aria-hidden="true">S</span><span class="brandname">Signal</span></div>
+    <div class="apihealth"><span class="hdot" id="hdot"></span> <span id="hlabel">API: connecting…</span></div>
     <nav class="main" id="navDesktop" aria-label="Primary">
       <button data-view="dashboard" aria-current="page"><span class="ic" aria-hidden="true">▤</span> Dashboard</button>
       <button data-view="submissions"><span class="ic" aria-hidden="true">✎</span> Submissions</button>
@@ -161,34 +152,44 @@
   </aside>
 
   <main>
+    <!-- DASHBOARD -->
     <section id="view-dashboard">
-      <div class="topbar">
-        <div><h1>Dashboard</h1><p>Your workspace at a glance — updates live as requests change.</p></div>
-        <button class="themebtn hide-sm" id="themeBtn2" aria-label="Toggle colour theme"><span aria-hidden="true">◑</span> Theme</button>
-      </div>
+      <div class="topbar"><div><h1>Dashboard</h1><p>Live workspace overview — data served from the REST API.</p></div>
+        <button class="themebtn hide-sm" id="themeBtn2" aria-label="Toggle colour theme"><span aria-hidden="true">◑</span> Theme</button></div>
       <div class="stats" id="statCards" aria-live="polite"></div>
+      <div class="grid2">
+        <div class="panel reveal">
+          <div class="ph"><h2>Requests over time</h2><span class="muted" id="trendNote"></span></div>
+          <div class="chartwrap" id="chart"></div>
+          <div class="xlabels" id="xlabels"></div>
+        </div>
+        <div class="panel reveal">
+          <div class="ph"><h2>Top voted</h2><span class="muted">by demand</span></div>
+          <div class="toplist" id="topList"></div>
+        </div>
+      </div>
       <div class="panel reveal">
         <div class="ph"><h2>Requests by status</h2><span class="muted" id="totalNote"></span></div>
         <div class="bar" id="statusBar" role="img" aria-label="Status breakdown"></div>
         <div class="legend" id="statusLegend"></div>
       </div>
-      <div class="panel reveal" style="margin-top:16px">
-        <div class="ph"><h2>Recent activity</h2></div>
-        <table><tbody id="recentBody"></tbody></table>
-      </div>
     </section>
 
+    <!-- SUBMISSIONS -->
     <section id="view-submissions" class="hidden">
-      <div class="topbar"><div><h1>Submissions</h1><p>Click a status to advance it. Everything persists locally.</p></div></div>
+      <div class="topbar"><div><h1>Submissions</h1><p>Search, sort, upvote, and advance requests through the workflow.</p></div></div>
+      <div class="toolbar">
+        <label class="search"><span aria-hidden="true">🔎</span><input id="searchInput" placeholder="Search requests or requesters…" aria-label="Search" /></label>
+        <label class="hidden" for="sortSel">Sort</label>
+        <select class="mini" id="sortSel" aria-label="Sort"><option value="votes">Most voted</option><option value="new">Newest</option><option value="status">By status</option></select>
+      </div>
       <div class="toolbar" id="filterChips" role="group" aria-label="Filter by status"></div>
       <div class="addbar">
-        <label class="hidden" for="newTitle">New request title</label>
-        <input id="newTitle" placeholder="New request title…" />
-        <label class="hidden" for="newBy">Requester</label>
-        <input id="newBy" placeholder="Requester" style="max-width:150px" />
+        <label class="hidden" for="newTitle">New request title</label><input id="newTitle" class="grow" placeholder="New request title…" />
+        <label class="hidden" for="newBy">Requester</label><input id="newBy" placeholder="Requester" style="width:150px" />
         <button class="primary" id="addBtn">Add request</button>
       </div>
-      <div class="panel" style="margin-top:14px">
+      <div class="panel">
         <table>
           <thead><tr><th scope="col">Request</th><th scope="col" class="hide-sm">Added</th><th scope="col">Votes</th><th scope="col">Status</th><th scope="col" class="rt"><span class="hidden">Actions</span></th></tr></thead>
           <tbody id="subBody"></tbody>
@@ -196,11 +197,18 @@
       </div>
     </section>
 
+    <!-- ADMIN -->
     <section id="view-admin" class="hidden">
-      <div class="topbar"><div><h1>Admin</h1><p>Manage workspace members and content.</p></div></div>
+      <div class="topbar"><div><h1>Admin</h1><p>Manage members, roles and access.</p></div></div>
       <div class="stats" id="adminStats"></div>
+      <div class="addbar">
+        <label class="hidden" for="invName">Name</label><input id="invName" class="grow" placeholder="Invite — full name" />
+        <label class="hidden" for="invEmail">Email</label><input id="invEmail" placeholder="email@company.com" style="width:200px" />
+        <label class="hidden" for="invRole">Role</label><select class="mini" id="invRole"></select>
+        <button class="primary" id="inviteBtn">Invite</button>
+      </div>
       <div class="panel">
-        <div class="ph"><h2>Members</h2><span class="muted">Toggle access</span></div>
+        <div class="ph"><h2>Members</h2><span class="muted">Change role or access</span></div>
         <table>
           <thead><tr><th scope="col">Name</th><th scope="col" class="hide-sm">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col" class="rt"><span class="hidden">Actions</span></th></tr></thead>
           <tbody id="userBody"></tbody>
@@ -217,41 +225,49 @@
 </div>
 
 <script type="module">
-  import { STATUSES, ORDER, advance, remove, addSubmission, counts, toggleUser, relativeTime } from "./logic.js";
+  import { STATUSES, ORDER, ROLES, advance, upvote, remove, addSubmission, counts,
+           searchSort, topVoted, weeklyTrend, toggleUser, changeRole, addUser, relativeTime } from "./logic.js";
   const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-  const KEY="signal_mvp_v2", SESS="signal_sess_v1", THEME="signal_theme";
-  const now = Date.now(), DAY=86_400_000;
+  const KEY="signal_v3", SESS="signal_sess_v1", THEME="signal_theme";
+  const colors={open:"var(--barOpen)",prog:"var(--barProg)",shipped:"var(--barShipped)",closed:"var(--barClosed)"};
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
   /* theme */
   function applyTheme(t){document.documentElement.dataset.theme=t;localStorage.setItem(THEME,t);
-    const dark=t==="dark"; const ic=$("#themeIc"),lbl=$("#themeLbl"); if(ic)ic.textContent=dark?"☀️":"🌙"; if(lbl)lbl.textContent=dark?"Light":"Dark";}
-  applyTheme(localStorage.getItem(THEME) || (matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
-  const toggle=()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
-  $("#themeBtn").onclick=toggle; $("#themeBtn2").onclick=toggle;
+    const d=t==="dark"; const ic=$("#themeIc"),l=$("#themeLbl"); if(ic)ic.textContent=d?"☀️":"🌙"; if(l)l.textContent=d?"Light":"Dark";}
+  applyTheme(localStorage.getItem(THEME)||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"));
+  const tog=()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
+  $("#themeBtn").onclick=tog; $("#themeBtn2").onclick=tog;
 
-  /* seed */
-  const seedSubs=[
-    {id:1,title:"Slack notifications for new feedback",by:"Priya (Acme)",votes:42,status:"prog",createdAt:iso(0.2)},
-    {id:2,title:"Export requests to CSV",by:"Daniel M.",votes:28,status:"open",createdAt:iso(1)},
-    {id:3,title:"Dark mode for the dashboard",by:"Lucia R.",votes:19,status:"shipped",createdAt:iso(2)},
-    {id:4,title:"Public roadmap page",by:"Tomás (Beta)",votes:37,status:"open",createdAt:iso(4)},
-    {id:5,title:"Merge duplicate requests",by:"Priya (Acme)",votes:15,status:"prog",createdAt:iso(6)},
-    {id:6,title:"Weekly digest email",by:"Sofia K.",votes:23,status:"open",createdAt:iso(9)},
-    {id:7,title:"SSO / Google login",by:"Marco (Enterprise)",votes:31,status:"closed",createdAt:iso(14)},
-    {id:8,title:"Tag & categorise submissions",by:"Daniel M.",votes:12,status:"shipped",createdAt:iso(21)},
-  ];
-  function iso(daysAgo){return new Date(now-daysAgo*DAY).toISOString();}
-  const seedUsers=[
-    {id:1,name:"Alex Rivera",email:"alex@startup.com",role:"Owner",active:true},
-    {id:2,name:"Priya Nair",email:"priya@acme.io",role:"Member",active:true},
-    {id:3,name:"Daniel Moreno",email:"daniel@startup.com",role:"Member",active:true},
-    {id:4,name:"Lucia Rossi",email:"lucia@beta.co",role:"Viewer",active:false},
-  ];
-  const load=()=>JSON.parse(localStorage.getItem(KEY)||"null")||{subs:seedSubs,users:seedUsers};
-  const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
-  let state=load(), filter="all";
-  const colors={open:"var(--barOpen)",prog:"var(--barProg)",shipped:"var(--barShipped)",closed:"var(--barClosed)"};
-  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  /* API */
+  const API={
+    health:()=>fetch("/api/health").then(r=>r.json()),
+    subs:()=>fetch("/api/submissions").then(r=>r.json()),
+    users:()=>fetch("/api/users").then(r=>r.json()),
+    createSub:b=>send("/api/submissions","POST",b),
+    patchSub:b=>send("/api/submissions","PATCH",b),
+    delSub:id=>send("/api/submissions","DELETE",{id}),
+    createUser:b=>send("/api/users","POST",b),
+    patchUser:b=>send("/api/users","PATCH",b),
+  };
+  const send=(u,m,b)=>fetch(u,{method:m,headers:{"content-type":"application/json"},body:JSON.stringify(b)}).then(r=>r.json()).catch(()=>null);
+
+  let state={subs:[],users:[]}, filter="all", q="", sort="votes";
+  const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+
+  async function boot(){
+    // API health badge
+    try{const h=await API.health(); if(h&&h.ok){$("#hdot").classList.add("on");$("#hlabel").textContent="API: live";}else throw 0;}
+    catch{$("#hlabel").textContent="API: offline";}
+    // load: localStorage first (persists edits), else seed from the live API
+    const cached=JSON.parse(localStorage.getItem(KEY)||"null");
+    if(cached&&cached.subs&&cached.subs.length){state=cached;}
+    else{
+      const [s,u]=await Promise.all([API.subs().catch(()=>({submissions:[]})),API.users().catch(()=>({users:[]}))]);
+      state={subs:s.submissions||[],users:u.users||[]}; save();
+    }
+    render();
+  }
 
   /* auth */
   let signup=false;
@@ -260,72 +276,105 @@
     $("#authBtn").textContent=signup?"Create account":"Sign in";
     $("#nameField").style.display=signup?"block":"none";
     $("#authSwitch").innerHTML=signup?'Have an account? <a id="toSignup" role="button" tabindex="0">Sign in</a>':'New here? <a id="toSignup" role="button" tabindex="0">Create an account</a>';
-    $("#toSignup").onclick=toggleSignup; $("#toSignup").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")toggleSignup();};
-  }
-  $("#toSignup").onclick=toggleSignup; $("#toSignup").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")toggleSignup();};
+    bindSwitch();}
+  function bindSwitch(){const a=$("#toSignup"); a.onclick=toggleSignup; a.onkeydown=e=>{if(e.key==="Enter"||e.key===" ")toggleSignup();};}
+  bindSwitch();
   $("#authForm").onsubmit=e=>{e.preventDefault();
     const email=$("#emailInput").value.trim()||"you@startup.com";
     const name=(signup&&$("#nameInput").value.trim())||"Alex Rivera";
     localStorage.setItem(SESS,JSON.stringify({email,name})); enterApp(name,email);};
   function enterApp(name,email){$("#authScreen").style.display="none";$("#appShell").style.display="grid";
-    $("#whoName").textContent=name;$("#whoEmail").textContent=email;render();observe();}
+    $("#whoName").textContent=name;$("#whoEmail").textContent=email;boot();}
   $("#logoutBtn").onclick=()=>{localStorage.removeItem(SESS);location.reload();};
 
   /* nav */
   function setView(v){["dashboard","submissions","admin"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
-    $$("nav.main button,.tabbar button").forEach(b=>{const on=b.dataset.view===v;on?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current");});
+    $$("nav.main button,.tabbar button").forEach(b=>{b.dataset.view===v?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current");});
     window.scrollTo(0,0);observe();}
   $$("#navDesktop button,#navMobile button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
   /* render */
-  function render(){renderDash();renderSubs();renderAdmin();}
+  function render(){renderDash();renderSubs();renderAdmin();observe();}
+
   function renderDash(){
     const c=counts(state.subs), total=c.total;
     $("#statCards").innerHTML=[
       {n:total,l:"Total requests",col:"var(--text)"},{n:c.open,l:"Open",col:"var(--barOpen)"},
       {n:c.prog,l:"In progress",col:"var(--barProg)"},{n:c.shipped,l:"Shipped",col:"var(--barShipped)"},
     ].map(s=>`<div class="stat"><div class="n">${s.n}</div><div class="l"><span class="dot" style="background:${s.col}"></span>${s.l}</div></div>`).join("");
-    $("#totalNote").textContent=total+" total";
-    $("#statusBar").innerHTML=ORDER.map(k=>{const w=total?(c[k]/total*100):0;return w?`<i style="width:${w}%;background:${colors[k]}"></i>`:"";}).join("");
+    // trend chart
+    const weeks=8, data=weeklyTrend(state.subs,Date.now(),weeks), max=Math.max(1,...data);
+    const W=520,H=150,pad=8, iw=W-pad*2, ih=H-pad*2;
+    const pts=data.map((v,i)=>[pad+(iw*(i/(weeks-1))), pad+ih-(ih*(v/max))]);
+    const line=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+    const area=`M${pad} ${pad+ih} `+pts.map(p=>"L"+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")+` L${pad+iw} ${pad+ih} Z`;
+    $("#chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Requests per week">
+      <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+      <path d="${area}" fill="url(#g)"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>`).join("")}
+    </svg>`;
+    $("#xlabels").innerHTML=data.map((_,i)=>`<span>${i===weeks-1?"now":(weeks-1-i)+"w"}</span>`).join("");
+    $("#trendNote").textContent=`last ${weeks} weeks`;
+    // top voted
+    const top=topVoted(state.subs,5), tmax=Math.max(1,...top.map(t=>t.votes));
+    $("#topList").innerHTML=top.map((s,i)=>`<div class="toprow"><span class="rank">${i+1}</span>
+      <span class="tt" title="${esc(s.title)}">${esc(s.title)}</span>
+      <span class="vbar"><i style="width:${(s.votes/tmax*100).toFixed(0)}%"></i></span><span class="vn">${s.votes}</span></div>`).join("");
+    // status bar
+    $("#statusBar").innerHTML=ORDER.map(k=>{const w=total?c[k]/total*100:0;return w?`<i style="width:${w}%;background:${colors[k]}"></i>`:"";}).join("");
     $("#statusLegend").innerHTML=ORDER.map(k=>`<span><span class="dot" style="background:${colors[k]}"></span>${STATUSES[k]} · ${c[k]}</span>`).join("");
-    $("#recentBody").innerHTML=[...state.subs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5)
-      .map(s=>`<tr><td><b>${esc(s.title)}</b><div class="muted" style="font-size:12px">${esc(s.by)} · ${relativeTime(s.createdAt,Date.now())}</div></td>
-      <td class="rt"><span class="pill ${s.status}">${STATUSES[s.status]}</span></td></tr>`).join("");
+    $("#totalNote").textContent=total+" total";
   }
+
   function renderSubs(){
     $("#filterChips").innerHTML=`<button class="chip" aria-pressed="${filter==='all'}" data-f="all">All</button>`+
       ORDER.map(k=>`<button class="chip" aria-pressed="${filter===k}" data-f="${k}">${STATUSES[k]}</button>`).join("");
     $$("#filterChips .chip").forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderSubs();});
-    const rows=state.subs.filter(s=>filter==="all"||s.status===filter);
+    let rows=searchSort(state.subs,{q,sort});
+    if(filter!=="all") rows=rows.filter(s=>s.status===filter);
     $("#subBody").innerHTML=rows.length?rows.map(s=>`<tr>
       <td><b>${esc(s.title)}</b><div class="muted hide-sm" style="font-size:12px">${esc(s.by)}</div></td>
       <td class="hide-sm muted">${relativeTime(s.createdAt,Date.now())}</td>
-      <td><span class="votes">▲ ${s.votes}</span></td>
+      <td><button class="up" data-vote="${s.id}" aria-label="Upvote ${esc(s.title)}">▲ ${s.votes}</button></td>
       <td><button class="pill ${s.status}" data-adv="${s.id}" aria-label="Status ${STATUSES[s.status]} — advance">${STATUSES[s.status]}</button></td>
       <td class="rt"><button class="iconbtn" data-del="${s.id}" aria-label="Delete ${esc(s.title)}">🗑</button></td></tr>`).join("")
-      :`<tr><td colspan="5" class="muted" style="padding:22px">No requests in “${filter==='all'?'any':STATUSES[filter]}”. Add one above.</td></tr>`;
-    $$("[data-adv]").forEach(el=>el.onclick=()=>{state.subs=advance(state.subs,+el.dataset.adv);save(state);render();});
-    $$("[data-del]").forEach(el=>el.onclick=()=>{state.subs=remove(state.subs,+el.dataset.del);save(state);render();});
+      :`<tr><td colspan="5" class="muted" style="padding:22px">No matching requests.</td></tr>`;
+    $$("[data-vote]").forEach(el=>el.onclick=()=>{const id=+el.dataset.vote;state.subs=upvote(state.subs,id);save();renderSubs();renderDash();API.patchSub({id,op:"upvote"});});
+    $$("[data-adv]").forEach(el=>el.onclick=()=>{const id=+el.dataset.adv;state.subs=advance(state.subs,id);save();renderSubs();renderDash();API.patchSub({id,op:"advance"});});
+    $$("[data-del]").forEach(el=>el.onclick=()=>{const id=+el.dataset.del;state.subs=remove(state.subs,id);save();renderSubs();renderDash();API.delSub(id);});
   }
+  $("#searchInput").oninput=e=>{q=e.target.value;renderSubs();};
+  $("#sortSel").onchange=e=>{sort=e.target.value;renderSubs();};
+  $("#addBtn").onclick=async()=>{
+    const title=$("#newTitle").value, by=$("#newBy").value; if(!title.trim())return;
+    const r=await API.createSub({title,by});                      // backend mints the record
+    const item=(r&&r.submission)||{id:Date.now(),title:title.trim(),by:by.trim()||"You",votes:1,status:"open",createdAt:new Date().toISOString()};
+    state.subs=[item,...state.subs]; $("#newTitle").value="";$("#newBy").value="";save();setView("submissions");render();};
+
   function renderAdmin(){
     const c=counts(state.subs), active=state.users.filter(u=>u.active).length;
     $("#adminStats").innerHTML=[{n:state.users.length,l:"Members"},{n:active,l:"Active"},{n:c.total,l:"Requests"},{n:c.shipped,l:"Shipped"}]
       .map(s=>`<div class="stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("");
+    if(!$("#invRole").options.length)$("#invRole").innerHTML=ROLES.map(r=>`<option>${r}</option>`).join("");
     $("#userBody").innerHTML=state.users.map(u=>`<tr>
-      <td><b>${esc(u.name)}</b></td><td class="hide-sm muted">${esc(u.email)}</td><td>${esc(u.role)}</td>
+      <td><b>${esc(u.name)}</b></td><td class="hide-sm muted">${esc(u.email)}</td>
+      <td><select class="mini" data-role="${u.id}" aria-label="Role for ${esc(u.name)}">${ROLES.map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select></td>
       <td><span class="pill ${u.active?'shipped':'closed'}">${u.active?'Active':'Disabled'}</span></td>
       <td class="rt"><button class="chip" data-tog="${u.id}" aria-label="${u.active?'Disable':'Enable'} ${esc(u.name)}">${u.active?'Disable':'Enable'}</button></td></tr>`).join("");
-    $$("[data-tog]").forEach(el=>el.onclick=()=>{state.users=toggleUser(state.users,+el.dataset.tog);save(state);renderAdmin();});
+    $$("[data-tog]").forEach(el=>el.onclick=()=>{const id=+el.dataset.tog;state.users=toggleUser(state.users,id);save();renderAdmin();API.patchUser({id,op:"toggle"});});
+    $$("[data-role]").forEach(el=>el.onchange=()=>{const id=+el.dataset.role;state.users=changeRole(state.users,id,el.value);save();renderAdmin();API.patchUser({id,op:"role",role:el.value});});
   }
-  $("#addBtn").onclick=()=>{const t=$("#newTitle").value, by=$("#newBy").value;
-    const next=addSubmission(state.subs,{title:t,by,now:Date.now()}); if(next===state.subs)return;
-    state.subs=next;$("#newTitle").value="";$("#newBy").value="";save(state);setView("submissions");render();};
+  $("#inviteBtn").onclick=async()=>{
+    const name=$("#invName").value,email=$("#invEmail").value,role=$("#invRole").value; if(!name.trim()||!email.trim())return;
+    const r=await API.createUser({name,email,role});
+    const u=(r&&r.user)||{id:Date.now(),name:name.trim(),email:email.trim(),role,active:true};
+    state.users=[...state.users,u]; $("#invName").value="";$("#invEmail").value="";save();renderAdmin();};
 
   /* motion */
-  function observe(){const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.08});
+  let io; function observe(){io=io||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.08});
     $$(".reveal:not(.in)").forEach(el=>io.observe(el));}
 
-  /* boot */
   const sess=JSON.parse(localStorage.getItem(SESS)||"null"); if(sess)enterApp(sess.name,sess.email);
 </script>
 </body>
