@@ -1,3 +1,37 @@
 .vercel
 node_modules
 .DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Ephemeris kernels and large data are downloaded, never committed
+*.bsp
+*.se1
+data/ephemeris/
+oracle/.venv/
+oracle/cache/
+
+# Web
+web/.next/
+web/out/
+web/test-results/
+web/playwright-report/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local env
+.env
+.env.local
+*.sqlite3
+*.db

@@ -1,0 +1,60 @@
+# Bibliography for knowledge-base citations. Rules reference entries by `id`.
+# `edition` is required on every citation because chapter numbering differs by edition.
+texts:
+  - id: bphs
+    title: Brihat Parashara Hora Shastra
+    attributed_to: Parashara
+    notes: Foundation of the Parashari system.
+  - id: laghu_parashari
+    title: Laghu Parashari (Jataka Chandrika)
+    notes: Functional benefics/malefics and dasha results.
+  - id: brihat_jataka
+    title: Brihat Jataka
+    author: Varahamihira
+  - id: saravali
+    title: Saravali
+    author: Kalyana Varma
+  - id: phaladeepika
+    title: Phaladeepika
+    author: Mantreswara
+  - id: jataka_parijata
+    title: Jataka Parijata
+    author: Vaidyanatha Dikshita
+  - id: sarvartha_chintamani
+    title: Sarvartha Chintamani
+    author: Venkatesha
+  - id: uttara_kalamrita
+    title: Uttara Kalamrita
+    author: Kalidasa
+  - id: jaimini_sutras
+    title: Jaimini Upadesha Sutras
+    author: Jaimini
+  - id: tajika_neelakanthi
+    title: Tajika Neelakanthi
+    author: Neelakantha
+  - id: prashna_marga
+    title: Prashna Marga
+  - id: muhurta_chintamani
+    title: Muhurta Chintamani
+    author: Rama Daivagya
+  - id: surya_siddhanta
+    title: Surya Siddhanta
+modern_references:
+  - id: pvr_integrated
+    title: "Vedic Astrology: An Integrated Approach"
+    author: P.V.R. Narasimha Rao
+  - id: raman_how_to_judge
+    title: How to Judge a Horoscope (Vols 1-2)
+    author: B.V. Raman
+  - id: raman_300
+    title: Three Hundred Important Combinations
+    author: B.V. Raman
+  - id: raman_balas
+    title: Graha and Bhava Balas
+    author: B.V. Raman
+  - id: knrao_chara
+    title: Predicting through Jaimini's Chara Dasha
+    author: K.N. Rao
+  - id: kp_readers
+    title: KP Readers 1-6
+    author: K.S. Krishnamurti

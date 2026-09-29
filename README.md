@@ -1,22 +1,50 @@
-# Signal — SaaS MVP demo
+# Jyotish Platform
 
-A working proof-of-concept feedback & feature-request tracker, built to show the spine of a single-workspace SaaS MVP.
+A precise, explainable Vedic astrology (Jyotish) platform:
 
-**Live:** https://saas-mvp-signal.vercel.app
+- **Engine** (`engine/`): the deterministic Python calculation engine. It uses NASA JPL ephemerides through Skyfield, and every shipped dependency is permissively licensed.
+- **API** (`api/`): FastAPI service.
+- **Web** (`web/`): Next.js app. The professional astrologer workbench comes first, then the consumer experience.
+- **Knowledge base** (`knowledge/`): classical rules, each paraphrased and cited to its source text.
 
-## What's inside
-- `index.html` — premium marketing/landing page (offline, honest copy, live embed of the app)
-- `app.html` — the app: email auth, dashboard, CRUD with a status workflow, admin view, light/dark themes, mobile + desktop
-- `logic.js` — pure, DOM-free core logic (status transitions, counts, dates)
-- `logic.test.mjs` — unit tests for the core logic
+> This repository previously held only the README of the "Signal" SaaS demo. It is now
+> the monorepo for the Jyotish platform, and can be renamed on GitHub at any time.
 
-## Run locally
+## Why it is different
+
+- **Calculations you can trust:** sub-arcsecond planet positions, historically correct time zones (including Bombay Time, Calcutta Time and India's 1942–45 war time), and transparent settings.
+- **Birth-time sensitivity and rectification:** the app tells you which factors depend on an uncertain birth time.
+- **Explainable readings:** every statement cites the rule and classical text behind it.
+- **Honest accuracy:** no guaranteed predictions. Hit rates are measured against controls.
+
+Read [`docs/RESEARCH.md`](docs/RESEARCH.md) for the research behind these choices, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for milestones and status.
+
+## Develop
+
 ```bash
-# serve the folder over http (ES modules need http, not file://)
-npx serve .        # or: python3 -m http.server
-# run tests
-node --test
+# Python engine + API (uv workspace)
+uv sync
+uv run ruff check . && uv run mypy engine/jyotish_engine api/jyotish_api
+uv run pytest
+uv run python scripts/check_licenses.py          # licence guard (runtime deps)
+
+# API server
+uv run uvicorn jyotish_api.main:app --reload
+
+# Web app
+pnpm -C web install
+pnpm -C web dev            # http://localhost:3000
+pnpm -C web lint && pnpm -C web typecheck && pnpm -C web test
 ```
 
-## Notes
-Front-end proof-of-concept: data is stored in the browser (localStorage) and sign-in is simulated. A production build would use Next.js + Supabase (Postgres, REST). Accessibility targets WCAG AA in both themes.
+### Ephemeris
+
+The engine uses NASA JPL **DE440** in production. To use it locally, download `de440.bsp` from `https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/` and either place it in `data/ephemeris/` or point `JYOTISH_EPHEMERIS` at it.
+
+Without it, the engine falls back to DE421 (1899-07-28 to 2053-10-08), which the `skyfield-data` package bundles.
+
+## Data credits
+
+- Planetary ephemerides: NASA JPL.
+- Places: [GeoNames](https://www.geonames.org/) (CC BY 4.0).
+- Timezone boundaries: timezone-boundary-builder / OpenStreetMap contributors (ODbL).
