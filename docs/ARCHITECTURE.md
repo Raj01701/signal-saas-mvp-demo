@@ -42,7 +42,9 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `rules/` | Rule DSL parser and safe evaluator; converts a chart into facts |
 | `predict/` | Promise × period × trigger timeline; convergence; confidence |
 | `rectify/` | Candidate grid, event scoring, classical priors, sensitivity |
-| `chart.py` | `compute_chart(BirthInput, Settings) -> ChartResult` |
+| `models.py` | Public input and output models (pydantic, JSON-serialisable) |
+| `settings.py` | Calculation settings, presets and the settings fingerprint |
+| `chart.py` | `compute_chart(BirthInput, Settings) -> ChartResult`: about 80 ms per chart |
 
 ## Ephemeris resolution
 

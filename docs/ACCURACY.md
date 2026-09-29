@@ -72,3 +72,17 @@ Above about 60° the reference's own sunset times depend on where its search sta
 | Delta T | 339 | 0.6631 s | 0.0122 s | both follow IERS values |
 
 Future Delta T is a prediction in every tool; by 2050 models differ by seconds, which moves the Moon by about 0.5″ per second of difference.
+
+## Jyotish layer (M2) versus PyJHora 4.8.7
+
+* Divisional charts: 80 of 80 reference tables (23 divisions with their Parashara, parivritti, Somanatha, Jagannatha, Raman and siddhamsa variants) match exactly, sign by sign and part by part; the unequal Trimsamsa (D30) and divisional longitudes also match.
+* Chara karakas, compound (panchadha) relationships: exact on all 120 charts.
+* Bhava arudhas: exact on every chart where PyJHora's convention of counting the Lagna as a planet does not apply.
+* Bhava, Hora and Ghati lagnas within 0.12′; Indu lagna within 0.03′; Sree lagna within 1′ (it moves 27 times faster than the Moon).
+* Sun-based upagrahas exact; time-based upagrahas within 1′ for day births where both part-lord conventions agree.
+
+Reference deviations found and documented (the engine follows the classical texts):
+
+* PyJHora's PyPI package ships no planetary data files, so Swiss Ephemeris falls back to the Moshier model (Moon off by up to ~3″, nodes by up to ~50″); fixtures are generated with the real files.
+* It uses true (geometric) positions, about 20″ from the apparent positions most almanacs use; the engine offers both (`position_type`).
+* It adds the timezone twice when taking the Sun at sunrise for special lagnas, counts a clock second as one tharparai in Pranapada, measures night upagraha parts from sunrise, and places the lordless eighth part after Saturn.

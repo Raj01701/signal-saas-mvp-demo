@@ -7,14 +7,17 @@ be reproduced exactly.
 from __future__ import annotations
 
 import hashlib
+import json
 from enum import StrEnum
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from jyotish_engine.astro.ayanamsa import Ayanamsa
 from jyotish_engine.astro.houses import HouseSystem
-from jyotish_engine.astro.positions import NodeType
+from jyotish_engine.astro.positions import NodeType, PositionType
 from jyotish_engine.astro.riseset import SunriseDefinition
+from jyotish_engine.core.varga import VARGAS, VargaMethod
 
 
 class DashaYear(StrEnum):
@@ -49,13 +52,22 @@ class Settings(BaseModel):
     ayanamsa: Ayanamsa = Ayanamsa.LAHIRI
     user_ayanamsa_j2000: float | None = None
     node_type: NodeType = NodeType.TRUE
+    position_type: PositionType = PositionType.APPARENT
     bhava_system: HouseSystem = HouseSystem.SRIPATI
     sunrise: SunriseDefinition = SunriseDefinition.HINDU
     dasha_year: DashaYear = DashaYear.SIDEREAL
     include_outer_planets: bool = False
+    #: 8 includes Rahu among the chara karakas (Parashara); 7 excludes it (Jaimini).
+    karaka_scheme: Literal[7, 8] = 8
+    #: Per-division overrides of the Parashara varga rules, e.g. {24: "siddhamsa_from_leo"}.
+    varga_methods: dict[int, VargaMethod] = Field(default_factory=dict)
+    #: "common": Gulika at the start of Saturn's part, Mandi at its middle.
+    #: "pvr_book": the reverse, as in P.V.R. Narasimha Rao's book.
+    gulika_convention: Literal["common", "pvr_book"] = "common"
+    node_aspects_5_9: bool = False
 
     @model_validator(mode="after")
-    def _check_user_ayanamsa(self) -> Settings:
+    def _check(self) -> Settings:
         if self.ayanamsa is Ayanamsa.USER and self.user_ayanamsa_j2000 is None:
             raise ValueError("user_ayanamsa_j2000 is required for a user-defined ayanamsa")
         if self.bhava_system is HouseSystem.WHOLE_SIGN:
@@ -63,11 +75,17 @@ class Settings(BaseModel):
                 "bhava_system must be a quadrant or equal system; "
                 "whole-sign houses are always provided"
             )
+        unknown = set(self.varga_methods) - set(VARGAS)
+        if unknown:
+            raise ValueError(f"unsupported divisional charts: {sorted(unknown)}")
         return self
+
+    def varga_method(self, division: int) -> VargaMethod:
+        return self.varga_methods.get(division, VargaMethod.PARASHARA)
 
     def fingerprint(self) -> str:
         """Short, stable hash of the settings (16 hex characters)."""
-        canonical = self.model_dump_json(exclude_none=False)
+        canonical = json.dumps(json.loads(self.model_dump_json()), sort_keys=True)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
 
@@ -79,7 +97,11 @@ PRESETS: dict[Preset, Settings] = {
         bhava_system=HouseSystem.PLACIDUS,
         dasha_year=DashaYear.JULIAN,
     ),
-    Preset.PVR_JHORA_STYLE: Settings(ayanamsa=Ayanamsa.TRUE_PUSHYA),
+    Preset.PVR_JHORA_STYLE: Settings(
+        ayanamsa=Ayanamsa.TRUE_PUSHYA,
+        position_type=PositionType.TRUE,
+        varga_methods={24: VargaMethod.SIDDHAMSA_FROM_LEO},
+    ),
 }
 
 

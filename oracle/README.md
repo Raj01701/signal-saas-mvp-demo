@@ -18,8 +18,14 @@ environment.
 
 ```bash
 oracle/setup.sh                                          # isolated venv + data files
-oracle/.venv/bin/python oracle/generate_astro_fixtures.py
+oracle/.venv/bin/python oracle/generate_astro_fixtures.py   # Swiss Ephemeris: astronomy
+oracle/.venv/bin/python oracle/generate_varga_fixtures.py   # PyJHora: divisional charts
+oracle/.venv/bin/python oracle/generate_chart_fixtures.py   # PyJHora: karakas, arudhas, special points
 uv run python scripts/accuracy_report.py                 # refresh docs/ACCURACY.md
 ```
 
 The report script runs in the product environment; it only reads the fixture numbers.
+
+PyJHora's PyPI package ships no Swiss Ephemeris planet files, so on import it points
+Swiss Ephemeris at a folder without them and silently falls back to the Moshier
+model. The generators reset the path to `oracle/cache/ephe` after importing it.

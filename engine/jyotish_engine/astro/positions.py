@@ -1,8 +1,17 @@
-"""Apparent geocentric positions of the grahas.
+"""Geocentric positions of the grahas.
 
 Longitudes are tropical, referred to the true ecliptic and equinox of date (they
-include nutation), and corrected for light-time, aberration and gravitational
-deflection. Speeds come from a symmetric finite difference.
+include nutation). Two conventions are supported:
+
+* ``APPARENT`` (default): corrected for light-time, annual aberration and
+  gravitational deflection, i.e. where the planet is seen. Swiss Ephemeris, Drik
+  Panchang and most almanacs use this.
+* ``TRUE``: the instantaneous geometric position, without those corrections. PyJHora
+  (and tools that follow Jagannatha Hora's defaults) use this. The Sun and planets
+  then differ by up to about 20 arcseconds (the aberration constant), the Moon by
+  about 1 arcsecond.
+
+Speeds come from a symmetric finite difference.
 """
 
 from __future__ import annotations
@@ -26,6 +35,11 @@ SPEED_STEP_DAYS = 1.0 / 24.0
 
 class NodeType(StrEnum):
     MEAN = "mean"
+    TRUE = "true"
+
+
+class PositionType(StrEnum):
+    APPARENT = "apparent"
     TRUE = "true"
 
 
@@ -62,13 +76,18 @@ def _speed(lons: Any) -> float:
     return delta / (2.0 * SPEED_STEP_DAYS)
 
 
-def ephemeris_body_position(body: Body, instant: Instant) -> EclipticPosition:
-    """Apparent position of a body read straight from the JPL kernel."""
+def ephemeris_body_position(
+    body: Body, instant: Instant, position_type: PositionType = PositionType.APPARENT
+) -> EclipticPosition:
+    """Position of a body read straight from the JPL kernel."""
     eph = get_ephemeris()
     eph.check_range(instant.jd_tt)
     times = _times_around(instant)
-    apparent = eph.earth.at(times).observe(eph.target(body)).apparent()
-    lat, lon, dist = apparent.frame_latlon(ecliptic_frame)
+    if position_type is PositionType.APPARENT:
+        position = eph.earth.at(times).observe(eph.target(body)).apparent()
+    else:
+        position = (eph.target(body) - eph.earth).at(times)
+    lat, lon, dist = position.frame_latlon(ecliptic_frame)
     return EclipticPosition(
         longitude=wrap360(float(lon.degrees[1])),
         latitude=float(lat.degrees[1]),
@@ -127,13 +146,14 @@ def tropical_positions(
     instant: Instant,
     bodies: Iterable[Body],
     node_type: NodeType = NodeType.TRUE,
+    position_type: PositionType = PositionType.APPARENT,
 ) -> dict[Body, EclipticPosition]:
-    """Tropical apparent positions for the requested bodies (Ketu = Rahu + 180 degrees)."""
+    """Tropical positions for the requested bodies (Ketu = Rahu + 180 degrees)."""
     wanted = list(bodies)
     result: dict[Body, EclipticPosition] = {}
     for body in wanted:
         if body in EPHEMERIS_BODIES:
-            result[body] = ephemeris_body_position(body, instant)
+            result[body] = ephemeris_body_position(body, instant, position_type)
     if Body.RAHU in wanted or Body.KETU in wanted:
         rahu = (
             true_node_position(instant)

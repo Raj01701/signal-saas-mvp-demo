@@ -6,7 +6,8 @@ from pydantic import ValidationError
 from jyotish_engine.astro.ayanamsa import Ayanamsa
 from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.houses import HouseSystem
-from jyotish_engine.chart import BirthInput, BirthTimeSource, PlaceInput, compute_chart
+from jyotish_engine.chart import compute_chart
+from jyotish_engine.models import BirthInput, BirthTimeSource, PlaceInput
 from jyotish_engine.place.timezone import TimeStandard
 from jyotish_engine.settings import PRESETS, Preset, Settings
 
@@ -61,10 +62,32 @@ def test_sun_position_for_known_date() -> None:
 
 def test_birth_day_sunrise_brackets_the_birth() -> None:
     chart = compute_chart(_birth())
-    assert chart.day.sunrise_before_birth is not None
+    assert chart.day.sunrise is not None
     assert chart.day.next_sunrise is not None
-    assert chart.day.sunrise_before_birth < chart.time.interpretation.utc < chart.day.next_sunrise
+    assert chart.day.sunrise < chart.time.interpretation.utc < chart.day.next_sunrise
     assert chart.day.born_during_day is True
+    assert chart.day.weekday == 4  # 17 May 1990 was a Thursday
+
+
+def test_m2_quantities_are_present_and_consistent() -> None:
+    chart = compute_chart(_birth())
+    assert {v.division for v in chart.vargas} >= {1, 2, 3, 9, 10, 12, 30, 60, 144}
+    d1 = next(v for v in chart.vargas if v.division == 1)
+    assert d1.ascendant.sign == chart.ascendant.sign
+    assert len(chart.special.karakas) == 8
+    assert len(chart.special.arudhas) == 12
+    assert chart.special.bhava_lagna is not None
+    assert len(chart.special.upagrahas) == 11
+    sun = next(g for g in chart.grahas if g.body is Body.SUN)
+    assert sun.nakshatra.name == "Krittika"
+    assert sun.house == (sun.sign - chart.ascendant.sign) % 12 + 1
+    assert all(g.dignity is not None for g in chart.grahas)
+
+
+def test_chart_serialises_to_json() -> None:
+    chart = compute_chart(_birth())
+    text = chart.model_dump_json()
+    assert '"karakas"' in text and "NaN" not in text
 
 
 def test_settings_hash_is_stable_and_sensitive() -> None:
