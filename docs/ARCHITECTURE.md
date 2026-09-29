@@ -52,6 +52,16 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 
 The loaded kernel name and date range are recorded in every result. Requests outside the kernel's range fail with a clear error; the engine never extrapolates.
 
+## Time handling
+
+Planet positions use TT. Sidereal time, and therefore the ascendant and cusps,
+uses UT1. Civil birth times are resolved to UTC by `place/timezone.py`: the IANA
+tz database, plus curated Indian rules (Bombay Time, Calcutta Time, local mean
+time, war-time advisories). Every resolution returns the alternatives it rejected,
+a confidence level and warnings, so ambiguous records are surfaced rather than
+silently guessed.
+
 ## Oracle harness (`oracle/`)
 
 This is a separate virtual environment containing pyswisseph and PyJHora (both AGPL). It is never installed with, or imported by, the product. It generates numeric fixtures, `engine/tests/fixtures/*.json`, which the golden tests compare against.
+`scripts/accuracy_report.py` turns those comparisons into `docs/ACCURACY.md`.

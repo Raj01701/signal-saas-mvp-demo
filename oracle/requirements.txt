@@ -1,0 +1,2 @@
+# Oracle harness only (AGPL-3.0). Never install these into the product environment.
+pyswisseph==2.10.3.2

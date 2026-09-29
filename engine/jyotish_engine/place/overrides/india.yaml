@@ -1,0 +1,80 @@
+# Historical civil-time rules for India that the IANA tz database does not model.
+#
+# The tz database merges all of India into Asia/Kolkata (Local Mean Time until 1854,
+# Howrah Mean Time until 1870, Madras time until 1906, then IST with war time in
+# 1941-1945) and documents that pre-1970 data "does not suffice" for historical work.
+# These rules add city-specific local civil times and flag windows where records are
+# known to be ambiguous. Every rule names its sources; offsets are local minus UTC.
+
+sources:
+  tzdb: IANA tz database, file 'asia', zone Asia/Kolkata and its commentary
+  bombay_time_wikipedia: https://en.wikipedia.org/wiki/Bombay_Time
+  calcutta_time_wikipedia: https://en.wikipedia.org/wiki/Calcutta_Time
+  time_in_india_wikipedia: https://en.wikipedia.org/wiki/Time_in_India
+  live_history_india_ist: https://www.livehistoryindia.com/story/eras/indian-standard-time
+
+local_times:
+  bombay_time:
+    label: Bombay Time
+    utc_offset: "+04:51:10"
+    # The Municipal Corporation advanced its clocks by 38 min 50 s when it adopted IST.
+    area: {latitude: 18.93, longitude: 72.83, radius_km: 35}
+    from: "1884-01-01"
+    until: "1955-01-01"
+    ambiguous_from: "1906-01-01"
+    note: >-
+      From 1906 Bombay kept two times: government offices, railways and telegraph used
+      IST, while the Municipal Corporation, mills and most residents kept Bombay Time,
+      until the city switched in 1955 (exact date unconfirmed). Confirm which clock
+      the birth record used.
+    sources: [bombay_time_wikipedia, live_history_india_ist]
+  calcutta_time:
+    label: Calcutta Time
+    utc_offset: "+05:53:20"
+    area: {latitude: 22.57, longitude: 88.36, radius_km: 25}
+    from: "1884-01-01"
+    until: "1948-01-01"
+    ambiguous_from: "1906-01-01"
+    note: >-
+      Calcutta kept its own local time for civil purposes until 1948 (exact date
+      unconfirmed), alongside IST used by the railways. Confirm which clock the birth
+      record used.
+    sources: [calcutta_time_wikipedia, live_history_india_ist]
+
+# Before IST (1 January 1906) most places kept local mean time; the tz database uses
+# Madras time for all of India from 1870.
+lmt_before: "1906-01-01"
+
+# Windows where clocks may have run one hour ahead of the tz database. They are
+# flagged, not applied, because the dates are unverified.
+advisories:
+  - id: war_dst_1962
+    from: "1962-10-01"
+    until: "1963-01-01"
+    note: >-
+      Daylight saving is reported during the 1962 Sino-Indian War but is not in the
+      tz database. If the birth record's clock ran one hour ahead, choose a fixed
+      offset of +06:30.
+    sources: [time_in_india_wikipedia]
+  - id: war_dst_1965
+    from: "1965-08-01"
+    until: "1965-10-01"
+    note: >-
+      Daylight saving is reported during the 1965 Indo-Pakistani War but is not in
+      the tz database. Confirm the clock used by the record.
+    sources: [time_in_india_wikipedia]
+  - id: war_dst_1971
+    from: "1971-12-01"
+    until: "1972-01-01"
+    note: >-
+      Daylight saving is reported during the 1971 Indo-Pakistani War but is not in
+      the tz database. Confirm the clock used by the record.
+    sources: [time_in_india_wikipedia]
+  - id: world_war_ii
+    from: "1941-10-01"
+    until: "1945-10-15"
+    note: >-
+      The tz database applies war time (IST + 1 h) from 1 Oct 1941 to 15 May 1942
+      and from 1 Sep 1942 to 15 Oct 1945, citing a single source it calls dubious.
+      Check the birth record if the time seems an hour off.
+    sources: [tzdb, time_in_india_wikipedia]

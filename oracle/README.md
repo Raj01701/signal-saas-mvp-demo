@@ -14,4 +14,12 @@ Swiss Ephemeris data files are fetched from the official GitHub repository
 (`aloistr/swisseph`, `ephe/`), because astro.com is not reachable from the build
 environment.
 
-The generator scripts arrive with milestone M1.
+## Usage
+
+```bash
+oracle/setup.sh                                          # isolated venv + data files
+oracle/.venv/bin/python oracle/generate_astro_fixtures.py
+uv run python scripts/accuracy_report.py                 # refresh docs/ACCURACY.md
+```
+
+The report script runs in the product environment; it only reads the fixture numbers.

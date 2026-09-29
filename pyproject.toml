@@ -37,6 +37,7 @@ extend-exclude = ["oracle/.venv", "web"]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "PL", "NPY"]
 ignore = [
     "PLR0913",  # astronomy formulas legitimately take many parameters
+    "PLR0917",
     "PLR2004",  # magic numbers are the norm in astronomical constants
     "PLR0911",
     "PLR0912",
