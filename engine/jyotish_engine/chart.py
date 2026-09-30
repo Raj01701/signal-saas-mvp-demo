@@ -3,8 +3,9 @@
 ``compute_chart`` resolves the birth time, computes positions and angles, then
 derives everything classical Jyotish needs from them: nakshatras, KP lords,
 dignities and states, all divisional charts, chara karakas, arudhas, special lagnas,
-upagrahas and planetary wars. Every result carries the engine version and a hash of
-the settings used.
+upagrahas, planetary wars, the Vimshottari dasha table and which conditional
+dashas apply. Every result carries the engine version and a hash of the settings
+used.
 """
 
 from __future__ import annotations
@@ -28,11 +29,17 @@ from jyotish_engine.core.states import (
 )
 from jyotish_engine.core.varga import VARGAS, varga_longitude
 from jyotish_engine.core.zodiac import Sign
+from jyotish_engine.dasha.conditions import applicability
+from jyotish_engine.dasha.nakshatra import NakshatraDasha
+from jyotish_engine.dasha.tables import nakshatra_dasha_table
+from jyotish_engine.dasha.years import dasha_year_days
 from jyotish_engine.models import (
     RODDEN_RATING,
     AyanamsaOut,
     BirthInput,
     ChartResult,
+    DashaApplicabilityOut,
+    DashasOut,
     DayOut,
     EphemerisOut,
     GrahaOut,
@@ -201,6 +208,27 @@ def _special(
     )
 
 
+def _dashas(
+    instant: Instant,
+    settings: Settings,
+    sidereal: dict[Body, float],
+    ascendant: float,
+    born_during_day: bool | None,
+) -> DashasOut:
+    year_days = dasha_year_days(settings, instant.jd_ut)
+    return DashasOut(
+        year=settings.dasha_year,
+        year_days=year_days,
+        vimshottari=nakshatra_dasha_table(
+            NakshatraDasha.VIMSHOTTARI, instant.jd_ut, sidereal[Body.MOON], year_days
+        ),
+        applicability=[
+            DashaApplicabilityOut(system=a.system.value, applicable=a.applicable, rule=a.rule)
+            for a in applicability(ascendant, sidereal, born_during_day)
+        ],
+    )
+
+
 def compute_chart(birth: BirthInput, settings: Settings | None = None) -> ChartResult:
     """Compute a complete sidereal chart for a birth record."""
     settings = settings or Settings()
@@ -229,6 +257,7 @@ def compute_chart(birth: BirthInput, settings: Settings | None = None) -> ChartR
     ascendant = PointOut.of(angles.ascendant, ayan_true)
     cusps = quadrant_cusps(settings.bhava_system, angles)
     day = vedic_day(instant, place.latitude, place.longitude, place.elevation_m, settings.sunrise)
+    born_during_day = day.is_day(instant) if day else None
 
     return ChartResult(
         engine_version=ENGINE_VERSION,
@@ -282,6 +311,7 @@ def compute_chart(birth: BirthInput, settings: Settings | None = None) -> ChartR
             sunset=day.sunset.utc_datetime() if day else None,
             next_sunrise=day.next_sunrise.utc_datetime() if day else None,
             weekday=day.weekday if day else None,
-            born_during_day=day.is_day(instant) if day else None,
+            born_during_day=born_during_day,
         ),
+        dashas=_dashas(instant, settings, sidereal, ascendant.sidereal_longitude, born_during_day),
     )

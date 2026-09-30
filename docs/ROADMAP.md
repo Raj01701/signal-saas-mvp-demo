@@ -7,7 +7,7 @@ Each milestone ends tested, committed and pushed. The status column is kept curr
 | M0 | Foundation: monorepo, tooling, CI, licence guard, research, README | Done |
 | M1 | Astronomy and place core, plus the oracle harness and golden fixtures | Done: see [ACCURACY.md](ACCURACY.md) |
 | M2 | Jyotish basics: nakshatras, vargas, dignity, avasthas, special points | Done: see [ACCURACY.md](ACCURACY.md) |
-| M3 | Timing: dashas, transits, Varshaphal and Tajika | Planned |
+| M3 | Timing: dashas, transits, Varshaphal and Tajika | In progress: 11 nakshatra dashas with applicability, dasha-year options (including the true sidereal year) and event search (ingresses, crossings, stations) are done and validated; next are Sade Sati and double transit, Jaimini sign dashas, Kalachakra, Varshaphal and Tithi Pravesha |
 | M4 | Strength and yogas: Shadbala, Ashtakavarga, rule DSL, 300+ yogas | Planned |
 | M5 | Panchanga, matchmaking, KP | Planned |
 | M6 | API and data layer: FastAPI, Postgres, auth, caching | Planned |

@@ -1,6 +1,6 @@
 # Accuracy report
 
-*Generated 2026-09-29 by `scripts/accuracy_report.py`, engine 0.1.0, ephemeris DE421.* Reference: Swiss Ephemeris 2.10.03 (pyswisseph), files sepl_18/semo_18; 412 cases (1900–2050, latitudes −60° to +78°, seed 20260929).
+*Generated 2026-09-30 by `scripts/accuracy_report.py`, engine 0.1.0, ephemeris DE421.* Reference: Swiss Ephemeris 2.10.03 (pyswisseph), files sepl_18/semo_18; 412 cases (1900–2050, latitudes −60° to +78°, seed 20260929).
 
 The engine and the reference are given identical TT/UT1 instants, so these numbers measure the astronomy itself. Delta T is compared separately.
 
@@ -86,3 +86,43 @@ Reference deviations found and documented (the engine follows the classical text
 * PyJHora's PyPI package ships no planetary data files, so Swiss Ephemeris falls back to the Moshier model (Moon off by up to ~3″, nodes by up to ~50″); fixtures are generated with the real files.
 * It uses true (geometric) positions, about 20″ from the apparent positions most almanacs use; the engine offers both (`position_type`).
 * It adds the timezone twice when taking the Sun at sunrise for special lagnas, counts a clock second as one tharparai in Pranapada, measures night upagraha parts from sunrise, and places the lordless eighth part after Saturn.
+
+## Transit events (M3) versus Swiss Ephemeris
+
+Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent, true node), sidereal sign ingresses 1995–2025 (the Moon 1995–1996) and planetary stations, each bisected to about 10 ms.
+
+| Body | Ingresses (engine / reference) | Max | Median | Stations | Max | Median |
+|---|---|---|---|---|---|---|
+| Sun | 360 / 360 | 0.16 s | 0.02 s | — | — | — |
+| Moon | 321 / 321 | 0.05 s | 0.02 s | — | — | — |
+| Mars | 205 / 205 | 0.31 s | 0.02 s | 29 / 29 | 0.50 s | 0.18 s |
+| Mercury | 441 / 441 | 0.17 s | 0.02 s | 190 / 190 | 0.20 s | 0.06 s |
+| Jupiter | 42 / 42 | 0.54 s | 0.08 s | 55 / 55 | 0.77 s | 0.31 s |
+| Venus | 383 / 383 | 0.17 s | 0.02 s | 36 / 36 | 0.44 s | 0.15 s |
+| Saturn | 26 / 26 | 0.31 s | 0.09 s | 58 / 58 | 1.64 s | 0.55 s |
+| Rahu | 19 / 19 | 13.41 s | 1.25 s | — | — | — |
+
+Milestone target: ingress times within one minute. The true node's reversals are not reported as stations (Rahu and Ketu are treated as always retrograde).
+
+## Nakshatra dashas (M3) versus PyJHora 4.8.7
+
+40 charts; the engine is given PyJHora's Moon longitude and dasha year, so these numbers measure the dasha arithmetic itself.
+
+| System | Periods compared | Lords matching | Max start difference |
+|---|---|---|---|
+| Vimshottari | 3240 | 3240 | 0.004 s |
+| Ashtottari | 2560 | 2560 | 0.004 s |
+| Yogini | 7680 | 7680 | 0.004 s |
+| Shodashottari | 2560 | 2560 | 0.004 s |
+| Dwadashottari | 2560 | 2560 | 0.004 s |
+| Panchottari | 1960 | 1960 | 0.004 s |
+| Shatabdika | 1960 | 1960 | 0.004 s |
+| Chaturashiti Sama | 1960 | 1960 | 0.004 s |
+| Dwisaptati Sama | 5120 | 5120 | 0.004 s |
+| Shashtihayani | 5120 | 5120 | 0.004 s |
+| Shattrimsha Sama | 7680 | 7680 | 0.004 s |
+
+* Antardashas are divided the way PyJHora divides them: in proportion to the lords' years for Vimshottari and Ashtottari, equally for the rest. BPHS divides them proportionally in every system, which is the engine's default.
+* True sidereal year (Mesha sankranti to Mesha sankranti): the engine is within 0.24 s of an exact Swiss Ephemeris bisection on every chart. PyJHora's own value is off by up to 168 s, because it interpolates each sankranti from sunrise samples, and on 1 chart(s) by 0.9 days (a wrong sankranti day); its dasha dates move accordingly.
+* Applicability of the conditional dashas: 280 of 280 verdicts agree (7 systems; PyJHora has no rule for Shodashottari or Shattrimsha Sama).
+* Yogini dasha follows BPHS's formula, (birth nakshatra + 3) mod 8; a cyclic count from Ardra gives different lords for births in Ashwini to Mrigashira.

@@ -84,3 +84,12 @@ def equinox_longitude_shift(jd_tt_epoch: float, jd_tt: float, model: PrecessionM
     in_date_equatorial = p_date @ in_j2000
     in_date_ecliptic = _rot1(eps_date) @ in_date_equatorial
     return math.degrees(math.atan2(in_date_ecliptic[1], in_date_ecliptic[0]))
+
+
+def equinox_longitude_shifts(jd_tt_epoch: float, jd_tt: Any) -> Any:
+    """Vectorised :func:`equinox_longitude_shift` for an array of dates (IAU 2006)."""
+    dates = np.atleast_1d(np.asarray(jd_tt, dtype=float))
+    in_j2000 = _iau2006_matrix(jd_tt_epoch).T @ np.array([1.0, 0.0, 0.0])
+    x, y, z = np.einsum("ijn,j->in", np.asarray(compute_precession(dates)), in_j2000)
+    eps = np.asarray(mean_obliquity(dates)) * ARCSEC
+    return np.degrees(np.arctan2(np.cos(eps) * y + np.sin(eps) * z, x))

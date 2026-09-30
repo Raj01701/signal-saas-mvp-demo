@@ -34,7 +34,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `special/` | Upagrahas, special lagnas, arudha padas, chara karakas, sahams |
 | `strength/` | Shadbala, Bhava Bala, Vimshopaka, Ashtakavarga |
 | `dasha/` | A generic period tree; Vimshottari and the other nakshatra dashas; Jaimini sign dashas |
-| `transit/` | Ingress and station search; Sade Sati; double transit; Ashtakavarga transit scoring |
+| `transit/` | Ingress, longitude-crossing and station search on vectorised sidereal positions (`astro/series.py`); Sade Sati; double transit; Ashtakavarga transit scoring |
 | `annual/` | Varshaphal (Tajika), Mudda and Patyayini dashas, Tithi Pravesha |
 | `kp/` | KP significators and ruling planets |
 | `panchanga/` | Panchanga elements, their end times, muhurta periods, calendar |

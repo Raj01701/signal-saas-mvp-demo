@@ -51,7 +51,7 @@ CATALOGUE: dict[AnchorStar, HipparcosStar] = {
 
 
 @cache
-def _skyfield_star(anchor: AnchorStar) -> Any:
+def skyfield_star(anchor: AnchorStar) -> Any:
     data = CATALOGUE[anchor]
     return Star(
         ra_hours=data.ra_deg / 15.0,
@@ -70,7 +70,7 @@ def star_longitude(anchor: AnchorStar, instant: Instant, *, apparent: bool) -> f
     light-time are applied, but annual aberration and light deflection are not.
     """
     eph = get_ephemeris()
-    position = eph.earth.at(instant.skyfield()).observe(_skyfield_star(anchor))
+    position = eph.earth.at(instant.skyfield()).observe(skyfield_star(anchor))
     if apparent:
         position = position.apparent()
     _, lon, _ = position.frame_latlon(ecliptic_frame)

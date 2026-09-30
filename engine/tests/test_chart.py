@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import pairwise
 
 import pytest
 from pydantic import ValidationError
@@ -7,9 +8,11 @@ from jyotish_engine.astro.ayanamsa import Ayanamsa
 from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.houses import HouseSystem
 from jyotish_engine.chart import compute_chart
+from jyotish_engine.dasha.nakshatra import NakshatraDasha
+from jyotish_engine.dasha.tables import chart_dasha_table, running_periods
 from jyotish_engine.models import BirthInput, BirthTimeSource, PlaceInput
 from jyotish_engine.place.timezone import TimeStandard
-from jyotish_engine.settings import PRESETS, Preset, Settings
+from jyotish_engine.settings import PRESETS, DashaYear, Preset, Settings
 
 DELHI = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090, elevation_m=216)
 
@@ -122,3 +125,35 @@ def test_bombay_birth_reports_ambiguity() -> None:
     assert chart.time.ambiguous
     assert chart.time.interpretation.standard is TimeStandard.BOMBAY_TIME
     assert chart.time.alternatives
+
+
+def test_chart_carries_vimshottari_and_applicability() -> None:
+    chart = compute_chart(_birth())
+    dashas = chart.dashas
+    assert dashas.year is DashaYear.SIDEREAL
+    table = dashas.vimshottari
+    moon = next(g for g in chart.grahas if g.body is Body.MOON)
+    assert table.birth_lord is moon.nakshatra.lord
+    first = table.periods[0]
+    assert first.start_jd_ut <= chart.time.jd_ut < first.end_jd_ut
+    assert 0.0 < table.balance_years <= 20.0
+    assert first.start < first.end
+    systems = {a.system for a in dashas.applicability}
+    assert {s.value for s in NakshatraDasha} == systems
+    pvr = compute_chart(_birth(), PRESETS[Preset.PVR_JHORA_STYLE])
+    assert pvr.dashas.year is DashaYear.TRUE_SIDEREAL
+    assert pvr.dashas.year_days == pytest.approx(dashas.year_days, abs=0.01)
+
+
+def test_running_periods_nest_down_to_five_levels() -> None:
+    chart = compute_chart(_birth())
+    when = chart.time.jd_ut + 12345.6
+    chain = running_periods(chart, NakshatraDasha.VIMSHOTTARI, when, depth=5)
+    assert [len(p.lords) for p in chain] == [1, 2, 3, 4, 5]
+    for outer, inner in pairwise(chain):
+        assert inner.lords[:-1] == outer.lords
+        assert outer.start_jd_ut <= inner.start_jd_ut <= when < inner.end_jd_ut <= outer.end_jd_ut
+    with pytest.raises(ValueError, match="depth"):
+        running_periods(chart, NakshatraDasha.VIMSHOTTARI, when, depth=7)
+    yogini = chart_dasha_table(chart, NakshatraDasha.YOGINI)
+    assert yogini.system == "yogini"

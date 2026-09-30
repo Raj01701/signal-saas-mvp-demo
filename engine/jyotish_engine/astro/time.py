@@ -8,7 +8,7 @@ modern era and the Stephenson, Morrison & Hohenkerk (2016) model for historical 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from typing import Any
 
@@ -69,3 +69,15 @@ class Instant:
         """Civil UTC datetime for this instant."""
         value: datetime = self.skyfield().utc_datetime()
         return value
+
+
+_J2000_UTC = datetime(2000, 1, 1, 12, 0, tzinfo=UTC)
+
+
+def jd_to_datetime(jd_ut: float) -> datetime:
+    """Civil datetime (UTC) for a UT Julian day, rounded to the millisecond.
+
+    UT1 is taken as UTC: they differ by under a second, which is below the
+    precision that dasha periods and event times are reported with.
+    """
+    return _J2000_UTC + timedelta(milliseconds=round((jd_ut - J2000_JD) * 86_400_000.0))

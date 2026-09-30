@@ -23,12 +23,17 @@ from jyotish_engine.core.varga import VARGAS, VargaMethod
 class DashaYear(StrEnum):
     """Length of the year used to convert dasha periods to calendar dates."""
 
-    SIDEREAL = "sidereal"  # 365.256363 days
+    SIDEREAL = "sidereal"  # mean sidereal year, 365.256363 days
+    #: The actual sidereal solar year containing the birth, from the Sun's entry
+    #: into sidereal Aries (Mesha sankranti) before birth to the next one. It varies
+    #: by a few minutes from year to year; PyJHora uses it by default.
+    TRUE_SIDEREAL = "true_sidereal"
     JULIAN = "julian"  # 365.25 days
     TROPICAL = "tropical"  # 365.242190 days
     SAVANA = "savana"  # 360 days
 
 
+#: Fixed year lengths in days (``TRUE_SIDEREAL`` is computed per chart).
 DASHA_YEAR_DAYS: dict[DashaYear, float] = {
     DashaYear.SIDEREAL: 365.256363004,
     DashaYear.JULIAN: 365.25,
@@ -100,6 +105,7 @@ PRESETS: dict[Preset, Settings] = {
     Preset.PVR_JHORA_STYLE: Settings(
         ayanamsa=Ayanamsa.TRUE_PUSHYA,
         position_type=PositionType.TRUE,
+        dasha_year=DashaYear.TRUE_SIDEREAL,
         varga_methods={24: VargaMethod.SIDDHAMSA_FROM_LEO},
     ),
 }

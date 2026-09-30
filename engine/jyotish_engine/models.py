@@ -16,7 +16,7 @@ from jyotish_engine.core.varga import VargaMethod
 from jyotish_engine.core.zodiac import Sign, degrees_in_sign, sign_of
 from jyotish_engine.kp.subdivisions import kp_lords
 from jyotish_engine.place.timezone import Confidence, TimeInterpretation, TimeStandard
-from jyotish_engine.settings import Settings
+from jyotish_engine.settings import DashaYear, Settings
 from jyotish_engine.special.karakas import Karaka
 from jyotish_engine.special.upagraha import Upagraha
 
@@ -237,6 +237,40 @@ class SpecialPointsOut(BaseModel):
     planetary_wars: list[PlanetaryWarOut]
 
 
+class DashaPeriodOut(BaseModel):
+    """One dasha period; ``lords`` runs from the mahadasha lord down to this level."""
+
+    lords: list[Body]
+    start: datetime
+    end: datetime
+    start_jd_ut: float
+    end_jd_ut: float
+
+
+class DashaTableOut(BaseModel):
+    system: str
+    label: str
+    year_days: float
+    #: The mahadasha running at birth and the part of it still to run.
+    birth_lord: Body
+    balance_years: float
+    #: Periods depth-first: each mahadasha, then its sub-periods, and so on.
+    periods: list[DashaPeriodOut]
+
+
+class DashaApplicabilityOut(BaseModel):
+    system: str
+    applicable: bool | None
+    rule: str
+
+
+class DashasOut(BaseModel):
+    year: DashaYear
+    year_days: float
+    vimshottari: DashaTableOut
+    applicability: list[DashaApplicabilityOut]
+
+
 class ChartResult(BaseModel):
     engine_version: str
     ephemeris: EphemerisOut
@@ -253,3 +287,4 @@ class ChartResult(BaseModel):
     vargas: list[VargaChartOut]
     special: SpecialPointsOut
     day: DayOut
+    dashas: DashasOut

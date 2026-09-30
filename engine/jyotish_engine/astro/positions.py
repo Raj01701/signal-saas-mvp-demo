@@ -96,15 +96,18 @@ def ephemeris_body_position(
     )
 
 
-def mean_node_longitude(jd_tt: float) -> float:
-    """Mean longitude of the Moon's ascending node, mean equinox of date (degrees).
+def mean_node_polynomial(t: Any) -> Any:
+    """Mean node longitude (degrees, unwrapped) for Julian centuries ``t`` from J2000 TT.
 
     Chapront ELP-2000/82 polynomial as given in Meeus, *Astronomical Algorithms*
-    (2nd ed.), eq. 47.7.
+    (2nd ed.), eq. 47.7. Works on floats and NumPy arrays.
     """
-    t = (jd_tt - 2451545.0) / 36525.0
-    omega = 125.0445479 - 1934.1362891 * t + 0.0020754 * t**2 + t**3 / 467441.0 - t**4 / 60616000.0
-    return wrap360(omega)
+    return 125.0445479 - 1934.1362891 * t + 0.0020754 * t**2 + t**3 / 467441.0 - t**4 / 60616000.0
+
+
+def mean_node_longitude(jd_tt: float) -> float:
+    """Mean longitude of the Moon's ascending node, mean equinox of date (degrees)."""
+    return wrap360(float(mean_node_polynomial((jd_tt - 2451545.0) / 36525.0)))
 
 
 def mean_node_position(instant: Instant) -> EclipticPosition:
@@ -122,10 +125,11 @@ def mean_node_position(instant: Instant) -> EclipticPosition:
     )
 
 
-def _osculating_node_longitudes(times: Any) -> Any:
+def osculating_node_longitudes(times: Any, frame: Any = ecliptic_frame) -> Any:
+    """Osculating node longitudes (degrees) for a Skyfield time or array of times."""
     eph = get_ephemeris()
     geometric = (eph.target(Body.MOON) - eph.earth).at(times)
-    position, velocity = geometric.frame_xyz_and_velocity(ecliptic_frame)
+    position, velocity = geometric.frame_xyz_and_velocity(frame)
     h = np.cross(position.au, velocity.au_per_d, axis=0)
     return np.degrees(np.arctan2(h[0], -h[1])) % 360.0
 
@@ -133,7 +137,7 @@ def _osculating_node_longitudes(times: Any) -> Any:
 def true_node_position(instant: Instant) -> EclipticPosition:
     """Osculating (true) Rahu: where the Moon's instantaneous orbit crosses the ecliptic."""
     get_ephemeris().check_range(instant.jd_tt)
-    lons = _osculating_node_longitudes(_times_around(instant))
+    lons = osculating_node_longitudes(_times_around(instant))
     return EclipticPosition(
         longitude=float(lons[1]),
         latitude=0.0,

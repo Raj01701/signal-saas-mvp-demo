@@ -18,10 +18,11 @@ from typing import Any
 
 from jyotish_engine import ENGINE_VERSION
 from jyotish_engine.astro.ayanamsa import EPOCH_SYSTEMS, STAR_SYSTEMS, true_ayanamsa
-from jyotish_engine.astro.bodies import EPHEMERIS_BODIES
+from jyotish_engine.astro.bodies import EPHEMERIS_BODIES, GRAHAS, Body
 from jyotish_engine.astro.ephemeris import get_ephemeris
 from jyotish_engine.astro.houses import HouseSystem, chart_angles, quadrant_cusps
 from jyotish_engine.astro.positions import (
+    PositionType,
     angular_distance,
     mean_node_position,
     tropical_positions,
@@ -30,6 +31,12 @@ from jyotish_engine.astro.positions import (
 from jyotish_engine.astro.riseset import SunriseDefinition, next_sunrise, next_sunset
 from jyotish_engine.astro.time import Instant
 from jyotish_engine.core.varga import VargaMethod, varga_sign_index
+from jyotish_engine.dasha.base import Period, SubPeriodRule, subdivide
+from jyotish_engine.dasha.conditions import applicability
+from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
+from jyotish_engine.dasha.years import true_sidereal_year_days
+from jyotish_engine.settings import Settings
+from jyotish_engine.transit.search import sign_ingresses, stations
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "astro_swisseph.json"
@@ -93,6 +100,144 @@ def _jyotish_section() -> list[str]:
         "parts from sunrise, and places the lordless eighth part after Saturn.",
         "",
     ]
+
+
+def _transit_section() -> list[str]:
+    """M3: sign ingresses and stations versus Swiss Ephemeris."""
+    fixture = ROOT / "engine" / "tests" / "fixtures" / "transits_swisseph.json"
+    data: dict[str, Any] = json.loads(fixture.read_text("utf-8"))
+    lines = [
+        "## Transit events (M3) versus Swiss Ephemeris",
+        "",
+        f"Reference: {data['reference']}, sidereal sign ingresses 1995–2025 (the Moon "
+        "1995–1996) and planetary stations, each bisected to about 10 ms.",
+        "",
+        "| Body | Ingresses (engine / reference) | Max | Median | Stations | Max | Median |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for name, ref in data["bodies"].items():
+        body = Body(name)
+        ours = sign_ingresses(body, ref["start"], ref["end"])
+        ingress = [
+            abs(a.jd_ut - b[0]) * 86400 for a, b in zip(ours, ref["ingresses"], strict=False)
+        ]
+        row = (
+            f"| {name.title()} | {len(ours)} / {len(ref['ingresses'])} | "
+            f"{max(ingress):.2f} s | {statistics.median(ingress):.2f} s |"
+        )
+        if ref["stations"]:
+            found = stations(body, ref["start"], ref["end"])
+            diffs = [
+                abs(a.jd_ut - b[0]) * 86400 for a, b in zip(found, ref["stations"], strict=False)
+            ]
+            row += (
+                f" {len(found)} / {len(ref['stations'])} | {max(diffs):.2f} s | "
+                f"{statistics.median(diffs):.2f} s |"
+            )
+        else:
+            row += " — | — | — |"
+        lines.append(row)
+    lines += [
+        "",
+        "Milestone target: ingress times within one minute. The true node's reversals "
+        "are not reported as stations (Rahu and Ketu are treated as always retrograde).",
+        "",
+    ]
+    return lines
+
+
+def _flatten(
+    periods: list[Period], system: NakshatraDasha, rule: SubPeriodRule, depth: int
+) -> list[Period]:
+    if depth == 1:
+        return periods
+    out: list[Period] = []
+    for period in periods:
+        children = subdivide(period, DEFINITIONS[system].sequence, rule)
+        out += _flatten(children, system, rule, depth - 1)
+    return out
+
+
+def _dasha_section() -> list[str]:
+    """M3: nakshatra dashas versus PyJHora, given the same Moon longitude and year."""
+    fixture = ROOT / "engine" / "tests" / "fixtures" / "dashas_pyjhora.json"
+    data: dict[str, Any] = json.loads(fixture.read_text("utf-8"))
+    cases: list[dict[str, Any]] = data["cases"]
+    equal_rule = {NakshatraDasha.VIMSHOTTARI, NakshatraDasha.ASHTOTTARI}
+    lines = [
+        "## Nakshatra dashas (M3) versus PyJHora 4.8.7",
+        "",
+        f"{len(cases)} charts; the engine is given PyJHora's Moon longitude and dasha year, "
+        "so these numbers measure the dasha arithmetic itself.",
+        "",
+        "| System | Periods compared | Lords matching | Max start difference |",
+        "|---|---|---|---|",
+    ]
+    for system in NakshatraDasha:
+        rule = SubPeriodRule.PROPORTIONAL if system in equal_rule else SubPeriodRule.EQUAL
+        compared = matching = 0
+        worst = 0.0
+        for case in cases:
+            periods = mahadashas(system, case["jd_ut"], case["moon"], case["year_days"], 3)
+            ours = _flatten(periods, system, rule, 2)
+            for period, (lords, offset) in zip(ours, case["systems"][system.value], strict=False):
+                compared += 1
+                matching += [list(GRAHAS).index(b) for b in period.lords] == lords
+                worst = max(worst, abs(period.start_jd - case["jd_ut"] - offset) * 86400)
+        label = DEFINITIONS[system].name
+        lines.append(f"| {label} | {compared} | {matching} | {worst:.3f} s |")
+    year_errors = [
+        abs(
+            true_sidereal_year_days(c["jd_ut"], Settings(position_type=PositionType.TRUE))
+            - c["true_sidereal_year_days"]
+        )
+        * 86400
+        for c in cases
+    ]
+    reference_errors = [abs(c["year_days"] - c["true_sidereal_year_days"]) * 86400 for c in cases]
+    close = [e for e in reference_errors if e < 3600.0]
+    gross = [e for e in reference_errors if e >= 3600.0]
+    names = {
+        "ashtottari": NakshatraDasha.ASHTOTTARI,
+        "chaturaaseeti_sama": NakshatraDasha.CHATURASHITI_SAMA,
+        "dwadasottari": NakshatraDasha.DWADASHOTTARI,
+        "dwisatpathi": NakshatraDasha.DWISAPTATI_SAMA,
+        "panchottari": NakshatraDasha.PANCHOTTARI,
+        "satabdika": NakshatraDasha.SHATABDIKA,
+        "shashtisama": NakshatraDasha.SHASHTIHAYANI,
+    }
+    agree = total = 0
+    for case in cases:
+        sidereal = dict(zip(GRAHAS, case["grahas"], strict=True))
+        verdicts = {
+            a.system: a.applicable for a in applicability(case["ascendant"], sidereal, None)
+        }
+        expected = {names[n] for n in case["applicable"]}
+        for system in names.values():
+            total += 1
+            agree += verdicts[system] == (system in expected)
+    lines += [
+        "",
+        "* Antardashas are divided the way PyJHora divides them: in proportion to the "
+        "lords' years for Vimshottari and Ashtottari, equally for the rest. BPHS divides "
+        "them proportionally in every system, which is the engine's default.",
+        f"* True sidereal year (Mesha sankranti to Mesha sankranti): the engine is within "
+        f"{max(year_errors):.2f} s of an exact Swiss Ephemeris bisection on every chart. "
+        f"PyJHora's own value is off by up to {max(close):.0f} s, because it interpolates "
+        "each sankranti from sunrise samples"
+        + (
+            f", and on {len(gross)} chart(s) by {max(gross) / 86400:.1f} days (a wrong "
+            "sankranti day); its dasha dates move accordingly."
+            if gross
+            else "."
+        ),
+        f"* Applicability of the conditional dashas: {agree} of {total} verdicts agree "
+        "(7 systems; PyJHora has no rule for Shodashottari or Shattrimsha Sama).",
+        "* Yogini dasha follows BPHS's formula, (birth nakshatra + 3) mod 8; a cyclic "
+        "count from Ardra gives different lords for births in Ashwini to Mrigashira.",
+        "",
+    ]
+    return lines
 
 
 def main() -> None:
@@ -219,6 +364,8 @@ def main() -> None:
         "",
     ]
     lines += _jyotish_section()
+    lines += _transit_section()
+    lines += _dasha_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 
