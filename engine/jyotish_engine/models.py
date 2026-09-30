@@ -360,6 +360,11 @@ class VarshaphalOut(BaseModel):
     muntha_lord: Body
     by_day: bool | None
     office_bearers: OfficeBearersOut
+    #: Lord of the year and whether it aspects the annual lagna (pending review).
+    year_lord: Body
+    year_lord_aspects_lagna: bool
+    #: Tajika pancha-vargiya bala of the seven planets, out of 20.
+    pancha_vargiya: dict[Body, float]
     tajika: list[TajikaRelationOut]
     mudda: list[AnnualPeriodOut]
     patyayini: list[AnnualPeriodOut]
@@ -371,3 +376,67 @@ class TithiPraveshaOut(BaseModel):
     jd_ut: float
     elongation: float
     chart: ChartResult
+
+
+class ShadbalaOut(BaseModel):
+    """Shadbala of one planet in virupas (60 virupas = 1 rupa)."""
+
+    body: Body
+    uchcha: float
+    saptavargaja: float
+    ojayugma: float
+    kendradi: float
+    drekkana: float
+    sthana: float
+    dig: float
+    nathonnata: float
+    paksha: float
+    tribhaga: float
+    abda: float
+    masa: float
+    vara: float
+    hora: float
+    ayana: float
+    yuddha: float
+    kala: float
+    cheshta: float
+    naisargika: float
+    drik: float
+    total: float
+    rupas: float
+    required_rupas: float
+    #: Strength relative to the required minimum (1 = just strong enough).
+    ratio: float
+    ishta_phala: float
+    kashta_phala: float
+
+
+class BhavaBalaOut(BaseModel):
+    house: int
+    madhya: float
+    lord: Body
+    adhipati: float
+    dig: float
+    drishti: float
+    total: float
+    rupas: float
+
+
+class AshtakavargaOut(BaseModel):
+    moon_table: str
+    #: Bindus per sign (Aries first) for each planet and "lagna".
+    bav: dict[str, list[int]]
+    sav: list[int]
+    #: After trikona and ekadhipatya shodhana, and the resulting pindas.
+    reduced: dict[str, list[int]]
+    rasi_pinda: dict[str, int]
+    graha_pinda: dict[str, int]
+    shodhya_pinda: dict[str, int]
+
+
+class StrengthsOut(BaseModel):
+    shadbala: list[ShadbalaOut]
+    bhava_bala: list[BhavaBalaOut]
+    ashtakavarga: AshtakavargaOut
+    #: Vimshopaka bala (out of 20) under each varga scheme.
+    vimshopaka: dict[str, dict[Body, float]]

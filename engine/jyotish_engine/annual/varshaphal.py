@@ -10,7 +10,8 @@ from jyotish_engine.annual.dashas import (
     patyayini_sub_periods,
 )
 from jyotish_engine.annual.returns import tithi_pravesha, varsha_pravesha
-from jyotish_engine.annual.tajika import muntha_sign, office_bearers, tajika_relations
+from jyotish_engine.annual.tajika import SEVEN, muntha_sign, office_bearers, tajika_relations
+from jyotish_engine.annual.tajika_strength import pancha_vargiya_bala, year_lord
 from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.time import jd_to_datetime
 from jyotish_engine.chart import compute_chart_at
@@ -67,6 +68,7 @@ def compute_varshaphal(
         by_day if by_day is not None else True,
     )
     muntha = muntha_sign(natal.ascendant.sign, years_completed)
+    lord, aspects_lagna = year_lord(bearers.candidates(), annual.ascendant.sign, positions)
 
     mudda = []
     for maha in mudda_dashas(natal_positions[Body.MOON], years_completed, start, year_days):
@@ -102,6 +104,9 @@ def compute_varshaphal(
             dina_ratri_lord=bearers.dina_ratri_lord,
             candidates=bearers.candidates(),
         ),
+        year_lord=lord,
+        year_lord_aspects_lagna=aspects_lagna,
+        pancha_vargiya={b: pancha_vargiya_bala(b, positions[b]).total for b in SEVEN},
         tajika=[
             TajikaRelationOut(
                 faster=r.faster,

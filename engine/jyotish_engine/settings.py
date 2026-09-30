@@ -18,6 +18,7 @@ from jyotish_engine.astro.houses import HouseSystem
 from jyotish_engine.astro.positions import NodeType, PositionType
 from jyotish_engine.astro.riseset import SunriseDefinition
 from jyotish_engine.core.varga import VARGAS, VargaMethod
+from jyotish_engine.strength.ashtakavarga import MoonTable
 
 
 class DashaYear(StrEnum):
@@ -70,6 +71,8 @@ class Settings(BaseModel):
     #: "pvr_book": the reverse, as in P.V.R. Narasimha Rao's book.
     gulika_convention: Literal["common", "pvr_book"] = "common"
     node_aspects_5_9: bool = False
+    #: Which reading of the Moon's ashtakavarga table to use (see strength.ashtakavarga).
+    ashtakavarga_moon: MoonTable = MoonTable.PVR
 
     @model_validator(mode="after")
     def _check(self) -> Settings:
