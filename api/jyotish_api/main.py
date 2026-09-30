@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,6 +20,7 @@ from jyotish_api.config import ApiSettings, get_settings
 from jyotish_api.db import make_engine, session_factory
 from jyotish_api.routers import account, compute
 from jyotish_engine import ENGINE_VERSION
+from jyotish_engine.place.geocode import gazetteer
 
 
 def _value_error(_: Request, exc: Exception) -> JSONResponse:
@@ -24,9 +29,19 @@ def _value_error(_: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exc)})
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Load the place gazetteer (about 10 s) in the background at startup, so the
+    first place search does not wait for it."""
+    app.state.warmup = threading.Thread(target=gazetteer, name="gazetteer", daemon=True)
+    app.state.warmup.start()
+    yield
+
+
 def create_app(settings: ApiSettings | None = None) -> FastAPI:
     settings = settings or get_settings()
     app = FastAPI(
+        lifespan=_lifespan,
         title="Jyotish API",
         version=api_version,
         description="Vedic astrology calculations with cited, explainable results.",
@@ -50,6 +65,13 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     def health() -> dict[str, str]:
         """Liveness probe that also reports component versions."""
         return {"status": "ok", "api_version": api_version, "engine_version": ENGINE_VERSION}
+
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        """200 once startup work (the gazetteer) is done, 503 before."""
+        warmup = getattr(app.state, "warmup", None)
+        loading = warmup is not None and warmup.is_alive()
+        return JSONResponse(status_code=503 if loading else 200, content={"ready": not loading})
 
     app.include_router(compute.router)
     app.include_router(account.router)

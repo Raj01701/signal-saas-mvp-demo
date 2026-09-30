@@ -8,9 +8,15 @@ export default function Home() {
         Precise Vedic astrology, explained with its sources.
       </h1>
       <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-300">
-        The calculation engine is being built first. The astrologer workbench and consumer app
-        follow on the same API.
+        Charts, divisional charts and dashas calculated to the arcsecond, with every setting
+        visible. The consumer app follows on the same API.
       </p>
+      <a
+        href="/workbench"
+        className="w-fit rounded-md bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800"
+      >
+        Open the astrologer workbench
+      </a>
     </main>
   );
 }

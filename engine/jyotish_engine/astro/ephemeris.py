@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,11 @@ _TARGETS: dict[Body, tuple[str, ...]] = {
     Body.NEPTUNE: ("neptune barycenter",),
     Body.PLUTO: ("pluto barycenter",),
 }
+
+
+def _calendar_date(jd: float) -> str:
+    """Proleptic Gregorian date of a Julian day, for messages."""
+    return (datetime(2000, 1, 1, 12) + timedelta(days=jd - 2451545.0)).date().isoformat()
 
 
 class EphemerisRangeError(ValueError):
@@ -104,9 +110,10 @@ class Ephemeris:
 
     def check_range(self, jd_tt: float) -> None:
         if not self.info.jd_start <= jd_tt <= self.info.jd_end:
+            first, last = (_calendar_date(jd) for jd in (self.info.jd_start, self.info.jd_end))
             raise EphemerisRangeError(
-                f"JD(TT) {jd_tt:.5f} is outside {self.info.name} coverage "
-                f"({self.info.jd_start:.1f} to {self.info.jd_end:.1f})"
+                f"dates must fall between {first} and {last} with the {self.info.name} "
+                f"ephemeris (requested JD(TT) {jd_tt:.5f})"
             )
 
 

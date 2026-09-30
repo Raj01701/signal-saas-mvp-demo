@@ -24,6 +24,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ready
+         * @description 200 once startup work (the gazetteer) is done, 503 before.
+         */
+        get: operations["ready_ready_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts": {
         parameters: {
             query?: never;
@@ -476,9 +496,9 @@ export interface components {
             local_datetime: string;
             place: components["schemas"]["PlaceInput"];
             /** @default unknown */
-            time_source: components["schemas"]["BirthTimeSource"];
+            time_source?: components["schemas"]["BirthTimeSource"];
             /** @default auto */
-            time_standard: components["schemas"]["TimeStandard"];
+            time_standard?: components["schemas"]["TimeStandard"];
             /** Uncertainty Minutes */
             uncertainty_minutes?: number | null;
             /** Utc Offset Seconds */
@@ -653,7 +673,7 @@ export interface components {
              * Depth
              * @default 2
              */
-            depth: number;
+            depth?: number;
             preset?: components["schemas"]["Preset"] | null;
             settings?: components["schemas"]["Settings"] | null;
             /** System */
@@ -750,7 +770,7 @@ export interface components {
              * @default day
              * @enum {string}
              */
-            precision: "day" | "month" | "year";
+            precision?: "day" | "month" | "year";
         };
         /** EventOut */
         EventOut: {
@@ -778,7 +798,7 @@ export interface components {
              * @default day
              * @enum {string}
              */
-            precision: "day" | "month" | "year";
+            precision?: "day" | "month" | "year";
         };
         /** Export */
         Export: {
@@ -1060,7 +1080,7 @@ export interface components {
             groom: components["schemas"]["BirthInput"];
             preset?: components["schemas"]["Preset"] | null;
             /** @default popular */
-            profile: components["schemas"]["KootaProfile"];
+            profile?: components["schemas"]["KootaProfile"];
             settings?: components["schemas"]["Settings"] | null;
         };
         /** Me */
@@ -1226,12 +1246,12 @@ export interface components {
              * Guardian Consent
              * @default false
              */
-            guardian_consent: boolean;
+            guardian_consent?: boolean;
             /**
              * Is Minor
              * @default false
              */
-            is_minor: boolean;
+            is_minor?: boolean;
             /** Name */
             name: string;
             /** Notes */
@@ -1251,14 +1271,14 @@ export interface components {
              * Guardian Consent
              * @default false
              */
-            guardian_consent: boolean;
+            guardian_consent?: boolean;
             /** Id */
             id: string;
             /**
              * Is Minor
              * @default false
              */
-            is_minor: boolean;
+            is_minor?: boolean;
             /** Name */
             name: string;
             /** Notes */
@@ -1296,7 +1316,7 @@ export interface components {
              * Elevation M
              * @default 0
              */
-            elevation_m: number;
+            elevation_m?: number;
             /** Geonames Id */
             geonames_id?: number | null;
             /** Latitude */
@@ -1390,41 +1410,41 @@ export interface components {
          */
         Settings: {
             /** @default pvr */
-            ashtakavarga_moon: components["schemas"]["MoonTable"];
+            ashtakavarga_moon?: components["schemas"]["MoonTable"];
             /** @default lahiri */
-            ayanamsa: components["schemas"]["Ayanamsa"];
+            ayanamsa?: components["schemas"]["Ayanamsa"];
             /** @default sripati */
-            bhava_system: components["schemas"]["HouseSystem"];
+            bhava_system?: components["schemas"]["HouseSystem"];
             /** @default sidereal */
-            dasha_year: components["schemas"]["DashaYear"];
+            dasha_year?: components["schemas"]["DashaYear"];
             /**
              * Gulika Convention
              * @default common
              * @enum {string}
              */
-            gulika_convention: "common" | "pvr_book";
+            gulika_convention?: "common" | "pvr_book";
             /**
              * Include Outer Planets
              * @default false
              */
-            include_outer_planets: boolean;
+            include_outer_planets?: boolean;
             /**
              * Karaka Scheme
              * @default 8
              * @enum {integer}
              */
-            karaka_scheme: 7 | 8;
+            karaka_scheme?: 7 | 8;
             /**
              * Node Aspects 5 9
              * @default false
              */
-            node_aspects_5_9: boolean;
+            node_aspects_5_9?: boolean;
             /** @default true */
-            node_type: components["schemas"]["NodeType"];
+            node_type?: components["schemas"]["NodeType"];
             /** @default apparent */
-            position_type: components["schemas"]["PositionType"];
+            position_type?: components["schemas"]["PositionType"];
             /** @default hindu */
-            sunrise: components["schemas"]["SunriseDefinition"];
+            sunrise?: components["schemas"]["SunriseDefinition"];
             /** User Ayanamsa J2000 */
             user_ayanamsa_j2000?: number | null;
             /** Varga Methods */
@@ -1832,7 +1852,7 @@ export interface components {
              * Include Sensitive
              * @default false
              */
-            include_sensitive: boolean;
+            include_sensitive?: boolean;
             preset?: components["schemas"]["Preset"] | null;
             settings?: components["schemas"]["Settings"] | null;
         };
@@ -1863,6 +1883,26 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    ready_ready_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

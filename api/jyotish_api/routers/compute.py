@@ -65,11 +65,15 @@ def _sidereal(chart: ChartResult) -> dict[Body, float]:
 
 @router.get("/geo/search")
 def geo_search(
+    request: Request,
     q: str = Query(min_length=2, max_length=100),
     country: str | None = Query(default=None, min_length=2, max_length=2),
     limit: int = Query(default=10, ge=1, le=50),
 ) -> list[Place]:
     """Places by name (GeoNames), most populous first."""
+    warmup = getattr(request.app.state, "warmup", None)
+    if warmup is not None:
+        warmup.join(timeout=60.0)  # rather than loading a second copy
     return search_places(q, country_code=country, limit=limit)
 
 

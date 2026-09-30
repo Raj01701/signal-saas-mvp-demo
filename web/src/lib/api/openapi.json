@@ -4198,6 +4198,23 @@
         "summary": "Health"
       }
     },
+    "/ready": {
+      "get": {
+        "description": "200 once startup work (the gazetteer) is done, 503 before.",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready"
+      }
+    },
     "/v1/charts": {
       "post": {
         "description": "The birth chart: positions, houses, divisional charts, special points, Vimshottari.",

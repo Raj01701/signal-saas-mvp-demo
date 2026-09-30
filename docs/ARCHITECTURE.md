@@ -58,6 +58,13 @@ FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configurati
 - SQLAlchemy 2 models (`db.py`) with Alembic migrations (`api/migrations`, run `alembic upgrade head` from `api/`); SQLite for development and tests, Postgres in production through the pg8000 driver (the LGPL psycopg drivers are excluded by the licence guard). A test fails if models and migrations drift; a Postgres round trip runs when `JYOTISH_API_TEST_POSTGRES_URL` is set.
 - `scripts/export_openapi.py` writes `web/src/lib/api/openapi.json`, and `pnpm -C web api:types` generates `schema.d.ts` from it; CI fails when either is stale.
 
+## Web (`web/`)
+
+Next.js (App Router) with Tailwind. The workbench (`/workbench`) is a client component that calls the API directly with `openapi-fetch`, typed by the generated `src/lib/api/schema.d.ts`; `NEXT_PUBLIC_API_URL` points it at the API.
+
+- Chart drawings are SVG (`components/ChartDiagram.tsx`); their geometry for the North, South and East Indian styles is pure and unit-tested (`lib/chart-layout.ts`).
+- End-to-end tests (`web/e2e`, Playwright) start the API and a production build, then check the workbench on desktop and mobile viewports, including axe WCAG A/AA rules and horizontal overflow. `PW_CHROMIUM` selects an installed Chromium.
+
 ## Ephemeris resolution
 
 1. The environment variable `JYOTISH_EPHEMERIS` (an explicit path to a `.bsp` kernel).
