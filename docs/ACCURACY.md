@@ -159,6 +159,10 @@ PyJHora also gives every Chara mahadasha the same antardasha order, starting fro
 * Ashtakavarga: identical to P.V.R. Narasimha Rao's worked Chart 7, before and after both reductions (`test_ashtakavarga.py`).
 * Shadbala: every component of B.V. Raman's and V.P. Jain's worked examples within 1 virupa, apart from the book slips and method differences listed in `test_shadbala.py`.
 
+## Tajika sahams (M4)
+
+The 36 sahams of Rao's table on 300 random sets of positions, day and night: 10130 of 10800 values identical to PyJHora's. Every other value is reproduced exactly by one of three PyJHora departures from the table, which `test_sahams_golden.py` checks case by case: house cusps not reduced below 360 degrees before its between-signs test, Rahu or Ketu taken as the lord of Aquarius or Scorpio, and Labha reversed by night.
+
 ## Yogas and doshas (M4)
 
 312 rules in `knowledge/yogas/`, all `draft` until a qualified Jyotishi reviews them. They carry 493 citations, 0 checked against their edition so far. Provenance: 235 classical, 57 traditional (documented by modern authors, classical source not yet identified), 20 modern.

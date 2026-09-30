@@ -356,6 +356,15 @@ class OfficeBearersOut(BaseModel):
     candidates: list[Body]
 
 
+class SahamOut(BaseModel):
+    name: str
+    meaning: str
+    sidereal_longitude: float
+    sign: Sign
+    #: Disease, death and similar topics: shown only when explicitly requested.
+    sensitive: bool
+
+
 class VarshaphalOut(BaseModel):
     """The Tajika annual chart for the year after ``years_completed`` years of life."""
 
@@ -375,6 +384,8 @@ class VarshaphalOut(BaseModel):
     #: Tajika pancha-vargiya bala of the seven planets, out of 20.
     pancha_vargiya: dict[Body, float]
     tajika: list[TajikaRelationOut]
+    #: The 36 Tajika sahams of the annual chart; sensitive ones are flagged.
+    sahams: list[SahamOut]
     mudda: list[AnnualPeriodOut]
     patyayini: list[AnnualPeriodOut]
 

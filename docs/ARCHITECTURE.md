@@ -35,7 +35,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `strength/` | Shadbala, Bhava Bala, Vimshopaka, Ashtakavarga |
 | `dasha/` | A generic period tree; Vimshottari and the other nakshatra dashas with their applicability rules; dasha-year options; Chara and Narayana sign dashas (Jaimini sign strength in `core/jaimini.py`); Kalachakra |
 | `transit/` | Ingress, longitude-crossing and station search on vectorised sidereal positions (`astro/series.py`); Sade Sati; double transit; Ashtakavarga transit scoring |
-| `annual/` | Varsha Pravesha and the annual chart, Muntha, office-bearers, Tajika aspects (ithasala, isarapha), Mudda and Patyayini dashas, Tithi Pravesha |
+| `annual/` | Varsha Pravesha and the annual chart, Muntha, office-bearers, Tajika aspects (ithasala, isarapha), pancha-vargiya bala and the lord of the year, the 36 sahams, Mudda and Patyayini dashas, Tithi Pravesha |
 | `kp/` | KP significators and ruling planets |
 | `panchanga/` | Panchanga elements, their end times, muhurta periods, calendar |
 | `match/` | Ashtakoota, Dashakoota, Manglik |

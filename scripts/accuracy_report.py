@@ -24,6 +24,7 @@ from jyotish_engine.annual.dashas import (
     patyayini_sub_periods,
 )
 from jyotish_engine.annual.returns import tithi_pravesha, varsha_pravesha
+from jyotish_engine.annual.sahams import compute_sahams
 from jyotish_engine.astro.ayanamsa import EPOCH_SYSTEMS, STAR_SYSTEMS, true_ayanamsa
 from jyotish_engine.astro.bodies import EPHEMERIS_BODIES, GRAHAS, Body
 from jyotish_engine.astro.ephemeris import get_ephemeris
@@ -52,6 +53,7 @@ from jyotish_engine.transit.search import sign_ingresses, stations
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "astro_swisseph.json"
 OUT = ROOT / "docs" / "ACCURACY.md"
+SAHAM_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "sahams_pyjhora.json"
 
 
 def _row(name: str, values: list[float], unit: str, target: str) -> str:
@@ -388,6 +390,15 @@ def _strength_and_rules_section() -> list[str]:
     categories = Counter(r.rule.category.value for r in catalogue)
     provenance = Counter(r.rule.provenance.value for r in catalogue)
     citations = [c for r in catalogue for c in r.rule.sources]
+    saham_data: dict[str, Any] = json.loads(SAHAM_FIXTURE.read_text("utf-8"))
+    saham_total = saham_same = 0
+    for case in saham_data["cases"]:
+        sidereal = {Body(k): v for k, v in case["planets"].items()}
+        ours = compute_sahams(case["lagna"], sidereal, not case["night"])
+        for saham in ours:
+            theirs = case["sahams"][saham.name]
+            saham_total += 1
+            saham_same += abs((saham.longitude - theirs + 180.0) % 360.0 - 180.0) < 1e-7
     lines = [
         "## Strength (M4)",
         "",
@@ -396,6 +407,15 @@ def _strength_and_rules_section() -> list[str]:
         "* Shadbala: every component of B.V. Raman's and V.P. Jain's worked examples within "
         "1 virupa, apart from the book slips and method differences listed in "
         "`test_shadbala.py`.",
+        "",
+        "## Tajika sahams (M4)",
+        "",
+        f"The 36 sahams of Rao's table on {len(saham_data['cases'])} random sets of "
+        f"positions, day and night: {saham_same} of {saham_total} values identical to "
+        "PyJHora's. Every other value is reproduced exactly by one of three PyJHora "
+        "departures from the table, which `test_sahams_golden.py` checks case by case: "
+        "house cusps not reduced below 360 degrees before its between-signs test, Rahu or "
+        "Ketu taken as the lord of Aquarius or Scorpio, and Labha reversed by night.",
         "",
         "## Yogas and doshas (M4)",
         "",

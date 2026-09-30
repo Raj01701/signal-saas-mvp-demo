@@ -10,6 +10,7 @@ from jyotish_engine.annual.dashas import (
     patyayini_sub_periods,
 )
 from jyotish_engine.annual.returns import tithi_pravesha, varsha_pravesha
+from jyotish_engine.annual.sahams import compute_sahams
 from jyotish_engine.annual.tajika import SEVEN, muntha_sign, office_bearers, tajika_relations
 from jyotish_engine.annual.tajika_strength import pancha_vargiya_bala, year_lord
 from jyotish_engine.astro.bodies import GRAHAS, Body
@@ -21,6 +22,7 @@ from jyotish_engine.models import (
     ChartResult,
     OfficeBearersOut,
     PlaceInput,
+    SahamOut,
     TajikaRelationOut,
     TithiPraveshaOut,
     VarshaphalOut,
@@ -118,6 +120,20 @@ def compute_varshaphal(
                 yoga=r.yoga.value if r.yoga else None,
             )
             for r in tajika_relations(positions)
+        ],
+        sahams=[
+            SahamOut(
+                name=s.name,
+                meaning=s.meaning,
+                sidereal_longitude=s.longitude,
+                sign=Sign(int(s.longitude // 30.0)),
+                sensitive=s.sensitive,
+            )
+            for s in compute_sahams(
+                annual.ascendant.sidereal_longitude,
+                positions,
+                by_day if by_day is not None else True,
+            )
         ],
         mudda=mudda,
         patyayini=patyayini,

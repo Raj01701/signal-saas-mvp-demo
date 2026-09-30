@@ -110,6 +110,17 @@ def test_varshaphal_for_a_year_of_life(natal: object) -> None:
     assert len(patyayini) == 8 and "lagna" in {p.lords[0] for p in patyayini}
     assert patyayini[0].start_jd_ut == result.start_jd_ut
     assert patyayini[-1].end_jd_ut == pytest.approx(result.end_jd_ut)
+    assert len(result.sahams) == 36
+    punya = next(s for s in result.sahams if s.name == "punya")
+    annual = {g.body: g.sidereal_longitude for g in result.chart.grahas}
+    lagna = result.chart.ascendant.sidereal_longitude
+    arc = (
+        annual[Body.MOON] - annual[Body.SUN]
+        if result.by_day
+        else annual[Body.SUN] - annual[Body.MOON]
+    )
+    assert (punya.sidereal_longitude - lagna - arc) % 30.0 == pytest.approx(0.0, abs=1e-9)
+    assert punya.sign == int(punya.sidereal_longitude // 30)
     first = compute_varshaphal(chart, 0)  # type: ignore[arg-type]
     assert first.start_jd_ut == chart.time.jd_ut  # type: ignore[attr-defined]
     with pytest.raises(ValueError, match="years_completed"):
