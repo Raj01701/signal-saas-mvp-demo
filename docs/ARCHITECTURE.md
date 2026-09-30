@@ -46,6 +46,15 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `settings.py` | Calculation settings, presets and the settings fingerprint |
 | `chart.py` | `compute_chart(BirthInput, Settings) -> ChartResult`: about 80 ms per chart |
 
+## API (`api/`)
+
+FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configuration comes from `JYOTISH_API_*` environment variables (`config.py`).
+
+- Stateless calculation routes under `/v1` (`routers/compute.py`): place search, chart, yogas, strengths, any dasha system, transits, annual charts, KP (natal and horary), panchanga and matchmaking. Request bodies take a full `settings` object or a `preset`.
+- Charts are cached in memory, keyed by a hash of birth data and settings (`charts.py`); uncached chart p95 is about 230 ms.
+- Engine `ValueError`s (dates outside the ephemeris, polar days, unknown options) become HTTP 422; rate limiting per client address uses slowapi.
+- `scripts/export_openapi.py` writes `web/src/lib/api/openapi.json`, and `pnpm -C web api:types` generates `schema.d.ts` from it; CI fails when either is stale.
+
 ## Ephemeris resolution
 
 1. The environment variable `JYOTISH_EPHEMERIS` (an explicit path to a `.bsp` kernel).

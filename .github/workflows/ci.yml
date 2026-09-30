@@ -32,6 +32,8 @@ jobs:
         run: uv run mypy engine/jyotish_engine api/jyotish_api
       - name: Tests
         run: uv run pytest
+      - name: OpenAPI schema is current
+        run: uv run python scripts/export_openapi.py --check
 
   licences:
     name: Licence guard (runtime dependencies)
@@ -74,6 +76,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: API types match the OpenAPI schema
+        run: pnpm api:types && git diff --exit-code src/lib/api/schema.d.ts
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
