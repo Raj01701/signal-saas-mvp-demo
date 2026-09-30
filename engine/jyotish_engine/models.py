@@ -594,6 +594,86 @@ class CitationOut(BaseModel):
     verified: bool
 
 
+class KootaOut(BaseModel):
+    name: str
+    points: float
+    maximum: float
+    groom: str
+    bride: str
+    detail: str
+    sources: list[CitationOut]
+
+
+class MatchDoshaOut(BaseModel):
+    name: str
+    present: bool
+    cancelled: bool
+    #: The traditional exceptions that apply; any one cancels the dosha.
+    exceptions: list[str]
+    sources: list[CitationOut]
+
+
+class PoruthamOut(BaseModel):
+    name: str
+    agrees: bool
+    detail: str
+    relieved_by: str | None
+
+
+class KujaOut(BaseModel):
+    manglik: bool
+    #: Kuja dosha rules present (and not cancelled), and those cancelled.
+    present: list[str]
+    cancelled: list[str]
+
+
+class MatchOut(BaseModel):
+    """Marriage matching of two charts (groom first)."""
+
+    #: Which points tables were used ("popular" or "maitreya").
+    profile: str
+    ashtakoota: list[KootaOut]
+    ashtakoota_total: float
+    doshas: list[MatchDoshaOut]
+    dashakoota: list[PoruthamOut]
+    dashakoota_agreements: int
+    groom_kuja: KujaOut
+    bride_kuja: KujaOut
+    #: Both partners manglik, or neither.
+    kuja_balanced: bool
+    sources: list[CitationOut]
+
+
+class KpCuspOut(BaseModel):
+    house: int
+    longitude: float
+    lords: KpOut
+
+
+class KpPlanetOut(BaseModel):
+    body: Body
+    longitude: float
+    #: Placidus bhava, cusp to cusp.
+    house: int
+    lords: KpOut
+    #: Houses signified at the four KP levels, strongest first.
+    signifies: list[list[int]]
+
+
+class KpChartOut(BaseModel):
+    """KP chart: cusps with their lords, planets, significators, ruling planets."""
+
+    cusps: list[KpCuspOut]
+    planets: list[KpPlanetOut]
+    #: For each house (1-12), the planets signifying it at the four levels.
+    house_significators: list[list[list[Body]]]
+    day_lord: Body
+    ruling_planets: list[Body]
+    #: For a horary chart: the KP number and the moment its ascendant rises.
+    horary_number: int | None = None
+    horary_cusp_jd_ut: float | None = None
+
+
 class YogaOut(BaseModel):
     """A knowledge-base rule (yoga or dosha) found in a chart, with its evidence."""
 

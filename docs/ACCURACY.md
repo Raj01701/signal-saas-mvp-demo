@@ -220,3 +220,24 @@ Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise) and PyJHora
 * PyJHora's nija flag differs in 88 cases: it compares a 1-based month from one of its functions with a 0-based one from another. The engine's flag follows the rule above.
 * Tamil dates agree in 684 of 704 cases. In every other case PyJHora's backward search is the cause, as `test_calendar_golden.py` checks case by case: it stops at the first sunset it meets with the Sun less than 1 degree into its sign, which is one day late when the sankranti falls shortly before a sunset, and misses the month's start when the Sun is more than 1 degree in by then. Its solar samvatsara function failed on the first date tried and is not compared; the Tamil festival dates in `test_calendar.py` check the year instead.
 * Kshaya months: the rule finds two between 1950 and 2040, in 1963 (Kartika with Margashirsha) and 1983 (Pausha with Magha), each between two adhika months.
+
+## Marriage matching (M5) versus PyJHora
+
+All 11664 pairs of nakshatra padas (groom and bride). Koota tables differ between published sources, so the engine keeps named profiles and cites each table (`match/tables.py`); PyJHora was run with the Vashya table of the default profile.
+
+| Koota or kuta | Pairs identical | Remaining pairs |
+|---|---|---|
+| graha_maitri | 11664 | none |
+| gana | 11664 | none |
+| nadi | 11664 | none |
+| mahendra | 11664 | none |
+| rajju | 11664 | none |
+| bhakoot | 11583 | one PyJHora cell gives 7 to a Karka groom with a Kumbha bride (6/8) |
+| varna | 11664 | none, against the Maitreya profile (air signs Vaishya) that PyJHora follows |
+| tara | 11664 | none once inverted: PyJHora scores the inauspicious remainders 3, 5, 7 |
+| vashya | 9950 | PyJHora splits Dhanu and Makara by pada number instead of at 15 degrees |
+| yoni | 11536 | PyJHora's table is symmetric; two of Maitreya's cells are not |
+| vedha | 11072 | PyJHora flags any nakshatra numbers summing to 19, 28 or 37 |
+| vasya | 10530 | PyJHora tests only the groom's sign against the bride's |
+
+`test_match_golden.py` checks every remaining pair against its stated cause.

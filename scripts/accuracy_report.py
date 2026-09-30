@@ -51,6 +51,9 @@ from jyotish_engine.dasha.conditions import applicability
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
 from jyotish_engine.dasha.sign import SignDasha, SignPeriod, sign_mahadashas, sign_sub_periods
 from jyotish_engine.dasha.years import true_sidereal_year_days
+from jyotish_engine.match.ashtakoota import MoonPlacement, ashtakoota
+from jyotish_engine.match.dashakoota import dashakoota
+from jyotish_engine.match.tables import KootaProfile
 from jyotish_engine.panchanga.calendar import (
     lunar_month,
     lunar_year,
@@ -70,6 +73,7 @@ OUT = ROOT / "docs" / "ACCURACY.md"
 SAHAM_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "sahams_pyjhora.json"
 PANCHANGA_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "panchanga_swisseph.json"
 CALENDAR_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "calendar_reference.json"
+MATCH_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "match_pyjhora.json"
 
 
 def _row(name: str, values: list[float], unit: str, target: str) -> str:
@@ -606,6 +610,80 @@ def _calendar_section() -> list[str]:
     ]
 
 
+def _match_section() -> list[str]:
+    """M5: marriage matching versus PyJHora on every pair of nakshatra padas."""
+    data: dict[str, Any] = json.loads(MATCH_FIXTURE.read_text("utf-8"))
+    same: Counter[str] = Counter()
+    for row in data["rows"]:
+        theirs = dict(zip(data["columns"], row, strict=True))
+        groom = MoonPlacement.from_pada(theirs["groom_nakshatra"], theirs["groom_pada"])
+        bride = MoonPlacement.from_pada(theirs["bride_nakshatra"], theirs["bride_pada"])
+        ours = ashtakoota(groom, bride)
+        kutas = {p.name: p for p in dashakoota(groom, bride)}
+        for name in ("graha_maitri", "gana", "bhakoot", "nadi", "vashya", "yoni"):
+            same[name] += ours[name].points == theirs[name]
+        same["varna"] += (
+            ashtakoota(groom, bride, KootaProfile.MAITREYA)["varna"].points == theirs["varna"]
+        )
+        same["tara"] += ours["tara"].points == 3.0 - theirs["tara"]
+        for name, key in (
+            ("mahendra", "mahendra"),
+            ("rajju", "rajju"),
+            ("vedha", "vedha"),
+            ("vasya", "vasya_south"),
+        ):
+            same[name] += kutas[name].agrees == bool(theirs[key])
+    total = len(data["rows"])
+    return [
+        "## Marriage matching (M5) versus PyJHora",
+        "",
+        f"All {total} pairs of nakshatra padas (groom and bride). Koota tables differ between "
+        "published sources, so the engine keeps named profiles and cites each table "
+        "(`match/tables.py`); PyJHora was run with the Vashya table of the default profile.",
+        "",
+        "| Koota or kuta | Pairs identical | Remaining pairs |",
+        "|---|---|---|",
+        *(
+            f"| {name} | {same[name]} | {note} |"
+            for name, note in (
+                ("graha_maitri", "none"),
+                ("gana", "none"),
+                ("nadi", "none"),
+                ("mahendra", "none"),
+                ("rajju", "none"),
+                (
+                    "bhakoot",
+                    "one PyJHora cell gives 7 to a Karka groom with a Kumbha bride (6/8)",
+                ),
+                (
+                    "varna",
+                    "none, against the Maitreya profile (air signs Vaishya) that PyJHora follows",
+                ),
+                (
+                    "tara",
+                    "none once inverted: PyJHora scores the inauspicious remainders 3, 5, 7",
+                ),
+                (
+                    "vashya",
+                    "PyJHora splits Dhanu and Makara by pada number instead of at 15 degrees",
+                ),
+                (
+                    "yoni",
+                    "PyJHora's table is symmetric; two of Maitreya's cells are not",
+                ),
+                (
+                    "vedha",
+                    "PyJHora flags any nakshatra numbers summing to 19, 28 or 37",
+                ),
+                ("vasya", "PyJHora tests only the groom's sign against the bride's"),
+            )
+        ),
+        "",
+        "`test_match_golden.py` checks every remaining pair against its stated cause.",
+        "",
+    ]
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -737,6 +815,7 @@ def main() -> None:
     lines += _strength_and_rules_section()
     lines += _panchanga_section()
     lines += _calendar_section()
+    lines += _match_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

@@ -79,6 +79,10 @@ modern_references:
   - id: raman_how_to_judge
     title: How to Judge a Horoscope (Vols 1-2)
     author: B.V. Raman
+  - id: raman_muhurtha
+    title: Muhurtha (Electional Astrology)
+    author: B.V. Raman
+    notes: Its marriage chapter gives the ten kutas of South Indian matching, their exceptions and Kuja dosha.
   - id: raman_300
     title: Three Hundred Important Combinations
     author: B.V. Raman
@@ -91,6 +95,12 @@ modern_references:
   - id: kp_readers
     title: KP Readers 1-6
     author: K.S. Krishnamurti
+  - id: maitreya
+    title: Maitreya astrology software, Asta Koota documentation
+    notes: >-
+      Tables documented on the program's companion site Saravali
+      (saravali.github.io, CC BY-SA 4.0). Only numeric tables are used, with
+      citation; no text is copied.
   - id: popular_practice
     title: Contemporary Indian practice
     notes: >-
