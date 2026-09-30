@@ -15,6 +15,7 @@ from jyotish_api.schemas import (
     HoraryRequest,
     MatchRequest,
     PanchangaRequest,
+    ReadingsRequest,
     TransitRequest,
     YogasRequest,
 )
@@ -33,6 +34,7 @@ from jyotish_engine.models import (
     KpChartOut,
     MatchOut,
     PanchangaOut,
+    ReadingsOut,
     SensitivityOut,
     StrengthsOut,
     TithiPraveshaOut,
@@ -41,6 +43,7 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import Place, search_places
+from jyotish_engine.rules.readings import compute_readings
 from jyotish_engine.rules.yogas import compute_yogas
 from jyotish_engine.sensitivity import compute_sensitivity
 from jyotish_engine.settings import Preset, preset
@@ -96,6 +99,12 @@ def yogas(request: Request, body: YogasRequest) -> YogasOut:
     return compute_yogas(
         _chart(request, body), gender=body.gender, include_sensitive=body.include_sensitive
     )
+
+
+@router.post("/charts/readings")
+def readings(request: Request, body: ReadingsRequest) -> ReadingsOut:
+    """The classical result of each placement: rising sign, Moon's nakshatra, grahas, lords."""
+    return compute_readings(_chart(request, body), include_sensitive=body.include_sensitive)
 
 
 @router.post("/charts/strengths")

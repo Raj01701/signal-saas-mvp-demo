@@ -40,6 +40,8 @@ def test_chart_derived_routes(client: TestClient) -> None:
     yogas = _post(client, "/v1/charts/yogas", {"birth": BIRTH, "gender": "male"})
     assert yogas["catalogue_size"] >= 300
     assert _post(client, "/v1/charts/strengths", {"birth": BIRTH})
+    readings = _post(client, "/v1/charts/readings", {"birth": BIRTH})
+    assert readings["catalogue_size"] == 375 and len(readings["readings"]) == 30
     for system, key in (
         ("yogini", "table"),
         ("chara", "sign_periods"),

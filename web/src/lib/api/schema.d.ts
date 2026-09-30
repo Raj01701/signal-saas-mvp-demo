@@ -125,6 +125,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/charts/readings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Readings
+         * @description The classical result of each placement: rising sign, Moon's nakshatra, grahas, lords.
+         */
+        post: operations["readings_v1_charts_readings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts/sensitivity": {
         parameters: {
             query?: never;
@@ -589,7 +609,7 @@ export interface components {
          * Category
          * @enum {string}
          */
-        Category: "mahapurusha" | "chandra" | "surya" | "nabhasa" | "raja" | "dhana" | "parivartana" | "viparita" | "neecha_bhanga" | "bhava" | "malika" | "conjunction" | "named" | "dosha" | "birth";
+        Category: "mahapurusha" | "chandra" | "surya" | "nabhasa" | "raja" | "dhana" | "parivartana" | "viparita" | "neecha_bhanga" | "bhava" | "malika" | "conjunction" | "named" | "dosha" | "birth" | "lord_in_house" | "planet_in_house" | "planet_in_sign" | "nakshatra" | "lagna";
         /** ChartOptions */
         ChartOptions: {
             preset?: components["schemas"]["Preset"] | null;
@@ -1402,6 +1422,27 @@ export interface components {
          * @enum {string}
          */
         Provenance: "classical" | "traditional" | "modern";
+        /**
+         * ReadingsOut
+         * @description Natal readings: the classical result of each placement present in a chart.
+         */
+        ReadingsOut: {
+            /** Catalogue Size */
+            catalogue_size: number;
+            /** Readings */
+            readings: components["schemas"]["YogaOut"][];
+        };
+        /** ReadingsRequest */
+        ReadingsRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /**
+             * Include Sensitive
+             * @default false
+             */
+            include_sensitive?: boolean;
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+        };
         /** SahamOut */
         SahamOut: {
             /** Meaning */
@@ -2066,6 +2107,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KpChartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    readings_v1_charts_readings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingsOut"];
                 };
             };
             /** @description Validation Error */

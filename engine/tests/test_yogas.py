@@ -11,7 +11,7 @@ from jyotish_engine.chart import compute_chart
 from jyotish_engine.models import BirthInput, BirthTimeSource, ChartResult, PlaceInput, YogasOut
 from jyotish_engine.rules.catalogue import default_catalogue
 from jyotish_engine.rules.facts import ChartFacts
-from jyotish_engine.rules.yogas import compute_yogas
+from jyotish_engine.rules.yogas import YOGA_CATEGORIES, compute_yogas
 
 DELHI = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090, elevation_m=216)
 
@@ -29,7 +29,8 @@ def chart() -> ChartResult:
 
 def test_yogas_of_a_real_chart(chart: ChartResult) -> None:
     yogas = compute_yogas(chart)
-    assert yogas.catalogue_size == len(default_catalogue())
+    assert yogas.catalogue_size == sum(r.rule.category in YOGA_CATEGORIES for r in default_catalogue())
+    assert not any(y.category not in YOGA_CATEGORIES for y in yogas.present)
     ids = [y.id for y in yogas.present + yogas.cancelled]
     assert len(ids) == len(set(ids))
     assert yogas.present, "every chart forms some yogas (at least one lunar or solar one)"
@@ -52,7 +53,8 @@ def test_gender_decides_the_rules_that_need_it(chart: ChartResult) -> None:
 
 def test_matches_direct_catalogue_evaluation(chart: ChartResult) -> None:
     facts = ChartFacts.from_chart(chart, gender="female")
-    direct = {r.rule.id for r in default_catalogue().evaluate(facts) if r.present}
+    results = default_catalogue().evaluate(facts, YOGA_CATEGORIES)
+    direct = {r.rule.id for r in results if r.present}
     assert {y.id for y in compute_yogas(chart, gender="female").present} == direct
 
 

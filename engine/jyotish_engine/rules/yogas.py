@@ -11,9 +11,14 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.rules.catalogue import Catalogue, RuleResult, default_catalogue
 from jyotish_engine.rules.facts import ChartFacts
+from jyotish_engine.rules.schema import READING_CATEGORIES, Category
+
+#: Yoga and dosha categories: everything but the natal readings.
+YOGA_CATEGORIES = frozenset(Category) - READING_CATEGORIES
 
 
-def _out(result: RuleResult) -> YogaOut:
+def rule_out(result: RuleResult) -> YogaOut:
+    """A rule result as the public model."""
     rule = result.rule
     return YogaOut(
         id=rule.id,
@@ -58,12 +63,12 @@ def compute_yogas(
     are left out unless ``include_sensitive`` is set.
     """
     rules = catalogue or default_catalogue()
-    results = rules.evaluate(ChartFacts.from_chart(chart, gender=gender))
+    results = rules.evaluate(ChartFacts.from_chart(chart, gender=gender), YOGA_CATEGORIES)
     shown = [r for r in results if include_sensitive or not r.rule.sensitive]
     return YogasOut(
-        catalogue_size=len(rules),
-        present=[_out(r) for r in shown if r.present],
-        cancelled=[_out(r) for r in shown if r.cancelled],
+        catalogue_size=len(results),
+        present=[rule_out(r) for r in shown if r.present],
+        cancelled=[rule_out(r) for r in shown if r.cancelled],
         undecided=[
             UndecidedRuleOut(id=r.rule.id, name=r.rule.name, missing=r.missing)
             for r in shown

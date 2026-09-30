@@ -39,7 +39,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `kp/` | Star, sub and sub-sub lords and the 249 horary divisions (`subdivisions.py`); Placidus bhava placement, four-level significators with Rahu and Ketu as agents of their sign lords, ruling planets, horary cusps solved for the moment the number's ascendant rises (`significators.py`); `compute_kp(chart)` and `compute_kp_horary(number, moment, place)` (`chart.py`) |
 | `panchanga/` | Limb names and indices (`elements.py`); limb start and end times, all four limbs bisected together on shared Sun and Moon evaluations (`timing.py`); Rahu kalam, Yamaganda, Gulika, Abhijit, Brahma muhurta, durmuhurtas, horas and choghadiyas (`muhurta.py`); amanta and purnimanta months with adhika, nija and kshaya months, Kali, Shaka and Vikram years, samvatsara, ritu, ayana and the Tamil solar date, with new moons and sankrantis solved by Newton's method (`calendar.py`); `compute_panchanga(date, place)`, the Hindu day from sunrise to sunrise with its calendar date and kshaya or vriddhi tithis, in about 330 ms (`day.py`) |
 | `match/` | Ashtakoota (36 points) with Nadi, Bhakoot and Gana doshas and their exceptions; Raman's ten South Indian kutas with his reliefs; Kuja dosha of both charts from the knowledge base; koota tables kept as cited, named profiles because sources differ (`tables.py`); `compute_match(groom, bride)` |
-| `rules/` | Chart facts (from a chart or a compact test spec); the rule language (safe parser and evaluator with evidence); the rule schema; the catalogue loader, which checks citations against `knowledge/sources.yaml` and orders rules that refer to each other; `compute_yogas(chart)` |
+| `rules/` | Chart facts (from a chart or a compact test spec); the rule language (safe parser and evaluator with evidence); the rule schema; the catalogue loader, which checks citations against `knowledge/sources.yaml` and orders rules that refer to each other; `compute_yogas(chart)` and `compute_readings(chart)` (the result of each placement) |
 | `predict/` | Promise × period × trigger timeline; convergence; confidence |
 | `rectify/` | Candidate grid, event scoring, classical priors |
 | `sensitivity.py` | How many minutes each time-sensitive factor (D1, D9, D10 and D60 lagnas, the Moon's nakshatra pada) holds before and after the birth time, flagged when it would change within the time's uncertainty |
@@ -51,7 +51,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 
 FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configuration comes from `JYOTISH_API_*` environment variables (`config.py`).
 
-- Stateless calculation routes under `/v1` (`routers/compute.py`): place search, chart, yogas, strengths, any dasha system, transits, annual charts, KP (natal and horary), panchanga and matchmaking. Request bodies take a full `settings` object or a `preset`.
+- Stateless calculation routes under `/v1` (`routers/compute.py`): place search, chart, yogas, natal readings, strengths, any dasha system, transits, annual charts, KP (natal and horary), panchanga and matchmaking. Request bodies take a full `settings` object or a `preset`.
 - Charts are cached in memory, keyed by a hash of birth data and settings (`charts.py`); uncached chart p95 is about 230 ms.
 - Engine `ValueError`s (dates outside the ephemeris, polar days, unknown options) become HTTP 422; rate limiting per client address uses slowapi.
 - Account routes (`routers/account.py`, sign-in required): profile and research consent, saved people with birth data, life events for rectification and backtesting, `GET /v1/me/export` and `DELETE /v1/me` (everything saved is deleted). A minor's data needs the guardian's consent (DPDP Act).
@@ -94,8 +94,11 @@ Rules are data: YAML files validated against `rules/schema.py`, each with citati
 (text, edition, chapter or locator), provenance (classical, traditional or modern),
 review status and its own positive, negative and cancelled test charts. The
 catalogue is loaded once per process (`JYOTISH_KNOWLEDGE_DIR` overrides the
-location) and evaluates all 312 current rules in about 4 ms per chart.
-[`knowledge/README.md`](../knowledge/README.md) is the authoring guide.
+location). It holds 312 yogas and doshas (`knowledge/yogas/`, about 4 ms per chart) and
+375 natal readings (`knowledge/natal/`, about 2.5 ms): each house lord in each house,
+each graha in each house and sign, the Moon's nakshatra and the rising sign, written by
+`scripts/generate_readings.py`. [`knowledge/README.md`](../knowledge/README.md) is the
+authoring guide.
 
 ## Oracle harness (`oracle/`)
 

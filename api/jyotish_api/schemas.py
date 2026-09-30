@@ -25,6 +25,11 @@ class YogasRequest(ChartRequest):
     include_sensitive: bool = False
 
 
+class ReadingsRequest(ChartRequest):
+    #: Include rules marked sensitive (health, longevity); professional use only.
+    include_sensitive: bool = False
+
+
 class DashaRequest(ChartRequest):
     #: A nakshatra dasha (e.g. "vimshottari"), a sign dasha (e.g. "chara") or "kalachakra".
     system: str

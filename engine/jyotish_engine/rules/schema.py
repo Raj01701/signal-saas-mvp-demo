@@ -34,6 +34,24 @@ class Category(StrEnum):
     NAMED = "named"
     DOSHA = "dosha"
     BIRTH = "birth"
+    # Natal readings: the results of single placements.
+    LORD_IN_HOUSE = "lord_in_house"
+    PLANET_IN_HOUSE = "planet_in_house"
+    PLANET_IN_SIGN = "planet_in_sign"
+    NAKSHATRA = "nakshatra"
+    LAGNA = "lagna"
+
+
+#: Categories of natal readings (placement results) rather than yogas.
+READING_CATEGORIES = frozenset(
+    {
+        Category.LORD_IN_HOUSE,
+        Category.PLANET_IN_HOUSE,
+        Category.PLANET_IN_SIGN,
+        Category.NAKSHATRA,
+        Category.LAGNA,
+    }
+)
 
 
 class School(StrEnum):

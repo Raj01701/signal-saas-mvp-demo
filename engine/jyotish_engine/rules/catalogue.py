@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -22,10 +22,10 @@ from pydantic import ValidationError
 from jyotish_engine.astro.bodies import Body
 from jyotish_engine.rules.dsl import Expression, RuleSyntaxError, compile_expression
 from jyotish_engine.rules.facts import ChartFacts, MissingFactError
-from jyotish_engine.rules.schema import Citation, Rule, RuleFile, substitute
+from jyotish_engine.rules.schema import Category, Citation, Rule, RuleFile, substitute
 
 KNOWLEDGE_ENV = "JYOTISH_KNOWLEDGE_DIR"
-RULE_DIRECTORIES = ("yogas",)
+RULE_DIRECTORIES = ("yogas", "natal")
 
 
 class CatalogueError(ValueError):
@@ -233,10 +233,16 @@ class Catalogue:
     def __getitem__(self, rule_id: str) -> CompiledRule:
         return self._by_id[rule_id]
 
-    def evaluate(self, facts: ChartFacts) -> list[RuleResult]:
-        """Evaluate every rule, in dependency order, against one chart."""
+    def evaluate(
+        self, facts: ChartFacts, categories: Collection[Category] | None = None
+    ) -> list[RuleResult]:
+        """Evaluate every rule (or those of ``categories``), in dependency order, on one chart."""
         facts.results.clear()
-        return [self.evaluate_rule(compiled, facts) for compiled in self.rules]
+        return [
+            self.evaluate_rule(compiled, facts)
+            for compiled in self.rules
+            if categories is None or compiled.rule.category in categories
+        ]
 
     def evaluate_rule(self, compiled: CompiledRule, facts: ChartFacts) -> RuleResult:
         rule = compiled.rule

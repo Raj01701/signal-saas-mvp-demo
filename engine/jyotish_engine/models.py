@@ -726,3 +726,12 @@ class YogasOut(BaseModel):
     present: list[YogaOut]
     cancelled: list[YogaOut]
     undecided: list[UndecidedRuleOut]
+
+
+class ReadingsOut(BaseModel):
+    """Natal readings: the classical result of each placement present in a chart."""
+
+    #: Number of reading rules evaluated.
+    catalogue_size: int
+    #: Rising sign, the Moon's nakshatra, grahas in signs and houses, then house lords.
+    readings: list[YogaOut]

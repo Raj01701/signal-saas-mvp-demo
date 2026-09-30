@@ -9,7 +9,7 @@ import pytest
 
 from jyotish_engine.rules.catalogue import Catalogue, CompiledRule, default_catalogue
 from jyotish_engine.rules.facts import ChartFacts
-from jyotish_engine.rules.schema import Provenance, Status
+from jyotish_engine.rules.schema import READING_CATEGORIES, Category, Provenance, Status
 
 CATALOGUE = default_catalogue()
 RULES = list(CATALOGUE)
@@ -23,8 +23,17 @@ def _run(compiled: CompiledRule, spec: dict[str, Any]) -> tuple[bool, bool, list
 
 
 def test_catalogue_size() -> None:
-    """Milestone M4 ships at least 300 yogas and doshas."""
-    assert len(CATALOGUE) >= 300, Counter(r.rule.category.value for r in CATALOGUE)
+    """At least 300 yogas and doshas (M4), plus the natal readings (M8)."""
+    sizes = Counter(r.rule.category for r in CATALOGUE)
+    readings = {c: sizes[c] for c in READING_CATEGORIES}
+    assert sum(sizes.values()) - sum(readings.values()) >= 300, sizes
+    assert readings == {
+        Category.LORD_IN_HOUSE: 144,
+        Category.PLANET_IN_HOUSE: 108,
+        Category.PLANET_IN_SIGN: 84,
+        Category.NAKSHATRA: 27,
+        Category.LAGNA: 12,
+    }
 
 
 def test_every_rule_is_draft_and_cited() -> None:

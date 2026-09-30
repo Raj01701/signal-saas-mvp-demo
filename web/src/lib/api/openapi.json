@@ -504,7 +504,12 @@
           "conjunction",
           "named",
           "dosha",
-          "birth"
+          "birth",
+          "lord_in_house",
+          "planet_in_house",
+          "planet_in_sign",
+          "nakshatra",
+          "lagna"
         ],
         "title": "Category",
         "type": "string"
@@ -2865,6 +2870,65 @@
         "title": "Provenance",
         "type": "string"
       },
+      "ReadingsOut": {
+        "description": "Natal readings: the classical result of each placement present in a chart.",
+        "properties": {
+          "catalogue_size": {
+            "title": "Catalogue Size",
+            "type": "integer"
+          },
+          "readings": {
+            "items": {
+              "$ref": "#/components/schemas/YogaOut"
+            },
+            "title": "Readings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "catalogue_size",
+          "readings"
+        ],
+        "title": "ReadingsOut",
+        "type": "object"
+      },
+      "ReadingsRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "include_sensitive": {
+            "default": false,
+            "title": "Include Sensitive",
+            "type": "boolean"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "birth"
+        ],
+        "title": "ReadingsRequest",
+        "type": "object"
+      },
       "SahamOut": {
         "properties": {
           "meaning": {
@@ -4437,6 +4501,45 @@
           }
         },
         "summary": "Kp"
+      }
+    },
+    "/v1/charts/readings": {
+      "post": {
+        "description": "The classical result of each placement: rising sign, Moon's nakshatra, grahas, lords.",
+        "operationId": "readings_v1_charts_readings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Readings"
       }
     },
     "/v1/charts/sensitivity": {
