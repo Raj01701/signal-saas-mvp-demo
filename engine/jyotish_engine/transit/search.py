@@ -122,6 +122,12 @@ def _longitude_function(body: Body, settings: Settings) -> Callable[[FloatArray]
     return evaluate
 
 
+def longitude_at(body: Body, jd_ut: float, settings: Settings | None = None) -> float:
+    """Sidereal longitude of ``body`` at one instant (degrees)."""
+    evaluate = _longitude_function(body, settings or Settings())
+    return float(evaluate(jd_ut_to_tt([jd_ut]))[0])
+
+
 def _grid_step(body: Body, width: float, settings: Settings) -> float:
     step = MAX_STEP_DAYS[body]
     if body in (Body.RAHU, Body.KETU) and settings.node_type is NodeType.MEAN:
