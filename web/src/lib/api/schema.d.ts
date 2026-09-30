@@ -458,6 +458,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/people/{person_id}/rectify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Person Rectify
+         * @description Rectify a saved person's birth time from their saved life events.
+         */
+        post: operations["person_rectify_v1_people__person_id__rectify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/rectify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rectify Birth Time
+         * @description Rank candidate birth times near the recorded one by how their dashas fit the events.
+         */
+        post: operations["rectify_birth_time_v1_rectify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -874,6 +914,12 @@ export interface components {
              */
             precision?: "day" | "month" | "year";
         };
+        /**
+         * EventKind
+         * @description The event kinds saved with a person (``api/jyotish_api/routers/account.py``).
+         * @enum {string}
+         */
+        EventKind: "marriage" | "divorce" | "child_birth" | "education" | "job" | "promotion" | "job_loss" | "business" | "relocation" | "foreign_travel" | "property" | "illness" | "surgery" | "accident" | "parent_death" | "spouse_death" | "other";
         /** EventOut */
         EventOut: {
             /**
@@ -1427,6 +1473,26 @@ export interface components {
              */
             updated_at: string;
         };
+        /** PersonRectifyRequest */
+        PersonRectifyRequest: {
+            preset?: components["schemas"]["Preset"] | null;
+            /**
+             * Priors
+             * @default []
+             */
+            priors?: ("kunda" | "pranapada" | "navamsa_gender")[];
+            settings?: components["schemas"]["Settings"] | null;
+            /**
+             * Step Seconds
+             * @default 30
+             */
+            step_seconds?: number;
+            /**
+             * Uncertainty Minutes
+             * @default 60
+             */
+            uncertainty_minutes?: number;
+        };
         /** Place */
         Place: {
             /** Admin1 Code */
@@ -1644,6 +1710,109 @@ export interface components {
             preset?: components["schemas"]["Preset"] | null;
             settings?: components["schemas"]["Settings"] | null;
         };
+        /** RectificationCandidateOut */
+        RectificationCandidateOut: {
+            /** Events */
+            events: components["schemas"]["RectifiedEventOut"][];
+            lagna: components["schemas"]["Sign"];
+            /** Lagna Degrees */
+            lagna_degrees: number;
+            /**
+             * Local Time
+             * Format: date-time
+             */
+            local_time: string;
+            /** Log Likelihood */
+            log_likelihood: number;
+            /** Moon Nakshatra */
+            moon_nakshatra: string;
+            /** Moon Pada */
+            moon_pada: number;
+            navamsa_lagna: components["schemas"]["Sign"];
+            /** Offset Minutes */
+            offset_minutes: number;
+            /** Priors */
+            priors: {
+                [key: string]: boolean;
+            };
+            /** Share */
+            share: number;
+            /**
+             * Utc
+             * Format: date-time
+             */
+            utc: string;
+        };
+        /**
+         * RectificationOut
+         * @description Candidate birth times ranked by how well their dashas signify the dated events.
+         */
+        RectificationOut: {
+            /** Candidates */
+            candidates: components["schemas"]["RectificationCandidateOut"][];
+            /** Differences */
+            differences: string[];
+            /** Notes */
+            notes: string[];
+            /** Priors */
+            priors: string[];
+            /** Scan */
+            scan: components["schemas"]["ScanPointOut"][];
+            /** Step Seconds */
+            step_seconds: number;
+            /** Uncertainty Minutes */
+            uncertainty_minutes: number;
+        };
+        /** RectifiedEventOut */
+        RectifiedEventOut: {
+            /** Dasha */
+            dasha: components["schemas"]["Body"][];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Kind */
+            kind: string;
+            /** Reasons */
+            reasons: string[];
+            /** Score */
+            score: number;
+        };
+        /** RectifyEventIn */
+        RectifyEventIn: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            kind: components["schemas"]["EventKind"];
+        };
+        /** RectifyRequest */
+        RectifyRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /** Events */
+            events: components["schemas"]["RectifyEventIn"][];
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            preset?: components["schemas"]["Preset"] | null;
+            /**
+             * Priors
+             * @default []
+             */
+            priors?: ("kunda" | "pranapada" | "navamsa_gender")[];
+            settings?: components["schemas"]["Settings"] | null;
+            /**
+             * Step Seconds
+             * @default 30
+             */
+            step_seconds?: number;
+            /**
+             * Uncertainty Minutes
+             * @default 60
+             */
+            uncertainty_minutes?: number;
+        };
         /** SahamOut */
         SahamOut: {
             /** Meaning */
@@ -1661,6 +1830,13 @@ export interface components {
          * @enum {string}
          */
         SaturnTransit: "sade_sati" | "ardhashtama" | "ashtama" | "kantaka";
+        /** ScanPointOut */
+        ScanPointOut: {
+            /** Log Likelihood */
+            log_likelihood: number;
+            /** Offset Minutes */
+            offset_minutes: number;
+        };
         /**
          * School
          * @enum {string}
@@ -3053,6 +3229,74 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    person_rectify_v1_people__person_id__rectify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonRectifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RectificationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rectify_birth_time_v1_rectify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RectifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RectificationOut"];
+                };
             };
             /** @description Validation Error */
             422: {

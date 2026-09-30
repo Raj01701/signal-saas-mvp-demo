@@ -45,6 +45,10 @@ def test_chart_derived_routes(client: TestClient) -> None:
     body = {"birth": BIRTH, "start": "2020-01-01", "end": "2025-01-01"}
     predictions = _post(client, "/v1/charts/predictions", body)
     assert len(predictions["months"]) == 60 and len(predictions["domains"]) == 10
+    events = [{"kind": "marriage", "date": "2016-02-10"}, {"kind": "job", "date": "2013-07-01"}]
+    body = {"birth": BIRTH, "events": events, "uncertainty_minutes": 30, "priors": ["kunda"]}
+    rectified = _post(client, "/v1/rectify", body)
+    assert rectified["candidates"][0]["priors"].keys() == {"kunda"} and rectified["differences"]
     readings = _post(client, "/v1/charts/readings", {"birth": BIRTH})
     assert readings["catalogue_size"] == 375 and len(readings["readings"]) == 30
     for system, key in (
@@ -88,6 +92,10 @@ def test_other_routes(client: TestClient) -> None:
         ("/v1/charts", {"birth": {**BIRTH, "local_datetime": "1700-01-01T00:00:00"}}),
         ("/v1/kp/horary", {"number": 250, "moment": "2026-09-30T08:00:00", "place": DELHI}),
         ("/v1/charts/period", {"birth": BIRTH, "moment": "1980-01-01T00:00:00Z"}),
+        (
+            "/v1/rectify",
+            {"birth": BIRTH, "events": [{"kind": "job", "date": "1980-01-01"}] * 2},
+        ),
         ("/v1/charts/predictions", {"birth": BIRTH, "start": "2030-01-01", "end": "2020-01-01"}),
     ],
 )

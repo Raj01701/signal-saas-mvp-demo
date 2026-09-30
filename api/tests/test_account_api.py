@@ -90,12 +90,20 @@ def test_people_events_export_and_deletion(client: TestClient) -> None:
         "1990-05-17"
     )
 
+    assert client.post(base, json={"kind": "child_birth", "date": "2018-03-01"}, headers=me)
+    rectified = client.post(
+        f"/v1/people/{person['id']}/rectify",
+        json={"uncertainty_minutes": 20, "step_seconds": 60},
+        headers=me,
+    ).json()
+    assert len(rectified["candidates"]) >= 2 and len(rectified["scan"]) == 41
+
     other = _token("user-2")
     assert client.get(f"/v1/people/{person['id']}", headers=other).status_code == 404
     assert client.get(base, headers=other).status_code == 404
 
     export = client.get("/v1/me/export", headers=me).json()
-    assert export["me"]["people"] == 2 and len(export["events"][person["id"]]) == 1
+    assert export["me"]["people"] == 2 and len(export["events"][person["id"]]) == 2
 
     assert client.delete("/v1/me", headers=me).status_code == 204
     assert client.get("/v1/me", headers=me).json()["people"] == 0  # a fresh, empty account

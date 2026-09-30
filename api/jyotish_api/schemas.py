@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from jyotish_engine.match.tables import KootaProfile
 from jyotish_engine.models import BirthInput, PlaceInput
+from jyotish_engine.rectify import EventKind
 from jyotish_engine.settings import Preset, Settings
 
 
@@ -42,6 +43,25 @@ class PredictionsRequest(ChartRequest):
     start: date | None = None
     #: The first day after the timeline (default: 60 years after the start).
     end: date | None = None
+    gender: Literal["male", "female"] | None = None
+
+
+class RectifyEventIn(BaseModel):
+    kind: EventKind
+    date: date
+
+
+class RectifyOptions(BaseModel):
+    #: Minutes either side of the recorded time to search.
+    uncertainty_minutes: float = Field(60.0, gt=0, le=180)
+    #: Spacing of the candidate times.
+    step_seconds: float = Field(30.0, ge=5, le=600)
+    #: Traditional checks to add to the score (off unless listed).
+    priors: list[Literal["kunda", "pranapada", "navamsa_gender"]] = []
+
+
+class RectifyRequest(ChartRequest, RectifyOptions):
+    events: list[RectifyEventIn] = Field(min_length=2, max_length=40)
     gender: Literal["male", "female"] | None = None
 
 

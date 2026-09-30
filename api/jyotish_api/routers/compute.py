@@ -18,6 +18,7 @@ from jyotish_api.schemas import (
     PeriodRequest,
     PredictionsRequest,
     ReadingsRequest,
+    RectifyRequest,
     TransitRequest,
     YogasRequest,
 )
@@ -39,6 +40,7 @@ from jyotish_engine.models import (
     PeriodReadingsOut,
     PredictionsOut,
     ReadingsOut,
+    RectificationOut,
     SensitivityOut,
     StrengthsOut,
     TithiPraveshaOut,
@@ -48,6 +50,7 @@ from jyotish_engine.models import (
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import Place, search_places
 from jyotish_engine.predict import compute_predictions
+from jyotish_engine.rectify import LifeEvent, rectify
 from jyotish_engine.rules.periods import compute_period_readings
 from jyotish_engine.rules.readings import compute_readings
 from jyotish_engine.rules.yogas import compute_yogas
@@ -125,6 +128,19 @@ def period(request: Request, body: PeriodRequest) -> PeriodReadingsOut:
 def predictions(request: Request, body: PredictionsRequest) -> PredictionsOut:
     """Promise × period × trigger for each life domain, month by month, with windows."""
     return compute_predictions(_chart(request, body), body.start, body.end, gender=body.gender)
+
+
+@router.post("/rectify")
+def rectify_birth_time(request: Request, body: RectifyRequest) -> RectificationOut:
+    """Rank candidate birth times near the recorded one by how their dashas fit the events."""
+    return rectify(
+        _chart(request, body),
+        [LifeEvent(e.kind, e.date) for e in body.events],
+        uncertainty_minutes=body.uncertainty_minutes,
+        step_seconds=body.step_seconds,
+        gender=body.gender,
+        priors=body.priors,
+    )
 
 
 @router.post("/charts/strengths")

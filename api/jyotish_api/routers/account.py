@@ -13,7 +13,10 @@ from sqlalchemy import select
 from jyotish_api.auth import CurrentUser, SessionDep
 from jyotish_api.charts import ChartCache, resolve_settings
 from jyotish_api.db import LifeEvent, Person
-from jyotish_engine.models import BirthInput, ChartResult
+from jyotish_api.schemas import RectifyOptions
+from jyotish_engine.models import BirthInput, ChartResult, RectificationOut
+from jyotish_engine.rectify import EventKind, rectify
+from jyotish_engine.rectify import LifeEvent as DatedEvent
 from jyotish_engine.settings import Preset, Settings
 
 router = APIRouter(prefix="/v1")
@@ -176,6 +179,39 @@ def person_chart(
     return cache.chart(
         BirthInput.model_validate(person.birth), resolve_settings(body.settings, body.preset)
     )
+
+
+class PersonRectifyRequest(ChartOptions, RectifyOptions):
+    pass
+
+
+@router.post("/people/{person_id}/rectify")
+def person_rectify(
+    person_id: str,
+    body: PersonRectifyRequest,
+    request: Request,
+    user: CurrentUser,
+    session: SessionDep,
+) -> RectificationOut:
+    """Rectify a saved person's birth time from their saved life events."""
+    person = _person(session, user, person_id)
+    cache: ChartCache = request.app.state.charts
+    chart = cache.chart(
+        BirthInput.model_validate(person.birth), resolve_settings(body.settings, body.preset)
+    )
+    events = [DatedEvent(EventKind(e.kind), e.date) for e in person.events]
+    gender = person.gender if person.gender in ("male", "female") else None
+    try:
+        return rectify(
+            chart,
+            events,
+            uncertainty_minutes=body.uncertainty_minutes,
+            step_seconds=body.step_seconds,
+            gender=gender,
+            priors=body.priors,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @router.get("/people/{person_id}/events")

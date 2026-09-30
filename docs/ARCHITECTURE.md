@@ -41,7 +41,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `match/` | Ashtakoota (36 points) with Nadi, Bhakoot and Gana doshas and their exceptions; Raman's ten South Indian kutas with his reliefs; Kuja dosha of both charts from the knowledge base; koota tables kept as cited, named profiles because sources differ (`tables.py`); `compute_match(groom, bride)` |
 | `rules/` | Chart facts (from a chart or a compact test spec); the rule language (safe parser and evaluator with evidence); the rule schema; the catalogue loader, which checks citations against `knowledge/sources.yaml` and orders rules that refer to each other; `compute_yogas(chart)` and `compute_readings(chart)` (the result of each placement) |
 | `predict/` | Life domains with their houses, karakas, divisional charts and ages (`domains.py`); each domain's natal promise from its lords' dignity, placement and Shadbala, Ashtakavarga bindus, occupants, aspects, karakas, divisional-chart dignity and the knowledge base's yogas and readings (`promise.py`); the monthly timeline, where the running Vimshottari lords' links to the domain (period) and Jupiter's and Saturn's transits (trigger) multiply the promise, Yogini dasha agreement raises confidence, and windows carry their evidence and matching dasha and transit rules (`timeline.py`, about 0.4 s for 60 years) |
-| `rectify/` | Candidate grid, event scoring, classical priors |
+| `rectify/` | Life-event kinds and the houses, karakas and divisional chart that signify each (`events.py`); the candidate scan, where only the lagna (the sidereal angle advances at the sidereal rate), the Moon (from its speed) and so the dashas change, events scored through the same links as the prediction timeline down to the sookshma, optional Kunda, Pranapada and navamsa-gender priors, and plateau-aware ranking of distinct candidates (`search.py`); synthetic events drawn from the engine's own rules for acceptance tests (`synthetic.py`) |
 | `sensitivity.py` | How many minutes each time-sensitive factor (D1, D9, D10 and D60 lagnas, the Moon's nakshatra pada) holds before and after the birth time, flagged when it would change within the time's uncertainty |
 | `models.py` | Public input and output models (pydantic, JSON-serialisable) |
 | `settings.py` | Calculation settings, presets and the settings fingerprint |
@@ -51,7 +51,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 
 FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configuration comes from `JYOTISH_API_*` environment variables (`config.py`).
 
-- Stateless calculation routes under `/v1` (`routers/compute.py`): place search, chart, yogas, natal readings, period readings (`/charts/period`), predictions (`/charts/predictions`), strengths, any dasha system, transits, annual charts, KP (natal and horary), panchanga and matchmaking. Request bodies take a full `settings` object or a `preset`.
+- Stateless calculation routes under `/v1` (`routers/compute.py`): place search, chart, yogas, natal readings, period readings (`/charts/period`), predictions (`/charts/predictions`), birth-time rectification (`/rectify`), strengths, any dasha system, transits, annual charts, KP (natal and horary), panchanga and matchmaking. Request bodies take a full `settings` object or a `preset`.
 - Charts are cached in memory, keyed by a hash of birth data and settings (`charts.py`); uncached chart p95 is about 230 ms.
 - Engine `ValueError`s (dates outside the ephemeris, polar days, unknown options) become HTTP 422; rate limiting per client address uses slowapi.
 - Account routes (`routers/account.py`, sign-in required): profile and research consent, saved people with birth data, life events for rectification and backtesting, `GET /v1/me/export` and `DELETE /v1/me` (everything saved is deleted). A minor's data needs the guardian's consent (DPDP Act).
@@ -66,6 +66,7 @@ Next.js (App Router) with Tailwind. The pages are client components that call th
 - `/workbench`: chart, dashas, yogas, natal readings, the prediction timeline (with what the running dasha and transits say now), strengths, transits, KP and birth-time sensitivity for one birth.
 - `/panchanga`: the Hindu day for a date and place, with times shown in the place's local time.
 - `/match`: horoscope matching of two births.
+- `/rectify`: birth-time rectification from dated life events, with a scan of the window and the ranked candidates.
 - Shared form pieces: `PlaceField` (gazetteer search with a coordinates fallback) and `BirthFields` (date, time and place), both controlled; pure formatting helpers live in `lib/format.ts`.
 
 - Chart drawings are SVG (`components/ChartDiagram.tsx`); their geometry for the North, South and East Indian styles is pure and unit-tested (`lib/chart-layout.ts`).

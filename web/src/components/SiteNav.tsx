@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/workbench", label: "Workbench" },
   { href: "/panchanga", label: "Panchanga" },
   { href: "/match", label: "Match" },
+  { href: "/rectify", label: "Rectify" },
 ] as const;
 
 /** Site header with the main navigation; the current page is marked for assistive technology. */

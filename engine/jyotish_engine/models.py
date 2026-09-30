@@ -830,3 +830,50 @@ class PredictionsOut(BaseModel):
     periods: list[DashaPeriodOut]
     domains: list[DomainTimelineOut]
     notes: list[str]
+
+
+class RectifiedEventOut(BaseModel):
+    kind: str
+    date: date
+    #: Vimshottari lords at the event: mahadasha down to sookshma.
+    dasha: list[Body]
+    #: How strongly those lords signify the event (0 to 1).
+    score: float
+    reasons: list[str]
+
+
+class RectificationCandidateOut(BaseModel):
+    #: Minutes from the recorded birth time.
+    offset_minutes: float
+    local_time: datetime
+    utc: datetime
+    log_likelihood: float
+    #: Share of the probability among the listed candidates.
+    share: float
+    lagna: Sign
+    lagna_degrees: float
+    navamsa_lagna: Sign
+    moon_nakshatra: str
+    moon_pada: int
+    #: Traditional checks requested, and whether this time passes them.
+    priors: dict[str, bool]
+    events: list[RectifiedEventOut]
+
+
+class ScanPointOut(BaseModel):
+    offset_minutes: float
+    log_likelihood: float
+
+
+class RectificationOut(BaseModel):
+    """Candidate birth times ranked by how well their dashas signify the dated events."""
+
+    candidates: list[RectificationCandidateOut]
+    #: Every grid time's score, for plotting.
+    scan: list[ScanPointOut]
+    #: What separates each runner-up from the leading candidate.
+    differences: list[str]
+    step_seconds: float
+    uncertainty_minutes: float
+    priors: list[str]
+    notes: list[str]

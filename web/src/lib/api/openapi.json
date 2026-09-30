@@ -1279,6 +1279,30 @@
         "title": "EventIn",
         "type": "object"
       },
+      "EventKind": {
+        "description": "The event kinds saved with a person (``api/jyotish_api/routers/account.py``).",
+        "enum": [
+          "marriage",
+          "divorce",
+          "child_birth",
+          "education",
+          "job",
+          "promotion",
+          "job_loss",
+          "business",
+          "relocation",
+          "foreign_travel",
+          "property",
+          "illness",
+          "surgery",
+          "accident",
+          "parent_death",
+          "spouse_death",
+          "other"
+        ],
+        "title": "EventKind",
+        "type": "string"
+      },
       "EventOut": {
         "properties": {
           "created_at": {
@@ -2813,6 +2837,59 @@
         "title": "PersonOut",
         "type": "object"
       },
+      "PersonRectifyRequest": {
+        "properties": {
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priors": {
+            "default": [],
+            "items": {
+              "enum": [
+                "kunda",
+                "pranapada",
+                "navamsa_gender"
+              ],
+              "type": "string"
+            },
+            "title": "Priors",
+            "type": "array"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step_seconds": {
+            "default": 30.0,
+            "maximum": 600.0,
+            "minimum": 5.0,
+            "title": "Step Seconds",
+            "type": "number"
+          },
+          "uncertainty_minutes": {
+            "default": 60.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 180.0,
+            "title": "Uncertainty Minutes",
+            "type": "number"
+          }
+        },
+        "title": "PersonRectifyRequest",
+        "type": "object"
+      },
       "Place": {
         "properties": {
           "admin1_code": {
@@ -3385,6 +3462,281 @@
         "title": "ReadingsRequest",
         "type": "object"
       },
+      "RectificationCandidateOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/RectifiedEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "lagna": {
+            "$ref": "#/components/schemas/Sign"
+          },
+          "lagna_degrees": {
+            "title": "Lagna Degrees",
+            "type": "number"
+          },
+          "local_time": {
+            "format": "date-time",
+            "title": "Local Time",
+            "type": "string"
+          },
+          "log_likelihood": {
+            "title": "Log Likelihood",
+            "type": "number"
+          },
+          "moon_nakshatra": {
+            "title": "Moon Nakshatra",
+            "type": "string"
+          },
+          "moon_pada": {
+            "title": "Moon Pada",
+            "type": "integer"
+          },
+          "navamsa_lagna": {
+            "$ref": "#/components/schemas/Sign"
+          },
+          "offset_minutes": {
+            "title": "Offset Minutes",
+            "type": "number"
+          },
+          "priors": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Priors",
+            "type": "object"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          },
+          "utc": {
+            "format": "date-time",
+            "title": "Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "offset_minutes",
+          "local_time",
+          "utc",
+          "log_likelihood",
+          "share",
+          "lagna",
+          "lagna_degrees",
+          "navamsa_lagna",
+          "moon_nakshatra",
+          "moon_pada",
+          "priors",
+          "events"
+        ],
+        "title": "RectificationCandidateOut",
+        "type": "object"
+      },
+      "RectificationOut": {
+        "description": "Candidate birth times ranked by how well their dashas signify the dated events.",
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RectificationCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "differences": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Differences",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "priors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Priors",
+            "type": "array"
+          },
+          "scan": {
+            "items": {
+              "$ref": "#/components/schemas/ScanPointOut"
+            },
+            "title": "Scan",
+            "type": "array"
+          },
+          "step_seconds": {
+            "title": "Step Seconds",
+            "type": "number"
+          },
+          "uncertainty_minutes": {
+            "title": "Uncertainty Minutes",
+            "type": "number"
+          }
+        },
+        "required": [
+          "candidates",
+          "scan",
+          "differences",
+          "step_seconds",
+          "uncertainty_minutes",
+          "priors",
+          "notes"
+        ],
+        "title": "RectificationOut",
+        "type": "object"
+      },
+      "RectifiedEventOut": {
+        "properties": {
+          "dasha": {
+            "items": {
+              "$ref": "#/components/schemas/Body"
+            },
+            "title": "Dasha",
+            "type": "array"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "date",
+          "dasha",
+          "score",
+          "reasons"
+        ],
+        "title": "RectifiedEventOut",
+        "type": "object"
+      },
+      "RectifyEventIn": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EventKind"
+          }
+        },
+        "required": [
+          "kind",
+          "date"
+        ],
+        "title": "RectifyEventIn",
+        "type": "object"
+      },
+      "RectifyRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/RectifyEventIn"
+            },
+            "maxItems": 40,
+            "minItems": 2,
+            "title": "Events",
+            "type": "array"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priors": {
+            "default": [],
+            "items": {
+              "enum": [
+                "kunda",
+                "pranapada",
+                "navamsa_gender"
+              ],
+              "type": "string"
+            },
+            "title": "Priors",
+            "type": "array"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "step_seconds": {
+            "default": 30.0,
+            "maximum": 600.0,
+            "minimum": 5.0,
+            "title": "Step Seconds",
+            "type": "number"
+          },
+          "uncertainty_minutes": {
+            "default": 60.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 180.0,
+            "title": "Uncertainty Minutes",
+            "type": "number"
+          }
+        },
+        "required": [
+          "birth",
+          "events"
+        ],
+        "title": "RectifyRequest",
+        "type": "object"
+      },
       "SahamOut": {
         "properties": {
           "meaning": {
@@ -3426,6 +3778,24 @@
         ],
         "title": "SaturnTransit",
         "type": "string"
+      },
+      "ScanPointOut": {
+        "properties": {
+          "log_likelihood": {
+            "title": "Log Likelihood",
+            "type": "number"
+          },
+          "offset_minutes": {
+            "title": "Offset Minutes",
+            "type": "number"
+          }
+        },
+        "required": [
+          "offset_minutes",
+          "log_likelihood"
+        ],
+        "title": "ScanPointOut",
+        "type": "object"
       },
       "School": {
         "enum": [
@@ -5950,6 +6320,100 @@
           }
         ],
         "summary": "Delete Event"
+      }
+    },
+    "/v1/people/{person_id}/rectify": {
+      "post": {
+        "description": "Rectify a saved person's birth time from their saved life events.",
+        "operationId": "person_rectify_v1_people__person_id__rectify_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonRectifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RectificationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Person Rectify"
+      }
+    },
+    "/v1/rectify": {
+      "post": {
+        "description": "Rank candidate birth times near the recorded one by how their dashas fit the events.",
+        "operationId": "rectify_birth_time_v1_rectify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RectifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RectificationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rectify Birth Time"
       }
     }
   }
