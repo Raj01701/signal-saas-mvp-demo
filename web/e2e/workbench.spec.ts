@@ -1,5 +1,6 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+
+import { expectAccessible } from "./helpers";
 
 test("calculates and shows a chart", async ({ page }) => {
   await page.goto("/workbench");
@@ -31,11 +32,7 @@ test("calculates and shows a chart", async ({ page }) => {
   await expect(page.getByText("Saturn from the natal Moon")).toBeVisible();
   await page.getByRole("tab", { name: "Chart" }).click();
 
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-  expect(results.violations.filter((v) => ["serious", "critical"].includes(v.impact ?? ""))).toEqual([]);
-
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+  await expectAccessible(page);
 });
 
 test("searches places", async ({ page }) => {
