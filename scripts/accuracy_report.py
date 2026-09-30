@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import statistics
 from collections import Counter, defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -51,8 +51,14 @@ from jyotish_engine.dasha.conditions import applicability
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
 from jyotish_engine.dasha.sign import SignDasha, SignPeriod, sign_mahadashas, sign_sub_periods
 from jyotish_engine.dasha.years import true_sidereal_year_days
+from jyotish_engine.panchanga.calendar import (
+    lunar_month,
+    lunar_year,
+    purnimanta_month,
+    tamil_solar_date,
+)
 from jyotish_engine.panchanga.elements import Limb
-from jyotish_engine.panchanga.timing import all_limb_spans
+from jyotish_engine.panchanga.timing import all_limb_spans, limb_index_at
 from jyotish_engine.rules.catalogue import default_catalogue
 from jyotish_engine.rules.facts import ChartFacts
 from jyotish_engine.settings import Settings
@@ -63,6 +69,7 @@ FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "astro_swisseph.json"
 OUT = ROOT / "docs" / "ACCURACY.md"
 SAHAM_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "sahams_pyjhora.json"
 PANCHANGA_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "panchanga_swisseph.json"
+CALENDAR_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "calendar_reference.json"
 
 
 def _row(name: str, values: list[float], unit: str, target: str) -> str:
@@ -511,6 +518,94 @@ def _panchanga_section() -> list[str]:
     ]
 
 
+def _calendar_section() -> list[str]:
+    """M5: lunar months, era years and Tamil dates versus Swiss Ephemeris and PyJHora."""
+    data: dict[str, Any] = json.loads(CALENDAR_FIXTURE.read_text("utf-8"))
+    cases: list[dict[str, Any]] = data["cases"]
+    moon_errors: list[float] = []
+    sankranti_errors: list[float] = []
+    rule = amanta = purnimanta = purnimanta_adhika = years = tamil_rule = tamil_same = 0
+    nija_differs = 0
+    for case in cases:
+        month = lunar_month(case["sunrise"])
+        ours = jd_ut_to_tt([month.start_jd_ut, month.end_jd_ut])
+        for k, value in ((0, ours[0]), (1, ours[1])):
+            reference = case["new_moons"][k + 1] + case["new_moon_delta_t"][k + 1]
+            moon_errors.append(abs(value - reference) * 86400)
+        before, first, last = case["sun_signs"]
+        expected = ((first + 1) % 12, last == first, before == first != last, (last - first) % 12)
+        entered = 0 if month.adhika else 2 if month.kshaya else 1
+        rule += expected == (month.index, month.adhika, month.nija, entered)
+        tithi = limb_index_at(Limb.TITHI, case["sunrise"])
+        theirs = case["pyjhora"]
+        amanta += theirs["amanta"][:3] == [month.index + 1, tithi + 1, month.adhika]
+        nija_differs += theirs["amanta"][3] != month.nija
+        index, adhika = purnimanta_month(month, tithi)
+        if month.adhika and tithi >= 15:
+            purnimanta_adhika += 1
+        else:
+            purnimanta += [theirs["purnimanta"][0], theirs["purnimanta"][2]] == [index + 1, adhika]
+        year = lunar_year(month)
+        years += [theirs["kali"], theirs["vikram"], theirs["shaka"]] == [
+            year.kali,
+            year.vikram,
+            year.shaka,
+        ]
+        solar = tamil_solar_date(
+            date.fromisoformat(case["date"]),
+            case["sunset"],
+            case["latitude"],
+            case["longitude"],
+            case["elevation_m"],
+        )
+        sankranti = float(jd_ut_to_tt([solar.sankranti_jd_ut])[0])
+        sankranti_errors.append(
+            abs(sankranti - case["sankranti"] - case["sankranti_delta_t"]) * 86400
+        )
+        tamil_rule += solar.day == round(case["sunset"] - case["first_sunset"]) + 1
+        tamil_same += theirs["tamil"] == [solar.month, solar.day]
+    total = len(cases)
+    return [
+        "## Lunisolar calendar (M5) versus Swiss Ephemeris and PyJHora",
+        "",
+        f"Reference: {data['reference']}. {total} dates from 1950 to 2040: 400 at random, "
+        "144 in and around every adhika month of the period, and 160 on and after "
+        "sankrantis. Places keep UTC as civil time, because PyJHora reads a local Julian "
+        "day as UT when it takes the month at sunrise.",
+        "",
+        "| Quantity | Cases | Max | Median | Target |",
+        "|---|---|---|---|---|",
+        _row("New moons (month start and end, TT)", moon_errors, " s", "≤ 1 s"),
+        _row("Sankrantis (TT)", sankranti_errors, " s", "≤ 1 s"),
+        "",
+        f"* The month naming rule applied to Swiss Ephemeris' new moons and signs gives "
+        f"the engine's month, adhika, nija and kshaya flags in {rule} of {total} cases, "
+        f"and the sunset rule applied to its sunsets gives the engine's Tamil day in "
+        f"{tamil_rule} of {total}.",
+        f"* PyJHora agrees on the amanta month, the lunar day and the adhika flag in "
+        f"{amanta} of {total} cases, and on the Kali, Shaka and Vikram years in {years}.",
+        f"* Purnimanta months agree in {purnimanta} of {total - purnimanta_adhika} cases. In "
+        f"the other {purnimanta_adhika}, the dark half of an adhika month, PyJHora moves the "
+        "day into the next month; the engine keeps both halves in the adhika month "
+        "(adhika Shravana 2023 ran from 18 July to 16 August in both reckonings).",
+        f"* PyJHora's nija flag differs in {nija_differs} cases: it compares a 1-based "
+        "month from one of its functions with a 0-based one from another. The engine's "
+        "flag follows the rule above.",
+        f"* Tamil dates agree in {tamil_same} of {total} cases. In every other case "
+        "PyJHora's backward search is the cause, as `test_calendar_golden.py` checks "
+        "case by case: it "
+        "stops at the first sunset it meets with the Sun less than 1 degree into its "
+        "sign, which is one day late when the sankranti falls shortly before a sunset, "
+        "and misses the month's start when the Sun is more than 1 degree in by then. "
+        "Its solar samvatsara function failed on the first date tried and is not "
+        "compared; the Tamil "
+        "festival dates in `test_calendar.py` check the year instead.",
+        "* Kshaya months: the rule finds two between 1950 and 2040, in 1963 (Kartika with "
+        "Margashirsha) and 1983 (Pausha with Magha), each between two adhika months.",
+        "",
+    ]
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -641,6 +736,7 @@ def main() -> None:
     lines += _annual_section()
     lines += _strength_and_rules_section()
     lines += _panchanga_section()
+    lines += _calendar_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

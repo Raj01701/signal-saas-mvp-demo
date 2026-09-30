@@ -204,3 +204,19 @@ Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise). 560 civil 
 | Karana changes | 1688 | 0.0205 s | 0.0069 s | ≤ 60 s |
 
 Every limb span the engine reports from sunrise to the next sunrise matches a change in the reference (0 unmatched). The milestone target is one minute against Drik Panchang with the same sunrise definition; Drik Panchang cannot be reached from this environment, so that comparison is left to the manual spot checks.
+
+## Lunisolar calendar (M5) versus Swiss Ephemeris and PyJHora
+
+Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise) and PyJHora (apparent positions). 704 dates from 1950 to 2040: 400 at random, 144 in and around every adhika month of the period, and 160 on and after sankrantis. Places keep UTC as civil time, because PyJHora reads a local Julian day as UT when it takes the month at sunrise.
+
+| Quantity | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| New moons (month start and end, TT) | 1408 | 0.0138 s | 0.0033 s | ≤ 1 s |
+| Sankrantis (TT) | 704 | 0.0553 s | 0.0119 s | ≤ 1 s |
+
+* The month naming rule applied to Swiss Ephemeris' new moons and signs gives the engine's month, adhika, nija and kshaya flags in 704 of 704 cases, and the sunset rule applied to its sunsets gives the engine's Tamil day in 704 of 704.
+* PyJHora agrees on the amanta month, the lunar day and the adhika flag in 704 of 704 cases, and on the Kali, Shaka and Vikram years in 704.
+* Purnimanta months agree in 682 of 682 cases. In the other 22, the dark half of an adhika month, PyJHora moves the day into the next month; the engine keeps both halves in the adhika month (adhika Shravana 2023 ran from 18 July to 16 August in both reckonings).
+* PyJHora's nija flag differs in 88 cases: it compares a 1-based month from one of its functions with a 0-based one from another. The engine's flag follows the rule above.
+* Tamil dates agree in 684 of 704 cases. In every other case PyJHora's backward search is the cause, as `test_calendar_golden.py` checks case by case: it stops at the first sunset it meets with the Sun less than 1 degree into its sign, which is one day late when the sankranti falls shortly before a sunset, and misses the month's start when the Sun is more than 1 degree in by then. Its solar samvatsara function failed on the first date tried and is not compared; the Tamil festival dates in `test_calendar.py` check the year instead.
+* Kshaya months: the rule finds two between 1950 and 2040, in 1963 (Kartika with Margashirsha) and 1983 (Pausha with Magha), each between two adhika months.

@@ -491,6 +491,60 @@ class PeriodOut(BaseModel):
     quality: str | None = None
 
 
+class LunarMonthOut(BaseModel):
+    """An amanta month, from one new moon to the next."""
+
+    #: 1 = Chaitra ... 12 = Phalguna.
+    number: int
+    name: str
+    #: Intercalary month, in which the Sun enters no sign.
+    adhika: bool
+    #: The regular month that follows an adhika month of the same name.
+    nija: bool
+    #: For a kshaya month (the Sun enters two signs), the second name it carries.
+    kshaya_name: str | None = None
+    start: datetime
+    end: datetime
+    start_jd_ut: float
+    end_jd_ut: float
+
+
+class CalendarOut(BaseModel):
+    """The calendar date of a Hindu day: lunar values at sunrise, Tamil date at sunset."""
+
+    amanta: LunarMonthOut
+    #: Purnimanta month of the day (the dark half belongs to the next month).
+    purnimanta_number: int
+    purnimanta_name: str
+    purnimanta_adhika: bool
+    paksha: str
+    #: The tithi at sunrise counted within its paksha, 1-15.
+    paksha_day: int
+    #: Season by lunar month.
+    ritu: str
+    #: Uttarayana from Makara to Karka sankranti (sidereal), else dakshinayana.
+    ayana_sidereal: str
+    #: Uttarayana from the winter to the summer solstice (tropical).
+    ayana_tropical: str
+    kali_year: int
+    shaka_year: int
+    vikram_year: int
+    #: Gujarati (Kartikadi) Vikram year.
+    vikram_year_kartikadi: int
+    #: 1 = Prabhava ... 60 = Akshaya, continuous with the Shaka year.
+    samvatsara_number: int
+    samvatsara: str
+    #: Tamil solar month (1 = Chittirai) and day, by the sunset rule.
+    tamil_month_number: int
+    tamil_month: str
+    tamil_day: int
+    tamil_samvatsara: str
+    #: Tithis (1-30) that begin after sunrise and end before the next (kshaya).
+    kshaya_tithis: list[int]
+    #: The tithi at sunrise also prevailed at the previous sunrise (vriddhi).
+    vriddhi_tithi: bool
+
+
 class PanchangaOut(BaseModel):
     """The panchanga of one Hindu day, from sunrise to the next sunrise.
 
@@ -516,6 +570,7 @@ class PanchangaOut(BaseModel):
     #: Within the civil date (local midnight to midnight), if the Moon rises or sets.
     moonrise: datetime | None
     moonset: datetime | None
+    calendar: CalendarOut
     tithis: list[LimbSpanOut]
     nakshatras: list[LimbSpanOut]
     yogas: list[LimbSpanOut]
