@@ -210,6 +210,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["me_v1_me_get"];
+        /** Update Me */
+        put: operations["update_me_v1_me_put"];
+        post?: never;
+        /**
+         * Delete Me
+         * @description Delete the account and everything saved with it.
+         */
+        delete: operations["delete_me_v1_me_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export
+         * @description Everything stored for this account, in one document.
+         */
+        get: operations["export_v1_me_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/panchanga": {
         parameters: {
             query?: never;
@@ -222,6 +264,95 @@ export interface paths {
         /** Panchanga */
         post: operations["panchanga_v1_panchanga_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List People */
+        get: operations["list_people_v1_people_get"];
+        put?: never;
+        /** Create Person */
+        post: operations["create_person_v1_people_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Person */
+        get: operations["get_person_v1_people__person_id__get"];
+        /** Update Person */
+        put: operations["update_person_v1_people__person_id__put"];
+        post?: never;
+        /** Delete Person */
+        delete: operations["delete_person_v1_people__person_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people/{person_id}/chart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Person Chart */
+        post: operations["person_chart_v1_people__person_id__chart_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people/{person_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Events */
+        get: operations["list_events_v1_people__person_id__events_get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_v1_people__person_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/people/{person_id}/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Event */
+        delete: operations["delete_event_v1_people__person_id__events__event_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -419,6 +550,11 @@ export interface components {
          * @enum {string}
          */
         Category: "mahapurusha" | "chandra" | "surya" | "nabhasa" | "raja" | "dhana" | "parivartana" | "viparita" | "neecha_bhanga" | "bhava" | "malika" | "conjunction" | "named" | "dosha" | "birth";
+        /** ChartOptions */
+        ChartOptions: {
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+        };
         /** ChartRequest */
         ChartRequest: {
             birth: components["schemas"]["BirthInput"];
@@ -594,6 +730,65 @@ export interface components {
             jd_start: number;
             /** Name */
             name: string;
+        };
+        /** EventIn */
+        EventIn: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "marriage" | "divorce" | "child_birth" | "education" | "job" | "promotion" | "job_loss" | "business" | "relocation" | "foreign_travel" | "property" | "illness" | "surgery" | "accident" | "parent_death" | "spouse_death" | "other";
+            /**
+             * Precision
+             * @default day
+             * @enum {string}
+             */
+            precision: "day" | "month" | "year";
+        };
+        /** EventOut */
+        EventOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "marriage" | "divorce" | "child_birth" | "education" | "job" | "promotion" | "job_loss" | "business" | "relocation" | "foreign_travel" | "property" | "illness" | "surgery" | "accident" | "parent_death" | "spouse_death" | "other";
+            /**
+             * Precision
+             * @default day
+             * @enum {string}
+             */
+            precision: "day" | "month" | "year";
+        };
+        /** Export */
+        Export: {
+            /** Events */
+            events: {
+                [key: string]: components["schemas"]["EventOut"][];
+            };
+            me: components["schemas"]["Me"];
+            /** People */
+            people: components["schemas"]["PersonOut"][];
         };
         /** GrahaOut */
         GrahaOut: {
@@ -868,6 +1063,22 @@ export interface components {
             profile: components["schemas"]["KootaProfile"];
             settings?: components["schemas"]["Settings"] | null;
         };
+        /** Me */
+        Me: {
+            /** Email */
+            email: string | null;
+            /** Id */
+            id: string;
+            /** People */
+            people: number;
+            /** Research Consent */
+            research_consent: boolean;
+        };
+        /** MeUpdate */
+        MeUpdate: {
+            /** Research Consent */
+            research_consent: boolean;
+        };
         /**
          * MoonTable
          * @enum {string}
@@ -1005,6 +1216,58 @@ export interface components {
             start: string;
             /** Start Jd Ut */
             start_jd_ut: number;
+        };
+        /** PersonIn */
+        PersonIn: {
+            birth: components["schemas"]["BirthInput"];
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            /**
+             * Guardian Consent
+             * @default false
+             */
+            guardian_consent: boolean;
+            /**
+             * Is Minor
+             * @default false
+             */
+            is_minor: boolean;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** PersonOut */
+        PersonOut: {
+            birth: components["schemas"]["BirthInput"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            /**
+             * Guardian Consent
+             * @default false
+             */
+            guardian_consent: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Is Minor
+             * @default false
+             */
+            is_minor: boolean;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** Place */
         Place: {
@@ -1934,6 +2197,97 @@ export interface operations {
             };
         };
     };
+    me_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    update_me_v1_me_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_me_v1_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_v1_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
+            };
+        };
+    };
     panchanga_v1_panchanga_post: {
         parameters: {
             query?: never;
@@ -1955,6 +2309,285 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PanchangaOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_people_v1_people_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonOut"][];
+                };
+            };
+        };
+    };
+    create_person_v1_people_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_v1_people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_person_v1_people__person_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_person_v1_people__person_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    person_chart_v1_people__person_id__chart_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChartOptions"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChartResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_events_v1_people__person_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_v1_people__person_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_event_v1_people__person_id__events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

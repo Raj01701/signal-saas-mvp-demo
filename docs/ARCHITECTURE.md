@@ -53,6 +53,9 @@ FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configurati
 - Stateless calculation routes under `/v1` (`routers/compute.py`): place search, chart, yogas, strengths, any dasha system, transits, annual charts, KP (natal and horary), panchanga and matchmaking. Request bodies take a full `settings` object or a `preset`.
 - Charts are cached in memory, keyed by a hash of birth data and settings (`charts.py`); uncached chart p95 is about 230 ms.
 - Engine `ValueError`s (dates outside the ephemeris, polar days, unknown options) become HTTP 422; rate limiting per client address uses slowapi.
+- Account routes (`routers/account.py`, sign-in required): profile and research consent, saved people with birth data, life events for rectification and backtesting, `GET /v1/me/export` and `DELETE /v1/me` (everything saved is deleted). A minor's data needs the guardian's consent (DPDP Act).
+- Supabase access tokens are verified locally with the project's HS256 secret or its JWKS (`auth.py`); the first request from a user creates their account.
+- SQLAlchemy 2 models (`db.py`) with Alembic migrations (`api/migrations`, run `alembic upgrade head` from `api/`); SQLite for development and tests, Postgres in production through the pg8000 driver (the LGPL psycopg drivers are excluded by the licence guard). A test fails if models and migrations drift; a Postgres round trip runs when `JYOTISH_API_TEST_POSTGRES_URL` is set.
 - `scripts/export_openapi.py` writes `web/src/lib/api/openapi.json`, and `pnpm -C web api:types` generates `schema.d.ts` from it; CI fails when either is stale.
 
 ## Ephemeris resolution

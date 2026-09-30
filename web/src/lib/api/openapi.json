@@ -509,6 +509,32 @@
         "title": "Category",
         "type": "string"
       },
+      "ChartOptions": {
+        "properties": {
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ChartOptions",
+        "type": "object"
+      },
       "ChartRequest": {
         "properties": {
           "birth": {
@@ -1107,6 +1133,168 @@
           "jd_end"
         ],
         "title": "EphemerisOut",
+        "type": "object"
+      },
+      "EventIn": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "enum": [
+              "marriage",
+              "divorce",
+              "child_birth",
+              "education",
+              "job",
+              "promotion",
+              "job_loss",
+              "business",
+              "relocation",
+              "foreign_travel",
+              "property",
+              "illness",
+              "surgery",
+              "accident",
+              "parent_death",
+              "spouse_death",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "precision": {
+            "default": "day",
+            "enum": [
+              "day",
+              "month",
+              "year"
+            ],
+            "title": "Precision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "date"
+        ],
+        "title": "EventIn",
+        "type": "object"
+      },
+      "EventOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "marriage",
+              "divorce",
+              "child_birth",
+              "education",
+              "job",
+              "promotion",
+              "job_loss",
+              "business",
+              "relocation",
+              "foreign_travel",
+              "property",
+              "illness",
+              "surgery",
+              "accident",
+              "parent_death",
+              "spouse_death",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "precision": {
+            "default": "day",
+            "enum": [
+              "day",
+              "month",
+              "year"
+            ],
+            "title": "Precision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "date",
+          "id",
+          "created_at"
+        ],
+        "title": "EventOut",
+        "type": "object"
+      },
+      "Export": {
+        "properties": {
+          "events": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/EventOut"
+              },
+              "type": "array"
+            },
+            "title": "Events",
+            "type": "object"
+          },
+          "me": {
+            "$ref": "#/components/schemas/Me"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/PersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          }
+        },
+        "required": [
+          "me",
+          "people",
+          "events"
+        ],
+        "title": "Export",
         "type": "object"
       },
       "GrahaOut": {
@@ -1872,6 +2060,54 @@
         "title": "MatchRequest",
         "type": "object"
       },
+      "Me": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "people": {
+            "title": "People",
+            "type": "integer"
+          },
+          "research_consent": {
+            "title": "Research Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "research_consent",
+          "people"
+        ],
+        "title": "Me",
+        "type": "object"
+      },
+      "MeUpdate": {
+        "properties": {
+          "research_consent": {
+            "title": "Research Consent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "research_consent"
+        ],
+        "title": "MeUpdate",
+        "type": "object"
+      },
       "MoonTable": {
         "enum": [
           "pvr",
@@ -2253,6 +2489,135 @@
           "end_jd_ut"
         ],
         "title": "PeriodOut",
+        "type": "object"
+      },
+      "PersonIn": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "guardian_consent": {
+            "default": false,
+            "title": "Guardian Consent",
+            "type": "boolean"
+          },
+          "is_minor": {
+            "default": false,
+            "title": "Is Minor",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "name",
+          "birth"
+        ],
+        "title": "PersonIn",
+        "type": "object"
+      },
+      "PersonOut": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "guardian_consent": {
+            "default": false,
+            "title": "Guardian Consent",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_minor": {
+            "default": false,
+            "title": "Is Minor",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "birth",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PersonOut",
         "type": "object"
       },
       "Place": {
@@ -3795,6 +4160,12 @@
         "title": "YogasRequest",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -4249,6 +4620,109 @@
         "summary": "Match"
       }
     },
+    "/v1/me": {
+      "delete": {
+        "description": "Delete the account and everything saved with it.",
+        "operationId": "delete_me_v1_me_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Me"
+      },
+      "get": {
+        "operationId": "me_v1_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Me"
+      },
+      "put": {
+        "operationId": "update_me_v1_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Me"
+      }
+    },
+    "/v1/me/export": {
+      "get": {
+        "description": "Everything stored for this account, in one document.",
+        "operationId": "export_v1_me_export_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Export"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export"
+      }
+    },
     "/v1/panchanga": {
       "post": {
         "operationId": "panchanga_v1_panchanga_post",
@@ -4285,6 +4759,405 @@
           }
         },
         "summary": "Panchanga"
+      }
+    },
+    "/v1/people": {
+      "get": {
+        "operationId": "list_people_v1_people_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PersonOut"
+                  },
+                  "title": "Response List People V1 People Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List People"
+      },
+      "post": {
+        "operationId": "create_person_v1_people_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Person"
+      }
+    },
+    "/v1/people/{person_id}": {
+      "delete": {
+        "operationId": "delete_person_v1_people__person_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Person"
+      },
+      "get": {
+        "operationId": "get_person_v1_people__person_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Person"
+      },
+      "put": {
+        "operationId": "update_person_v1_people__person_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Person"
+      }
+    },
+    "/v1/people/{person_id}/chart": {
+      "post": {
+        "operationId": "person_chart_v1_people__person_id__chart_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChartOptions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChartResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Person Chart"
+      }
+    },
+    "/v1/people/{person_id}/events": {
+      "get": {
+        "operationId": "list_events_v1_people__person_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventOut"
+                  },
+                  "title": "Response List Events V1 People  Person Id  Events Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Events"
+      },
+      "post": {
+        "operationId": "create_event_v1_people__person_id__events_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Event"
+      }
+    },
+    "/v1/people/{person_id}/events/{event_id}": {
+      "delete": {
+        "operationId": "delete_event_v1_people__person_id__events__event_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "person_id",
+            "required": true,
+            "schema": {
+              "title": "Person Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Event"
       }
     }
   }

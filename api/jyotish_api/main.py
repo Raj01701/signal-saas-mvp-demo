@@ -1,4 +1,4 @@
-"""FastAPI application: stateless calculation routes under ``/v1``."""
+"""FastAPI application: calculation routes and account routes under ``/v1``."""
 
 from __future__ import annotations
 
@@ -13,7 +13,8 @@ from slowapi.util import get_remote_address
 from jyotish_api import __version__ as api_version
 from jyotish_api.charts import ChartCache
 from jyotish_api.config import ApiSettings, get_settings
-from jyotish_api.routers import compute
+from jyotish_api.db import make_engine, session_factory
+from jyotish_api.routers import account, compute
 from jyotish_engine import ENGINE_VERSION
 
 
@@ -30,7 +31,10 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
         version=api_version,
         description="Vedic astrology calculations with cited, explainable results.",
     )
+    app.state.settings = settings
     app.state.charts = ChartCache(settings.chart_cache_size)
+    app.state.db = make_engine(settings.database_url)
+    app.state.sessions = session_factory(app.state.db)
     app.state.limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit])
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
     app.add_exception_handler(ValueError, _value_error)
@@ -48,6 +52,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
         return {"status": "ok", "api_version": api_version, "engine_version": ENGINE_VERSION}
 
     app.include_router(compute.router)
+    app.include_router(account.router)
     return app
 
 
