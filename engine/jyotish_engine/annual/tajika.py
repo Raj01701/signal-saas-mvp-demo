@@ -11,9 +11,13 @@
   the degrees they have covered in their signs differ by less than the mean of
   their deeptamsas. The faster planet, still behind the slower, makes an
   **ithasala** (applying); once it has passed it, an **isarapha** (separating).
+* **Ikkavala** and **Induvara** yogas: all seven planets in the kendras and
+  panapharas of the annual chart, or all in its apoklimas.
 
-Choosing the lord of the year also needs the Tajika strengths (pancha-vargiya
-bala), which arrive with the other strengths in M4.
+The lord of the year, which needs the Tajika strengths, is in ``tajika_strength``.
+The Tajika yogas between significators (Nakta, Yamaya, Kamboola and the rest) are
+not implemented yet: their definitions are to be checked against Tajika
+Neelakanthi first.
 """
 
 from __future__ import annotations
@@ -96,6 +100,25 @@ def _sign(longitude: float) -> int:
 
 def muntha_sign(natal_lagna_sign: int, years_completed: int) -> int:
     return (natal_lagna_sign + years_completed) % 12
+
+
+#: Houses of the annual chart that are kendras or panapharas, and apoklimas.
+KENDRA_PANAPHARA = frozenset({1, 2, 4, 5, 7, 8, 10, 11})
+APOKLIMA = frozenset({3, 6, 9, 12})
+
+
+def _houses(lagna_sign: int, sidereal: Mapping[Body, float]) -> set[int]:
+    return {(_sign(sidereal[b]) - lagna_sign) % 12 + 1 for b in SEVEN}
+
+
+def ikkavala(lagna_sign: int, sidereal: Mapping[Body, float]) -> bool:
+    """Ikkavala yoga: all seven planets in kendras and panapharas (a prosperous year)."""
+    return _houses(lagna_sign, sidereal) <= KENDRA_PANAPHARA
+
+
+def induvara(lagna_sign: int, sidereal: Mapping[Body, float]) -> bool:
+    """Induvara yoga: all seven planets in apoklimas (a year of obstacles)."""
+    return _houses(lagna_sign, sidereal) <= APOKLIMA
 
 
 def tajika_aspect(sign_a: int, sign_b: int) -> TajikaAspect | None:

@@ -381,6 +381,9 @@ class VarshaphalOut(BaseModel):
     #: Lord of the year and whether it aspects the annual lagna (pending review).
     year_lord: Body
     year_lord_aspects_lagna: bool
+    #: All seven planets in kendras and panapharas (Ikkavala) or in apoklimas (Induvara).
+    ikkavala: bool
+    induvara: bool
     #: Tajika pancha-vargiya bala of the seven planets, out of 20.
     pancha_vargiya: dict[Body, float]
     tajika: list[TajikaRelationOut]

@@ -9,8 +9,11 @@ import pytest
 
 from jyotish_engine.annual.dashas import mudda_dashas, mudda_sub_periods
 from jyotish_engine.annual.tajika import (
+    SEVEN,
     TajikaAspect,
     TajikaYoga,
+    ikkavala,
+    induvara,
     muntha_sign,
     office_bearers,
     tajika_aspect,
@@ -23,6 +26,16 @@ from jyotish_engine.core.nakshatra import NAKSHATRA_SPAN
 from jyotish_engine.models import BirthInput, PlaceInput
 
 DELHI = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090)
+
+
+def test_ikkavala_and_induvara() -> None:
+    # Lagna Aries: houses 1, 2, 4, 5, 7, 8, 10, 11 are kendras and panapharas.
+    good = dict(zip(SEVEN, [0.0, 35.0, 95.0, 125.0, 185.0, 215.0, 305.0], strict=True))
+    assert ikkavala(0, good) and not induvara(0, good)
+    bad = dict(zip(SEVEN, [65.0, 155.0, 245.0, 335.0, 65.0, 155.0, 245.0], strict=True))
+    assert induvara(0, bad) and not ikkavala(0, bad)
+    mixed = {**good, Body.SATURN: 65.0}  # Saturn in the 3rd
+    assert not ikkavala(0, mixed) and not induvara(0, mixed)
 
 
 def test_muntha_moves_one_sign_a_year() -> None:

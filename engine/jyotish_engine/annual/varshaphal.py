@@ -11,7 +11,14 @@ from jyotish_engine.annual.dashas import (
 )
 from jyotish_engine.annual.returns import tithi_pravesha, varsha_pravesha
 from jyotish_engine.annual.sahams import compute_sahams
-from jyotish_engine.annual.tajika import SEVEN, muntha_sign, office_bearers, tajika_relations
+from jyotish_engine.annual.tajika import (
+    SEVEN,
+    ikkavala,
+    induvara,
+    muntha_sign,
+    office_bearers,
+    tajika_relations,
+)
 from jyotish_engine.annual.tajika_strength import pancha_vargiya_bala, year_lord
 from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.time import jd_to_datetime
@@ -108,6 +115,8 @@ def compute_varshaphal(
         ),
         year_lord=lord,
         year_lord_aspects_lagna=aspects_lagna,
+        ikkavala=ikkavala(annual.ascendant.sign, positions),
+        induvara=induvara(annual.ascendant.sign, positions),
         pancha_vargiya={b: pancha_vargiya_bala(b, positions[b]).total for b in SEVEN},
         tajika=[
             TajikaRelationOut(

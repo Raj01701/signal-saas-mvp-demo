@@ -114,6 +114,20 @@ def test_second_round_complements_the_first() -> None:
     assert sorted(s.sign for s in subs) == list(range(12))
 
 
+def test_shoola_runs_zodiacally_nine_years_each() -> None:
+    sidereal = _positions(sun=40.0, moon=100.0, mars=200.0, saturn=15.0, rahu=70.0, ketu=250.0)
+    lagna = 0  # ascendant at 5 degrees Aries
+    seed = stronger_sign(lagna, 6, sidereal)
+    mahas = sign_mahadashas(SignDasha.SHOOLA, 5.0, sidereal, 2451545.0, 365.25)
+    assert [m.sign for m in mahas] == [(seed + i) % 12 for i in range(12)]
+    assert all(m.end_jd - m.start_jd == pytest.approx(9 * 365.25) for m in mahas)
+    assert mahas[-1].end_jd == pytest.approx(2451545.0 + 108 * 365.25)
+    subs = sign_sub_periods(SignDasha.SHOOLA, mahas[3], sidereal)
+    assert [s.sign for s in subs] == [(mahas[3].sign + i) % 12 for i in range(12)]
+    assert subs[0].start_jd == mahas[3].start_jd and subs[-1].end_jd == mahas[3].end_jd
+    assert len(sign_mahadashas(SignDasha.SHOOLA, 5.0, sidereal, 2451545.0, 365.25, 2)) == 24
+
+
 def test_chart_level_sign_dasha_tables() -> None:
     chart = compute_chart(
         BirthInput(
@@ -129,3 +143,6 @@ def test_chart_level_sign_dasha_tables() -> None:
     assert narayana.first_sign in (chart.ascendant.sign, (chart.ascendant.sign + 6) % 12)
     chain = running_sign_periods(chart, SignDasha.NARAYANA, chart.time.jd_ut + 9000.0, 3)
     assert [len(p.signs) for p in chain] == [1, 2, 3]
+    shoola = chart_sign_dasha_table(chart, SignDasha.SHOOLA, depth=1)
+    assert shoola.label == "Shoola" and len(shoola.periods) == 12
+    assert shoola.first_sign == narayana.first_sign

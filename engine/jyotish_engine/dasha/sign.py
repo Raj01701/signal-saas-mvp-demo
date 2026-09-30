@@ -1,4 +1,4 @@
-"""Jaimini sign (rashi) dashas: Chara (K.N. Rao) and Narayana (P.V.R. Narasimha Rao).
+"""Jaimini sign (rashi) dashas: Chara (K.N. Rao), Narayana and Shoola (P.V.R. Narasimha Rao).
 
 Each period belongs to a sign, and its length comes from the position of that
 sign's lord (``core.jaimini.dasha_years``). A period divides into twelve equal
@@ -22,6 +22,11 @@ there reverses the direction. Antardashas start from the stronger of the signs
 holding the dasha sign's lord and the 7th lord, zodiacally from an odd sign and
 backwards from an even one; Saturn in that sign makes them zodiacal, and Ketu in
 the dasha sign reverses them.
+
+**Shoola dasha**. From the stronger of the lagna and the 7th, always zodiacally,
+nine years for every sign: one round of 108 years. Antardashas run zodiacally from
+the dasha sign itself. Tradition uses it to time longevity, so its readings belong
+to the professional view only.
 """
 
 from __future__ import annotations
@@ -41,14 +46,22 @@ from jyotish_engine.core.jaimini import (
 )
 
 ROUNDS = 2
+SHOOLA_YEARS = 9
 
 
 class SignDasha(StrEnum):
     CHARA = "chara"
     NARAYANA = "narayana"
+    SHOOLA = "shoola"
 
 
-LABELS = {SignDasha.CHARA: "Chara (K.N. Rao)", SignDasha.NARAYANA: "Narayana"}
+LABELS = {
+    SignDasha.CHARA: "Chara (K.N. Rao)",
+    SignDasha.NARAYANA: "Narayana",
+    SignDasha.SHOOLA: "Shoola",
+}
+#: Rounds of twelve dashas each system runs from birth.
+DEFAULT_ROUNDS = {SignDasha.CHARA: ROUNDS, SignDasha.NARAYANA: ROUNDS, SignDasha.SHOOLA: 1}
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,9 +126,14 @@ def narayana_antardasha_order(sign: int, sidereal: Mapping[Body, float]) -> list
     return _run(seed, 1 if forward else -1)
 
 
+def shoola_antardasha_order(sign: int, sidereal: Mapping[Body, float]) -> list[int]:
+    return _run(sign, 1)
+
+
 _SUB_ORDER: dict[SignDasha, Callable[[int, Mapping[Body, float]], list[int]]] = {
     SignDasha.CHARA: chara_antardasha_order,
     SignDasha.NARAYANA: narayana_antardasha_order,
+    SignDasha.SHOOLA: shoola_antardasha_order,
 }
 
 
@@ -132,6 +150,8 @@ def mahadasha_order(
     seed = first_sign(system, ascendant, sidereal)
     if system is SignDasha.CHARA:
         return chara_order(seed)
+    if system is SignDasha.SHOOLA:
+        return _run(seed, 1)
     return narayana_order(seed, sidereal)
 
 
@@ -141,11 +161,15 @@ def sign_mahadashas(
     sidereal: Mapping[Body, float],
     birth_jd_ut: float,
     year_days: float,
-    rounds: int = ROUNDS,
+    rounds: int | None = None,
 ) -> list[SignPeriod]:
-    """Mahadashas from birth: ``rounds`` rounds of twelve signs."""
+    """Mahadashas from birth: ``rounds`` rounds of twelve signs (the system's default)."""
+    rounds = DEFAULT_ROUNDS[system] if rounds is None else rounds
     order = mahadasha_order(system, ascendant, sidereal)
-    first_round = [dasha_years(sign, sidereal) for sign in order]
+    if system is SignDasha.SHOOLA:
+        first_round = [SHOOLA_YEARS] * 12
+    else:
+        first_round = [dasha_years(sign, sidereal) for sign in order]
     periods: list[SignPeriod] = []
     start = birth_jd_ut
     for round_index in range(rounds):
