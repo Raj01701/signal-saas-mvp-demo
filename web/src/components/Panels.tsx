@@ -10,7 +10,7 @@ import { jdToDate, useLoad } from "@/lib/use-load";
 
 const SIGNS = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"];
 
-function Yoga({ yoga, cancelled }: { yoga: Schemas["YogaOut"]; cancelled?: boolean }) {
+export function Yoga({ yoga, cancelled }: { yoga: Schemas["YogaOut"]; cancelled?: boolean }) {
   return (
     <li className="py-2">
       <details>

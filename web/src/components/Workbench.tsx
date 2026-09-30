@@ -7,6 +7,7 @@ import { ChartDiagram } from "@/components/ChartDiagram";
 import { DashaTable } from "@/components/DashaTable";
 import { KpPanel, SensitivityPanel, StrengthsPanel, TransitsPanel, YogasPanel } from "@/components/Panels";
 import { PlanetTable } from "@/components/PlanetTable";
+import { ReadingsPanel, TimelinePanel } from "@/components/Predictions";
 import { api, type Chart, errorMessage } from "@/lib/api/client";
 import type { ChartStyle, Placement } from "@/lib/chart-layout";
 
@@ -15,7 +16,7 @@ const STYLES: { value: ChartStyle; label: string }[] = [
   { value: "south", label: "South Indian" },
   { value: "east", label: "East Indian" },
 ];
-const TABS = ["Chart", "Dashas", "Yogas", "Strengths", "Transits", "KP"] as const;
+const TABS = ["Chart", "Dashas", "Yogas", "Readings", "Timeline", "Strengths", "Transits", "KP"] as const;
 type Tab = (typeof TABS)[number];
 
 const select = "rounded-md border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900";
@@ -36,7 +37,7 @@ function vargaPlacements(chart: Chart, division: number): { ascendant: number; p
   };
 }
 
-/** The astrologer workbench: birth data in; charts, dashas, yogas, strengths, transits and KP out. */
+/** The astrologer workbench: birth data in; charts, dashas, yogas, readings, timeline, strengths, transits and KP out. */
 export function Workbench() {
   const [chart, setChart] = useState<Chart | null>(null);
   const [request, setRequest] = useState<BirthRequest | null>(null);
@@ -135,6 +136,8 @@ export function Workbench() {
             )}
             {tab === "Dashas" && <DashaTable table={chart.dashas.vimshottari} now={new Date().toISOString()} />}
             {tab === "Yogas" && <YogasPanel request={request} />}
+            {tab === "Readings" && <ReadingsPanel request={request} />}
+            {tab === "Timeline" && <TimelinePanel request={request} />}
             {tab === "Strengths" && <StrengthsPanel request={request} ascendantSign={chart.ascendant.sign} />}
             {tab === "Transits" && <TransitsPanel request={request} />}
             {tab === "KP" && <KpPanel request={request} />}

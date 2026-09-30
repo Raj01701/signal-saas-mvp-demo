@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { toBirthInput } from "@/components/BirthFields";
 import { NEW_DELHI } from "@/components/PlaceField";
 
-import { clock, kujaText, longDate, offsetLabel, points } from "./format";
+import { clock, kujaText, longDate, offsetLabel, points, toneOf, yearly } from "./format";
 
 describe("panchanga formatting", () => {
   it("labels UTC offsets", () => {
@@ -44,5 +44,18 @@ describe("birth input", () => {
       place: NEW_DELHI.place,
       zone: null,
     });
+  });
+});
+
+describe("prediction timeline", () => {
+  it("keeps each year's strongest month", () => {
+    const months = ["2020-01-01", "2020-02-01", "2021-01-01"];
+    const years = yearly(months, { scores: [0.2, 0.5, 0.1], tones: [0.3, -0.4, 0] });
+    expect(years.get(2020)).toEqual({ score: 0.5, tone: -0.4 });
+    expect(years.get(2021)).toEqual({ score: 0.1, tone: 0 });
+  });
+
+  it("names tones", () => {
+    expect([toneOf(0.5), toneOf(0), toneOf(-0.5)]).toEqual(["favourable", "mixed", "challenging"]);
   });
 });

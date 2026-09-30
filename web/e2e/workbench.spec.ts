@@ -24,6 +24,14 @@ test("calculates and shows a chart", async ({ page }) => {
   const yogas = page.getByRole("list", { name: "Yogas present" });
   await yogas.locator("summary").first().click();
   await expect(yogas.getByText("Why it applies").first()).toBeVisible();
+  await page.getByRole("tab", { name: "Readings" }).click();
+  await expect(page.getByRole("list", { name: "House lords" }).locator(":scope > li")).toHaveCount(12);
+  await page.getByRole("tab", { name: "Timeline" }).click();
+  await expect(page.getByRole("heading", { name: "Now" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Life-domain timeline" })).toBeVisible();
+  await page.getByRole("button", { name: "Marriage" }).click();
+  await expect(page.getByRole("list", { name: "Marriage windows" }).locator("li").first()).toBeVisible();
+  await expectAccessible(page);
   await page.getByRole("tab", { name: "Strengths" }).click();
   await expect(page.getByText("Shadbala (rupas)")).toBeVisible();
   await page.getByRole("tab", { name: "KP" }).click();

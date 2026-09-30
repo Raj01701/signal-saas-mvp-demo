@@ -52,3 +52,20 @@ export function kujaText(kuja: Schemas["KujaOut"]): string {
   ].filter(Boolean);
   return `${kuja.manglik ? "Manglik" : "Not manglik"}${parts.length > 0 ? ` (${parts.join("; ")})` : ""}`;
 }
+
+/** Whether a prediction tone (-1 to 1) reads as favourable, mixed or challenging. */
+export const toneOf = (t: number) => (t > 0.15 ? "favourable" : t < -0.15 ? "challenging" : "mixed");
+
+/** The strongest month of each year of a timeline: its score and tone. */
+export function yearly(
+  months: string[],
+  timeline: { scores: number[]; tones: number[] },
+): Map<number, { score: number; tone: number }> {
+  const out = new Map<number, { score: number; tone: number }>();
+  months.forEach((m, i) => {
+    const year = Number(m.slice(0, 4));
+    const best = out.get(year);
+    if (!best || timeline.scores[i] > best.score) out.set(year, { score: timeline.scores[i], tone: timeline.tones[i] });
+  });
+  return out;
+}

@@ -63,13 +63,13 @@ FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configurati
 
 Next.js (App Router) with Tailwind. The pages are client components that call the API directly with `openapi-fetch`, typed by the generated `src/lib/api/schema.d.ts`; `NEXT_PUBLIC_API_URL` points them at the API.
 
-- `/workbench`: chart, dashas, yogas, strengths, transits, KP and birth-time sensitivity for one birth.
+- `/workbench`: chart, dashas, yogas, natal readings, the prediction timeline (with what the running dasha and transits say now), strengths, transits, KP and birth-time sensitivity for one birth.
 - `/panchanga`: the Hindu day for a date and place, with times shown in the place's local time.
 - `/match`: horoscope matching of two births.
 - Shared form pieces: `PlaceField` (gazetteer search with a coordinates fallback) and `BirthFields` (date, time and place), both controlled; pure formatting helpers live in `lib/format.ts`.
 
 - Chart drawings are SVG (`components/ChartDiagram.tsx`); their geometry for the North, South and East Indian styles is pure and unit-tested (`lib/chart-layout.ts`).
-- End-to-end tests (`web/e2e`, Playwright) start the API and a production build, then check every page on desktop and mobile viewports, including axe WCAG A/AA rules and horizontal overflow. `PW_CHROMIUM` selects an installed Chromium.
+- End-to-end tests (`web/e2e`, Playwright) start the API and a production build, then check every page on desktop and mobile viewports, including axe WCAG A/AA rules and horizontal overflow against the configured viewport width (a mobile browser would otherwise widen its layout viewport and hide the overflow). `PW_CHROMIUM` selects an installed Chromium.
 
 ## Ephemeris resolution
 

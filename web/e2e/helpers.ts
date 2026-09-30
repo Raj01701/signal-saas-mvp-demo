@@ -5,6 +5,9 @@ import { expect, type Page } from "@playwright/test";
 export async function expectAccessible(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(results.violations.filter((v) => ["serious", "critical"].includes(v.impact ?? ""))).toEqual([]);
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  expect(overflow).toBeLessThanOrEqual(0);
+  // Compare with the configured viewport: a mobile browser widens its layout viewport
+  // (and zooms out) when content overflows, so window.innerWidth would hide the problem.
+  const width = page.viewportSize()?.width ?? 0;
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(width);
 }
