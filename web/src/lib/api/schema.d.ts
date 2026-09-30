@@ -125,6 +125,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/charts/period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Period
+         * @description Dasha and transit readings at a moment (default now), with the running periods.
+         */
+        post: operations["period_v1_charts_period_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts/readings": {
         parameters: {
             query?: never;
@@ -609,7 +629,7 @@ export interface components {
          * Category
          * @enum {string}
          */
-        Category: "mahapurusha" | "chandra" | "surya" | "nabhasa" | "raja" | "dhana" | "parivartana" | "viparita" | "neecha_bhanga" | "bhava" | "malika" | "conjunction" | "named" | "dosha" | "birth" | "lord_in_house" | "planet_in_house" | "planet_in_sign" | "nakshatra" | "lagna";
+        Category: "mahapurusha" | "chandra" | "surya" | "nabhasa" | "raja" | "dhana" | "parivartana" | "viparita" | "neecha_bhanga" | "bhava" | "malika" | "conjunction" | "named" | "dosha" | "birth" | "lord_in_house" | "planet_in_house" | "planet_in_sign" | "nakshatra" | "lagna" | "dasha" | "transit";
         /** ChartOptions */
         ChartOptions: {
             preset?: components["schemas"]["Preset"] | null;
@@ -1277,6 +1297,42 @@ export interface components {
             /** Start Jd Ut */
             start_jd_ut: number;
         };
+        /**
+         * PeriodReadingsOut
+         * @description What the running dasha and the transits say at one moment.
+         */
+        PeriodReadingsOut: {
+            /** Cancelled */
+            cancelled: components["schemas"]["YogaOut"][];
+            /** Dasha */
+            dasha: components["schemas"]["DashaPeriodOut"][];
+            /** Dasha Readings */
+            dasha_readings: components["schemas"]["YogaOut"][];
+            /** Jd Ut */
+            jd_ut: number;
+            /**
+             * Moment
+             * Format: date-time
+             */
+            moment: string;
+            /** Transit Readings */
+            transit_readings: components["schemas"]["YogaOut"][];
+            /** Transits */
+            transits: components["schemas"]["TransitPositionOut"][];
+        };
+        /** PeriodRequest */
+        PeriodRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /**
+             * Include Sensitive
+             * @default false
+             */
+            include_sensitive?: boolean;
+            /** Moment */
+            moment?: string | null;
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+        };
         /** PersonIn */
         PersonIn: {
             birth: components["schemas"]["BirthInput"];
@@ -1747,6 +1803,17 @@ export interface components {
             /** Start Jd Ut */
             start_jd_ut: number;
         };
+        /** TransitPositionOut */
+        TransitPositionOut: {
+            body: components["schemas"]["Body"];
+            /** House From Lagna */
+            house_from_lagna: number;
+            /** House From Moon */
+            house_from_moon: number;
+            /** Longitude */
+            longitude: number;
+            sign: components["schemas"]["Sign"];
+        };
         /** TransitRequest */
         TransitRequest: {
             birth: components["schemas"]["BirthInput"];
@@ -2107,6 +2174,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KpChartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    period_v1_charts_period_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PeriodRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodReadingsOut"];
                 };
             };
             /** @description Validation Error */

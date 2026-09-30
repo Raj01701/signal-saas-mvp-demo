@@ -509,7 +509,9 @@
           "planet_in_house",
           "planet_in_sign",
           "nakshatra",
-          "lagna"
+          "lagna",
+          "dasha",
+          "transit"
         ],
         "title": "Category",
         "type": "string"
@@ -2496,6 +2498,115 @@
         "title": "PeriodOut",
         "type": "object"
       },
+      "PeriodReadingsOut": {
+        "description": "What the running dasha and the transits say at one moment.",
+        "properties": {
+          "cancelled": {
+            "items": {
+              "$ref": "#/components/schemas/YogaOut"
+            },
+            "title": "Cancelled",
+            "type": "array"
+          },
+          "dasha": {
+            "items": {
+              "$ref": "#/components/schemas/DashaPeriodOut"
+            },
+            "title": "Dasha",
+            "type": "array"
+          },
+          "dasha_readings": {
+            "items": {
+              "$ref": "#/components/schemas/YogaOut"
+            },
+            "title": "Dasha Readings",
+            "type": "array"
+          },
+          "jd_ut": {
+            "title": "Jd Ut",
+            "type": "number"
+          },
+          "moment": {
+            "format": "date-time",
+            "title": "Moment",
+            "type": "string"
+          },
+          "transit_readings": {
+            "items": {
+              "$ref": "#/components/schemas/YogaOut"
+            },
+            "title": "Transit Readings",
+            "type": "array"
+          },
+          "transits": {
+            "items": {
+              "$ref": "#/components/schemas/TransitPositionOut"
+            },
+            "title": "Transits",
+            "type": "array"
+          }
+        },
+        "required": [
+          "moment",
+          "jd_ut",
+          "dasha",
+          "transits",
+          "dasha_readings",
+          "transit_readings",
+          "cancelled"
+        ],
+        "title": "PeriodReadingsOut",
+        "type": "object"
+      },
+      "PeriodRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "include_sensitive": {
+            "default": false,
+            "title": "Include Sensitive",
+            "type": "boolean"
+          },
+          "moment": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moment"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "birth"
+        ],
+        "title": "PeriodRequest",
+        "type": "object"
+      },
       "PersonIn": {
         "properties": {
           "birth": {
@@ -3726,6 +3837,37 @@
         "title": "TransitEpisode",
         "type": "object"
       },
+      "TransitPositionOut": {
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/Body"
+          },
+          "house_from_lagna": {
+            "title": "House From Lagna",
+            "type": "integer"
+          },
+          "house_from_moon": {
+            "title": "House From Moon",
+            "type": "integer"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "sign": {
+            "$ref": "#/components/schemas/Sign"
+          }
+        },
+        "required": [
+          "body",
+          "longitude",
+          "sign",
+          "house_from_lagna",
+          "house_from_moon"
+        ],
+        "title": "TransitPositionOut",
+        "type": "object"
+      },
       "TransitRequest": {
         "properties": {
           "birth": {
@@ -4501,6 +4643,45 @@
           }
         },
         "summary": "Kp"
+      }
+    },
+    "/v1/charts/period": {
+      "post": {
+        "description": "Dasha and transit readings at a moment (default now), with the running periods.",
+        "operationId": "period_v1_charts_period_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodReadingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Period"
       }
     },
     "/v1/charts/readings": {

@@ -735,3 +735,28 @@ class ReadingsOut(BaseModel):
     catalogue_size: int
     #: Rising sign, the Moon's nakshatra, grahas in signs and houses, then house lords.
     readings: list[YogaOut]
+
+
+class TransitPositionOut(BaseModel):
+    body: Body
+    #: Sidereal longitude, degrees.
+    longitude: float
+    sign: Sign
+    #: Houses counted from the natal lagna and from the natal Moon.
+    house_from_lagna: int
+    house_from_moon: int
+
+
+class PeriodReadingsOut(BaseModel):
+    """What the running dasha and the transits say at one moment."""
+
+    moment: datetime
+    jd_ut: float
+    #: Vimshottari mahadasha, antardasha and pratyantardasha running at the moment.
+    dasha: list[DashaPeriodOut]
+    transits: list[TransitPositionOut]
+    dasha_readings: list[YogaOut]
+    transit_readings: list[YogaOut]
+    #: Rules whose condition holds but which are cancelled, such as a favourable transit
+    #: obstructed by vedha; ``cancel_evidence`` gives the reason.
+    cancelled: list[YogaOut]

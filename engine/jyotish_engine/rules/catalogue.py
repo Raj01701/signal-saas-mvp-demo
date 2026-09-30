@@ -25,7 +25,7 @@ from jyotish_engine.rules.facts import ChartFacts, MissingFactError
 from jyotish_engine.rules.schema import Category, Citation, Rule, RuleFile, substitute
 
 KNOWLEDGE_ENV = "JYOTISH_KNOWLEDGE_DIR"
-RULE_DIRECTORIES = ("yogas", "natal")
+RULE_DIRECTORIES = ("yogas", "natal", "dasha", "transit")
 
 
 class CatalogueError(ValueError):

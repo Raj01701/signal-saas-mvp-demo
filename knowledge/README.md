@@ -196,6 +196,13 @@ Generated from the code by `uv run python scripts/rules_reference.py`.
 | `karana` | 0 | karana name, such as 'vishti' |
 | `nakshatra` | 1 | nakshatra of x, 1 (Ashwini) to 27 (Revati) |
 | `pada` | 1 | nakshatra pada (1-4) of x |
+| `natural_friend` | 2 | a counts b as a natural friend (BPHS) |
+| `natural_enemy` | 2 | a counts b as a natural enemy (BPHS) |
+| `yogakaraka` | 1 | p lords a kendra (4, 7, 10) and a trikona (5, 9) |
+| `transit_sign` | 1 | sign occupied by transiting p |
+| `transit_house` | 1 or 2 | house of transiting p counted from natal ref (default lagna) |
+| `transit_influences` | 2 or 3 | transiting p occupies or aspects house h from natal ref |
+| `vedha` | 1 | p's favourable transit from the Moon is obstructed (vedha) |
 | `day_birth` | 0 | born between sunrise and sunset |
 | `male` | 0 | native is male |
 | `female` | 0 | native is female |

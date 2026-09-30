@@ -11,10 +11,10 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.rules.catalogue import Catalogue, RuleResult, default_catalogue
 from jyotish_engine.rules.facts import ChartFacts
-from jyotish_engine.rules.schema import READING_CATEGORIES, Category
+from jyotish_engine.rules.schema import PERIOD_CATEGORIES, READING_CATEGORIES, Category
 
-#: Yoga and dosha categories: everything but the natal readings.
-YOGA_CATEGORIES = frozenset(Category) - READING_CATEGORIES
+#: Yoga and dosha categories: everything but natal readings and period results.
+YOGA_CATEGORIES = frozenset(Category) - READING_CATEGORIES - PERIOD_CATEGORIES
 
 
 def rule_out(result: RuleResult) -> YogaOut:

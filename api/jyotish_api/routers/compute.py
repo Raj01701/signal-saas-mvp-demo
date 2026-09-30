@@ -15,6 +15,7 @@ from jyotish_api.schemas import (
     HoraryRequest,
     MatchRequest,
     PanchangaRequest,
+    PeriodRequest,
     ReadingsRequest,
     TransitRequest,
     YogasRequest,
@@ -34,6 +35,7 @@ from jyotish_engine.models import (
     KpChartOut,
     MatchOut,
     PanchangaOut,
+    PeriodReadingsOut,
     ReadingsOut,
     SensitivityOut,
     StrengthsOut,
@@ -43,6 +45,7 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import Place, search_places
+from jyotish_engine.rules.periods import compute_period_readings
 from jyotish_engine.rules.readings import compute_readings
 from jyotish_engine.rules.yogas import compute_yogas
 from jyotish_engine.sensitivity import compute_sensitivity
@@ -105,6 +108,14 @@ def yogas(request: Request, body: YogasRequest) -> YogasOut:
 def readings(request: Request, body: ReadingsRequest) -> ReadingsOut:
     """The classical result of each placement: rising sign, Moon's nakshatra, grahas, lords."""
     return compute_readings(_chart(request, body), include_sensitive=body.include_sensitive)
+
+
+@router.post("/charts/period")
+def period(request: Request, body: PeriodRequest) -> PeriodReadingsOut:
+    """Dasha and transit readings at a moment (default now), with the running periods."""
+    return compute_period_readings(
+        _chart(request, body), body.moment, include_sensitive=body.include_sensitive
+    )
 
 
 @router.post("/charts/strengths")

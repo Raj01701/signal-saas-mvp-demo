@@ -40,6 +40,9 @@ class Category(StrEnum):
     PLANET_IN_SIGN = "planet_in_sign"
     NAKSHATRA = "nakshatra"
     LAGNA = "lagna"
+    # Period results: they need a running dasha or transit positions.
+    DASHA = "dasha"
+    TRANSIT = "transit"
 
 
 #: Categories of natal readings (placement results) rather than yogas.
@@ -52,6 +55,8 @@ READING_CATEGORIES = frozenset(
         Category.LAGNA,
     }
 )
+#: Categories of period results (a running dasha, or transits).
+PERIOD_CATEGORIES = frozenset({Category.DASHA, Category.TRANSIT})
 
 
 class School(StrEnum):

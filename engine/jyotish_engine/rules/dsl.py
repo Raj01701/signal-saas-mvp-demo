@@ -33,7 +33,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from jyotish_engine.astro.bodies import GRAHAS, Body
-from jyotish_engine.core.dignity import DIGNITY_RULES
+from jyotish_engine.core.aspects import graha_aspected_signs
+from jyotish_engine.core.dignity import DIGNITY_RULES, Relationship, natural_relationship
 from jyotish_engine.core.zodiac import SIGN_LORDS, Sign
 from jyotish_engine.rules.facts import (
     DUSTHANA,
@@ -46,6 +47,7 @@ from jyotish_engine.rules.facts import (
     UPACHAYA,
     ChartFacts,
 )
+from jyotish_engine.transit.gochara import NO_VEDHA, VEDHA
 
 
 class RuleSyntaxError(ValueError):
@@ -184,6 +186,32 @@ def _exalted_in(f: ChartFacts, sign: Any) -> list[Body]:
 def _navamsa_dignity(f: ChartFacts, p: Any, offset: int) -> bool:
     body = _body(p)
     return Sign((f.navamsa_sign(body) + offset) % 12) in DIGNITY_RULES[body].exaltation_signs
+
+
+def _transit_influences(f: ChartFacts, p: Any, h: Any, ref: Any = LAGNA) -> bool:
+    body = _body(p)
+    target = f.sign_of_house(_int(h), _point(ref))
+    sign = f.transit_sign(body)
+    return target == sign or target in graha_aspected_signs(body, sign, f.node_aspects_5_9)
+
+
+def _vedha(f: ChartFacts, p: Any) -> bool:
+    """A favourable transit from the natal Moon obstructed by a graha in its vedha house."""
+    body = _body(p)
+    blocked = VEDHA[body].get(f.transit_house(body, Body.MOON))
+    if blocked is None:
+        return False
+    return any(
+        other is not body
+        and frozenset({body, other}) not in NO_VEDHA
+        and f.transit_house(other, Body.MOON) == blocked
+        for other in f.transits or {}
+    )
+
+
+def _yogakaraka(f: ChartFacts, p: Any) -> bool:
+    owned = {h for h in range(1, 13) if f.lord(h) is _body(p)}
+    return bool(owned & {4, 7, 10}) and bool(owned & {5, 9})
 
 
 def _fires(f: ChartFacts, pattern: Any) -> bool:
@@ -340,6 +368,32 @@ FUNCTIONS: dict[str, Function] = {
         (1,), "nakshatra of x, 1 (Ashwini) to 27 (Revati)", lambda f, x: f.nakshatra(_point(x))
     ),
     "pada": _fn((1,), "nakshatra pada (1-4) of x", lambda f, x: f.pada(_point(x))),
+    "natural_friend": _fn(
+        (2,),
+        "a counts b as a natural friend (BPHS)",
+        lambda f, a, b: natural_relationship(_body(a), _body(b)) is Relationship.FRIEND,
+    ),
+    "natural_enemy": _fn(
+        (2,),
+        "a counts b as a natural enemy (BPHS)",
+        lambda f, a, b: natural_relationship(_body(a), _body(b)) is Relationship.ENEMY,
+    ),
+    "yogakaraka": _fn((1,), "p lords a kendra (4, 7, 10) and a trikona (5, 9)", _yogakaraka),
+    # period: transits (dasha lords are the names md and ad)
+    "transit_sign": _fn(
+        (1,), "sign occupied by transiting p", lambda f, p: SignValue(f.transit_sign(_body(p)))
+    ),
+    "transit_house": _fn(
+        (1, 2),
+        "house of transiting p counted from natal ref (default lagna)",
+        lambda f, p, r=LAGNA: f.transit_house(_body(p), _point(r)),
+    ),
+    "transit_influences": _fn(
+        (2, 3),
+        "transiting p occupies or aspects house h from natal ref",
+        _transit_influences,
+    ),
+    "vedha": _fn((1,), "p's favourable transit from the Moon is obstructed (vedha)", _vedha),
     # birth facts
     "day_birth": _fn((0,), "born between sunrise and sunset", lambda f: f.require_day_birth()),
     "male": _fn((0,), "native is male", lambda f: f.require_gender() == "male"),
@@ -372,7 +426,15 @@ GROUPS: dict[str, Callable[[ChartFacts], list[Any]]] = {
     "upachayas": lambda f: list(UPACHAYA),
 }
 
-CONSTANT_NAMES = {b.value for b in GRAHAS} | {LAGNA} | set(SIGN_NAMES) | set(GROUPS)
+#: Names bound to the running period: the mahadasha and antardasha lords.
+CONTEXT_NAMES: dict[str, Callable[[ChartFacts], Body]] = {
+    "md": lambda f: f.dasha_lord(1),
+    "ad": lambda f: f.dasha_lord(2),
+}
+
+CONSTANT_NAMES = (
+    {b.value for b in GRAHAS} | {LAGNA} | set(SIGN_NAMES) | set(GROUPS) | set(CONTEXT_NAMES)
+)
 COMPREHENSIONS = ("any", "all", "count", "select")
 KEYWORDS = {"and", "or", "not", "in"}
 
@@ -384,6 +446,8 @@ def _constant(name: str, facts: ChartFacts) -> Any:
         return SignValue(SIGN_NAMES[name])
     if name in GROUPS:
         return GROUPS[name](facts)
+    if name in CONTEXT_NAMES:
+        return CONTEXT_NAMES[name](facts)
     return Body(name)
 
 
@@ -459,6 +523,8 @@ class ListNode(Node):
 
 def _derived(node: Node) -> bool:
     """Whether a node's value is worth showing next to its text in evidence."""
+    if isinstance(node, Name):
+        return node.name in CONTEXT_NAMES
     return isinstance(node, (Call, Variable, Comprehension))
 
 

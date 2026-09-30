@@ -40,6 +40,8 @@ def test_chart_derived_routes(client: TestClient) -> None:
     yogas = _post(client, "/v1/charts/yogas", {"birth": BIRTH, "gender": "male"})
     assert yogas["catalogue_size"] >= 300
     assert _post(client, "/v1/charts/strengths", {"birth": BIRTH})
+    period = _post(client, "/v1/charts/period", {"birth": BIRTH, "moment": "2026-09-30T00:00:00Z"})
+    assert len(period["dasha"]) == 3 and len(period["transits"]) == 9 and period["dasha_readings"]
     readings = _post(client, "/v1/charts/readings", {"birth": BIRTH})
     assert readings["catalogue_size"] == 375 and len(readings["readings"]) == 30
     for system, key in (
@@ -82,6 +84,7 @@ def test_other_routes(client: TestClient) -> None:
         ("/v1/charts/transits", {"birth": BIRTH, "start": "2030-01-01", "end": "2020-01-01"}),
         ("/v1/charts", {"birth": {**BIRTH, "local_datetime": "1700-01-01T00:00:00"}}),
         ("/v1/kp/horary", {"number": 250, "moment": "2026-09-30T08:00:00", "place": DELHI}),
+        ("/v1/charts/period", {"birth": BIRTH, "moment": "1980-01-01T00:00:00Z"}),
     ],
 )
 def test_bad_input_is_422(client: TestClient, path: str, body: dict[str, Any]) -> None:

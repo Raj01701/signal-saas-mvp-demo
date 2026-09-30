@@ -141,12 +141,24 @@ def test_library_on_a_known_chart(text: str, facts: ChartFacts) -> None:
     assert evidence
 
 
+#: Functions exercised with a running dasha and transits in test_periods.py.
+PERIOD_TESTED = {
+    "natural_friend",
+    "natural_enemy",
+    "yogakaraka",
+    "transit_sign",
+    "transit_house",
+    "transit_influences",
+    "vedha",
+}
+
+
 def test_every_function_is_documented_and_used_in_the_table() -> None:
     used = " ".join(TRUE_EXPRESSIONS)
     for name, function in FUNCTIONS.items():
         assert function.doc, name
         assert function.arities, name
-        assert f"{name}(" in used or name in {"day_birth", "male", "female"}, name
+        assert f"{name}(" in used or name in {"day_birth", "male", "female"} | PERIOD_TESTED, name
 
 
 def test_knowledge_guide_lists_every_function() -> None:

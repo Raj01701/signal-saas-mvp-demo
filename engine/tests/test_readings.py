@@ -51,13 +51,13 @@ def test_readings_follow_the_chart(chart: ChartResult) -> None:
 
 
 def test_generated_rule_files_are_current(monkeypatch: pytest.MonkeyPatch) -> None:
-    """knowledge/natal/ is what scripts/generate_readings.py writes (re-run it after edits)."""
+    """knowledge/natal, dasha and transit are what scripts/generate_readings.py writes."""
     monkeypatch.syspath_prepend(str(ROOT / "scripts"))
     module = importlib.import_module("generate_readings")
     try:
-        for name, build in module.FILES:
-            text = (ROOT / "knowledge" / "natal" / name).read_text(encoding="utf-8")
+        for folder, name, build in module.FILES:
+            text = (ROOT / "knowledge" / folder / name).read_text(encoding="utf-8")
             assert text == module.HEADER + module._dump(build()), name
     finally:
-        sys.modules.pop("generate_readings", None)
-        sys.modules.pop("generate_rule_families", None)
+        for name in ("generate_readings", "generate_rule_families", "period_rules"):
+            sys.modules.pop(name, None)

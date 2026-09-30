@@ -74,6 +74,12 @@ class Instant:
 _J2000_UTC = datetime(2000, 1, 1, 12, 0, tzinfo=UTC)
 
 
+def datetime_to_jd(moment: datetime) -> float:
+    """UT Julian day of an aware datetime (naive datetimes are taken as UTC)."""
+    aware = moment if moment.tzinfo is not None else moment.replace(tzinfo=UTC)
+    return J2000_JD + (aware - _J2000_UTC).total_seconds() / 86_400.0
+
+
 def jd_to_datetime(jd_ut: float) -> datetime:
     """Civil datetime (UTC) for a UT Julian day, rounded to the millisecond.
 

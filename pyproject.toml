@@ -53,6 +53,8 @@ known-first-party = ["jyotish_engine", "jyotish_api"]
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["PLC0415", "N802", "N806"]
 "oracle/**" = ["PLC0415"]
+# Rule texts and templates: long prose strings are data.
+"scripts/period_rules.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

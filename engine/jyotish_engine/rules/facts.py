@@ -11,12 +11,17 @@ name or through ``rest``. Rahu and Ketu are always opposite: give one of them (t
 other follows), or neither, in which case Rahu goes to ``rest`` and Ketu opposite.
 Optional keys ``day_birth`` (true or false) and ``gender`` ("male" or "female")
 supply the birth facts a few rules need.
+
+Dasha and transit rules also need a period: ``dasha`` lists the running lords,
+mahadasha first (``{"dasha": ["jupiter", "venus"]}``), and ``transit`` places the
+transiting grahas (``{"transit": {"saturn": "pisces 10"}}``); a transiting graha
+that is not given obstructs nothing.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import cached_property
 from typing import Any
 
@@ -98,6 +103,10 @@ class ChartFacts:
     node_aspects_5_9: bool = False
     day_birth: bool | None = None
     gender: str | None = None
+    #: The running dasha lords, mahadasha first (for dasha rules).
+    dasha: tuple[Body, ...] = ()
+    #: Sidereal longitudes of the transiting grahas (for transit rules).
+    transits: Mapping[Body, float] | None = None
     #: Outcomes of the rules evaluated so far, filled by the rule runner so that
     #: rules can refer to each other with ``fires(...)``.
     results: dict[str, bool] = field(default_factory=dict, compare=False, repr=False)
@@ -119,7 +128,8 @@ class ChartFacts:
 
     @classmethod
     def from_spec(cls, spec: Mapping[str, Any]) -> ChartFacts:
-        known = {LAGNA, "rest", "retrograde", "day_birth", "gender", *(b.value for b in GRAHAS)}
+        known = {LAGNA, "rest", "retrograde", "day_birth", "gender", "dasha", "transit"}
+        known |= {b.value for b in GRAHAS}
         unknown = set(spec) - known
         if unknown:
             raise ValueError(f"unknown keys in chart spec: {sorted(unknown)}")
@@ -134,7 +144,19 @@ class ChartFacts:
             retrograde=frozenset(Body(b) for b in spec.get("retrograde", [])),
             day_birth=day_birth,
             gender=spec.get("gender"),
+            dasha=tuple(Body(b) for b in spec.get("dasha", [])),
+            transits=(
+                {Body(b): parse_position(v) for b, v in spec["transit"].items()}
+                if "transit" in spec
+                else None
+            ),
         )
+
+    def with_period(
+        self, dasha: tuple[Body, ...] = (), transits: Mapping[Body, float] | None = None
+    ) -> ChartFacts:
+        """The same chart with a running dasha and transit positions."""
+        return replace(self, dasha=dasha, transits=transits, results={})
 
     # --- signs and houses ---------------------------------------------------
 
@@ -271,6 +293,23 @@ class ChartFacts:
 
     def gandanta(self, point: Point) -> bool:
         return is_gandanta(self.longitude(point))
+
+    # --- period: dasha and transits ------------------------------------------------
+
+    def dasha_lord(self, level: int) -> Body:
+        """The running lord at ``level`` (1 = mahadasha, 2 = antardasha)."""
+        if len(self.dasha) < level:
+            raise MissingFactError("dasha")
+        return self.dasha[level - 1]
+
+    def transit_sign(self, body: Body) -> int:
+        if self.transits is None or body not in self.transits:
+            raise MissingFactError("transits")
+        return int(self.transits[body] // 30.0) % 12
+
+    def transit_house(self, body: Body, reference: Point = LAGNA) -> int:
+        """House (1-12) of transiting ``body`` counted from the natal ``reference``."""
+        return (self.transit_sign(body) - self.sign_of(reference)) % 12 + 1
 
     # --- birth facts --------------------------------------------------------------
 

@@ -30,6 +30,13 @@ class ReadingsRequest(ChartRequest):
     include_sensitive: bool = False
 
 
+class PeriodRequest(ChartRequest):
+    #: The moment to read (UTC when no offset is given); default: now.
+    moment: datetime | None = None
+    #: Include rules marked sensitive (health, longevity); professional use only.
+    include_sensitive: bool = False
+
+
 class DashaRequest(ChartRequest):
     #: A nakshatra dasha (e.g. "vimshottari"), a sign dasha (e.g. "chara") or "kalachakra".
     system: str
