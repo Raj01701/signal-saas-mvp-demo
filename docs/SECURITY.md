@@ -79,6 +79,13 @@
 - Research export includes only consenting adults, without names or IDs.
 - Users can export and delete their data.
 
+**Push reminders** (added after the review)
+- The server calls only the browsers' push services: HTTPS on the default port, with no credentials in the URL. It checks this when a subscription is saved and again when sending, so the API cannot be pointed at internal or arbitrary addresses.
+- Messages are encrypted for the browser (RFC 8291, checked against the RFC's test vector) and signed with the operator's VAPID key.
+- Replacing a subscription's keys or unsubscribing requires its authentication secret.
+- No birth details are stored. Reminders are deleted once sent, idle subscriptions are forgotten, and the tables have row-level security.
+- The service worker runs under its own strict content security policy and only opens pages of the site itself.
+
 **Supply chain**
 - Pinned lockfiles (`uv.lock`, `pnpm-lock.yaml`).
 - The licence guard, and vulnerability audits in CI.

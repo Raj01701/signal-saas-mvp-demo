@@ -93,6 +93,43 @@ class LifeEvent(Base):
     person: Mapped[Person] = relationship(back_populates="events")
 
 
+class PushSubscription(Base):
+    """A browser's Web Push subscription, kept for the reminders it asked for.
+
+    No account or birth data is involved: the browser sends its own reminder texts.
+    """
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    #: The push service URL for this browser; secret, as it addresses the browser.
+    endpoint: Mapped[str] = mapped_column(String(2048), unique=True)
+    #: The browser's P-256 public key and authentication secret (base64url).
+    p256dh: Mapped[str] = mapped_column(String(100))
+    auth: Mapped[str] = mapped_column(String(50))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    reminders: Mapped[list[PushReminder]] = relationship(
+        back_populates="subscription", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class PushReminder(Base):
+    """One reminder to send; deleted once sent (or when more than a day late)."""
+
+    __tablename__ = "push_reminders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    subscription_id: Mapped[str] = mapped_column(
+        ForeignKey("push_subscriptions.id", ondelete="CASCADE"), index=True
+    )
+    #: When to send it (UTC).
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    title: Mapped[str] = mapped_column(String(120))
+    body: Mapped[str] = mapped_column(String(300))
+    subscription: Mapped[PushSubscription] = relationship(back_populates="reminders")
+
+
 def tls_connect_args(url: str, tls: str = "prefer", ca_file: str | None = None) -> dict[str, Any]:
     """pg8000 arguments for "verify-full": TLS required, certificate and host name checked.
 

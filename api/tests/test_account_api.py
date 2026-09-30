@@ -129,10 +129,10 @@ def test_postgres_round_trip() -> None:
     command.check(config)
     with make_engine(url).connect() as connection:  # Supabase's REST roles see nothing
         rows = connection.exec_driver_sql(
-            "SELECT relname, relrowsecurity FROM pg_class WHERE relname IN "
-            "('users', 'people', 'life_events', 'alembic_version')"
+            "SELECT relname, relrowsecurity FROM pg_class WHERE relname IN ('users', 'people', "
+            "'life_events', 'push_subscriptions', 'push_reminders', 'alembic_version')"
         ).all()
-    assert len(rows) == 4 and all(secured for _, secured in rows)
+    assert len(rows) == 6 and all(secured for _, secured in rows)
     client = TestClient(create_app(ApiSettings(database_url=url, supabase_jwt_secret=SECRET)))
     me = _token(f"pg-{time.time_ns()}")
     person = client.post("/v1/people", json={"name": "Asha", "birth": BIRTH}, headers=me).json()

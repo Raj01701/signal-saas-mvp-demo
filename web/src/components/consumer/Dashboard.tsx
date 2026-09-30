@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Status } from "@/components/common";
 import { api, type Schemas } from "@/lib/api/client";
@@ -9,6 +10,7 @@ import { icsCalendar } from "@/lib/ics";
 import { formatDate, formatMonth, type Lang, useI18n } from "@/lib/i18n";
 import { domainName, nakshatraName, planetName, tithiName, varaName } from "@/lib/names";
 import { birthOf, type Profile } from "@/lib/profile";
+import { disablePush, enablePush, pushState, type PushReminder, type PushState, refreshPush, reminderMoment } from "@/lib/push";
 import { useLoad } from "@/lib/use-load";
 
 type Tone = "favourable" | "mixed" | "challenging";
@@ -193,6 +195,9 @@ function Reminders({ panchanga, predictions, today, lang }: { panchanga: Schemas
       .map((p) => ({ date: p.start.slice(0, 10), summary: d.alertDasha(formatDate(p.start, lang), planetName(p.lords[1], lang)) })),
     ...yearWindows(predictions, today).map(({ domain, window }) => ({ date: window.start, summary: d.alertWindow(formatDate(window.start, lang), domainName(domain, lang)) })),
   ];
+  const pushReminders = calendar
+    .filter((c) => c.date > today)
+    .map((c) => ({ at: reminderMoment(c.date), title: d.pushTitle, body: c.summary }));
   const stamp = `${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
   const href = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsCalendar(calendar, stamp))}`;
   return (
@@ -203,6 +208,57 @@ function Reminders({ panchanga, predictions, today, lang }: { panchanga: Schemas
         {upcoming.map((u) => <li key={`${u.date}-${u.text}`}>{u.text}</li>)}
       </ul>
       <a href={href} download="jyotish-reminders.ics" className="w-fit text-sm font-medium underline">{d.calendar}</a>
+      <PushToggle reminders={pushReminders} />
     </section>
+  );
+}
+
+/** Browser notifications for the reminders; hidden where the browser or the API cannot do push. */
+function PushToggle({ reminders }: { reminders: PushReminder[] }) {
+  const { t } = useI18n();
+  const d = t.dashboard;
+  const [state, setState] = useState<PushState>("unsupported");
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const key = JSON.stringify(reminders);
+  useEffect(() => {
+    let live = true;
+    pushState()
+      .then(async (current) => {
+        if (current === "on") await refreshPush(JSON.parse(key) as PushReminder[]);
+        if (live) setState(current);
+      })
+      .catch(() => {
+        if (live) setState("unsupported");
+      });
+    return () => {
+      live = false;
+    };
+  }, [key]);
+  if (state === "unsupported") return null;
+  const toggle = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      setState(state === "on" ? await disablePush() : await enablePush(reminders));
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="grid gap-1 text-sm">
+      {state === "denied" ? (
+        <p>{d.pushDenied}</p>
+      ) : (
+        <button type="button" onClick={toggle} disabled={busy} className="w-fit rounded-md border border-zinc-300 px-3 py-1.5 dark:border-zinc-700">
+          {state === "on" ? d.pushOff : d.pushOn}
+        </button>
+      )}
+      {state === "on" && <p>{d.pushActive}</p>}
+      {failed && <p role="alert">{d.pushError}</p>}
+      <p className="text-zinc-600 dark:text-zinc-400">{d.pushPrivacy}</p>
+    </div>
   );
 }

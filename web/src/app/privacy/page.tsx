@@ -28,7 +28,11 @@ export default function PrivacyPage() {
         <p>
           Without an account, the details you enter in &ldquo;My reading&rdquo; stay in your browser on this device; our
           servers receive them only to calculate each result and do not store them. With an account, the people and events
-          you save are stored in our database. Request logs record the route, status and timing, never birth data.
+          you save are stored in our database. Our request logs record the route, status and timing, never birth data or
+          your network address (hosting providers may keep their own connection logs). If you turn on reminder
+          notifications, we keep your browser&apos;s push address and the reminder texts
+          and dates your browser sends (never your birth details), delete each reminder once it is sent, and forget the
+          address when you turn notifications off or after 30 days without pending reminders.
         </p>
       </section>
       <section className={section} aria-labelledby="purposes">
@@ -63,6 +67,7 @@ export default function PrivacyPage() {
         <p>
           हम जन्म की तिथि, समय और स्थान केवल आपकी कुंडली की गणना के लिए उपयोग करते हैं। खाते के बिना आपका विवरण केवल आपके डिवाइस पर रहता है।
           आप अपना सारा डेटा देख, निर्यात कर और हटा सकते हैं। शोध में उपयोग केवल आपकी सहमति से, बिना नाम के होता है।
+          सूचनाएँ चालू करने पर हम केवल अनुस्मारक और उनकी तिथियाँ रखते हैं, जन्म विवरण नहीं।
         </p>
       </section>
     </main>

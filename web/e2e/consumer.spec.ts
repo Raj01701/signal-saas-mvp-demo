@@ -25,6 +25,8 @@ test("onboarding, dashboard and Hindi", async ({ page }) => {
   await expect(page.getByText(/mahadasha and the .* antardasha/)).toBeVisible();
   await expect(page.getByRole("list", { name: "The year ahead" }).locator("li").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Add these to your calendar (.ics)" })).toHaveAttribute("download", "jyotish-reminders.ics");
+  // Push is on in the test API, so the notification choice appears with its privacy note.
+  await expect(page.getByText("Only the reminder texts and dates go to our server, never your birth details.")).toBeVisible();
   await expectAccessible(page);
 
   await page.getByRole("button", { name: "Switch the interface to Hindi" }).click();

@@ -5,7 +5,7 @@
 - The production web build under the end-to-end suite, with its security headers and content security policy.
 - A Postgres 16 server with verified TLS: migrations up and down, the row-level-security check, and a round trip through the API.
 
-**What still needs checking.** The container image has not been built, because the build environment has no Docker daemon. No hosted deployment exists yet. Work through the [first-deploy checklist](#10-first-deploy-checklist) on the first real deployment.
+**What still needs checking.** The container image has not been built, because the build environment has no Docker daemon. No hosted deployment exists yet. Work through the [first-deploy checklist](#11-first-deploy-checklist) on the first real deployment.
 
 | Part | Where | Notes |
 |---|---|---|
@@ -68,6 +68,7 @@ Settings come from `JYOTISH_API_*` environment variables (`api/jyotish_api/confi
 | `JYOTISH_API_ANTHROPIC_API_KEY` (secret) | Optional; with `JYOTISH_API_NARRATIVE_PROVIDER=auto`, reports and chat use Claude |
 | `JYOTISH_API_METRICS_TOKEN` (secret) | Required to read `/metrics` |
 | `JYOTISH_API_MAX_BODY_BYTES` | `1000000` (the default) |
+| `JYOTISH_API_VAPID_PRIVATE_KEY` (secret), `JYOTISH_API_VAPID_SUBJECT` | Optional; turn on push reminders (see [section 6](#6-push-reminders)) |
 
 **Supabase notes**
 - Direct database connections use IPv6. If the host has no IPv6 egress, use the connection pooler in session mode (port 5432).
@@ -121,7 +122,29 @@ Keep it that way. Do not add RLS policies for the `anon` or `authenticated` role
 
 **Keeping changes compatible.** Write each migration so the previous release still works against the new schema: add first, remove in a later release. Then a code rollback needs no schema rollback.
 
-## 6. Deploy the web app (Vercel)
+## 6. Push reminders
+
+The reminders in "My reading" can also arrive as browser notifications (Web Push). Push stays off until both variables below are set. After that, the dashboard offers "Notify me on this device" in browsers that support push.
+
+1. **Make a key pair once** with `python -m jyotish_api.push keys`, from the image or a checkout.
+   - Store `JYOTISH_API_VAPID_PRIVATE_KEY` as a secret.
+   - Set `JYOTISH_API_VAPID_SUBJECT` to a contact such as `mailto:support@example.com`.
+   - Keep the key stable. Changing it invalidates every existing subscription, and browsers must subscribe again.
+2. **Schedule the sender** every 5 to 10 minutes, with the same environment as the API: `python -m jyotish_api.push send`. Use a Fly scheduled machine, a Render cron job, or Cloud Scheduler with a Cloud Run job. It prints its counts as JSON:
+   - `sent`
+   - `failed`: retried on the next run.
+   - `gone`: subscriptions the push service no longer knows, deleted.
+   - `late`: more than a day overdue, dropped.
+   - `idle`: subscriptions with nothing pending for 30 days, forgotten.
+3. **Allow outbound HTTPS** to the browsers' push services if egress is restricted. These are the only hosts the sender calls: `fcm.googleapis.com`, `*.push.services.mozilla.com`, `*.push.apple.com` and `*.notify.windows.com`.
+
+**Which devices get notifications**
+- Chrome, Edge, Firefox and Safari on macOS get them.
+- iPhones and iPads get them only for a site added to the Home Screen, which needs a web app manifest. The app does not have one yet.
+
+**What the server keeps.** The browser sends only its push address, its encryption keys and the reminder texts and times it computed. No birth details are sent.
+
+## 7. Deploy the web app (Vercel)
 
 1. Set the project root to `web/`. The framework is Next.js, installed with `pnpm install --frozen-lockfile` and built with `pnpm build`.
 2. Set `NEXT_PUBLIC_API_URL=https://api.example.com` for Production and Preview. It is read at build time: it goes into the client bundle and into the `connect-src` of the content security policy (`web/next.config.ts`), so changing it needs a rebuild.
@@ -135,7 +158,7 @@ Keep it that way. Do not add RLS policies for the `anon` or `authenticated` role
 
 Check them with `curl -sI https://www.example.com`.
 
-## 7. Health, metrics and logs
+## 8. Health, metrics and logs
 
 **Health checks**
 - `/health` is the liveness check and reports the API and engine versions. The container's `HEALTHCHECK` uses it.
@@ -153,7 +176,7 @@ Check them with `curl -sI https://www.example.com`.
 - Every response carries `X-Request-ID`. A caller can send its own ID (1–64 characters from letters, digits, `.`, `_` and `-`); otherwise the API makes one.
 - When a user reports a problem, ask for the ID and search the logs for it.
 
-## 8. Backups and personal-data requests
+## 9. Backups and personal-data requests
 
 **Backups**
 - Turn on daily backups, plus point-in-time recovery if the plan offers it.
@@ -170,18 +193,19 @@ Check them with `curl -sI https://www.example.com`.
 
 **Research data.** `scripts/export_research_cases.py` exports only consenting adults, without names or account IDs. Run it with the production settings from a trusted machine.
 
-## 9. Incidents
+## 10. Incidents
 
 1. **Contain**
    - Roll back by redeploying the previous image tag. Migrations are forward-compatible, per section 5.
+   - Stop push reminders by pausing the scheduled sender.
    - Switch off the Claude narrator with `JYOTISH_API_NARRATIVE_PROVIDER=template`.
    - Lower the rate limits if the API is being abused.
-2. **Rotate** whatever may be exposed: the database password, the Supabase signing keys, the Anthropic key and the metrics token.
+2. **Rotate** whatever may be exposed: the database password, the Supabase signing keys, the Anthropic key and the metrics token. If the database leaked, also rotate the VAPID key; subscribers then have to turn notifications on again.
 3. **Investigate** with request IDs and the access lines.
 4. **Notify** if personal data was breached. The DPDP Rules require telling the affected people and the Data Protection Board of India without delay, with a detailed report to the Board within 72 hours. CERT-In's directions require reporting certain cyber incidents within 6 hours. GDPR requires notice to the supervisory authority within 72 hours for EU users. Confirm the current obligations with counsel, and name who does this before launch.
 5. **Write a short post-incident note** covering the timeline, cause and fixes, then track the fixes.
 
-## 10. First-deploy checklist
+## 11. First-deploy checklist
 
 - [ ] The image builds with the pinned hash, and a wrong hash fails the build.
 - [ ] `/health` and `/ready` return 200, and a chart names `DE440`.
@@ -192,5 +216,6 @@ Check them with `curl -sI https://www.example.com`.
 - [ ] The API sends no `access-control-allow-origin` for another origin, e.g. `curl -si -H 'Origin: https://example.org' https://API/health`.
 - [ ] `alembic current` shows the head revision; the tables have row-level security on; the anon key reads nothing through Supabase's REST API.
 - [ ] The web pages carry the security headers above, the browser console shows no policy violations, and `/my`, `/workbench` and `/panchanga` work against the production API.
+- [ ] With push on: `/v1/push/key` returns the public key; turning on notifications in `/my` on a desktop browser delivers a test reminder once the sender runs.
 - [ ] Backups are on and a restore has been tested.
 - [ ] The owner-only items in [ROADMAP.md](ROADMAP.md) are done before public launch.

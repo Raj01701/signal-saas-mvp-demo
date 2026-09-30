@@ -19,8 +19,9 @@ from jyotish_api.charts import ChartCache
 from jyotish_api.config import ApiSettings, get_settings
 from jyotish_api.db import make_engine, session_factory
 from jyotish_api.observability import Metrics, ObservabilityMiddleware
+from jyotish_api.push import vapid_from_settings
 from jyotish_api.ratelimit import NarrativeQuota, client_address
-from jyotish_api.routers import account, compute, narrative
+from jyotish_api.routers import account, compute, narrative, push
 from jyotish_engine import ENGINE_VERSION
 from jyotish_engine.place.geocode import gazetteer
 
@@ -59,6 +60,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     app.state.sessions = session_factory(app.state.db)
     app.state.limiter = Limiter(key_func=client_address, default_limits=[settings.rate_limit])
     app.state.narrative_quota = NarrativeQuota(settings.narrative_rate_limit)
+    app.state.vapid = vapid_from_settings(settings.vapid_private_key, settings.vapid_subject)
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
     app.add_exception_handler(ValueError, _value_error)
     app.add_middleware(SlowAPIASGIMiddleware)
@@ -105,6 +107,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
     app.include_router(compute.router)
     app.include_router(account.router)
     app.include_router(narrative.router)
+    app.include_router(push.router)
     return app
 
 

@@ -47,6 +47,11 @@ class ApiSettings(BaseSettings):
     metrics_enabled: bool = True
     #: When set, /metrics needs "Authorization: Bearer <token>".
     metrics_token: str | None = None
+    #: Web Push reminders: the VAPID private key (base64url, from ``python -m
+    #: jyotish_api.push keys``) and a contact for the push services ("mailto:..." or an
+    #: https URL). Push is off unless both are set.
+    vapid_private_key: str | None = None
+    vapid_subject: str | None = None
 
 
 @lru_cache(maxsize=1)

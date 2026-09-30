@@ -518,6 +518,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/push/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public Key
+         * @description The key browsers subscribe with; 503 when push reminders are off.
+         */
+        get: operations["public_key_v1_push_key_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/push/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Reminders
+         * @description Save this browser's subscription and replace its pending reminders.
+         */
+        put: operations["save_reminders_v1_push_subscription_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/push/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unsubscribe
+         * @description Forget a subscription and its reminders (idempotent).
+         */
+        post: operations["unsubscribe_v1_push_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/rectify": {
         parameters: {
             query?: never;
@@ -1814,6 +1874,27 @@ export interface components {
          * @enum {string}
          */
         Provenance: "classical" | "traditional" | "modern";
+        /** PushKeyOut */
+        PushKeyOut: {
+            /** Public Key */
+            public_key: string;
+        };
+        /** PushKeys */
+        PushKeys: {
+            /** Auth */
+            auth: string;
+            /** P256Dh */
+            p256dh: string;
+        };
+        /**
+         * PushSubscriptionIn
+         * @description The browser's ``PushSubscription.toJSON()``.
+         */
+        PushSubscriptionIn: {
+            /** Endpoint */
+            endpoint: string;
+            keys: components["schemas"]["PushKeys"];
+        };
         /**
          * ReadingsOut
          * @description Natal readings: the classical result of each placement present in a chart.
@@ -1937,6 +2018,27 @@ export interface components {
              * @default 60
              */
             uncertainty_minutes?: number;
+        };
+        /** ReminderIn */
+        ReminderIn: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Body
+             * @default
+             */
+            body?: string;
+            /** Title */
+            title: string;
+        };
+        /** RemindersIn */
+        RemindersIn: {
+            /** Reminders */
+            reminders: components["schemas"]["ReminderIn"][];
+            subscription: components["schemas"]["PushSubscriptionIn"];
         };
         /** Report */
         Report: {
@@ -2341,6 +2443,13 @@ export interface components {
             missing: string;
             /** Name */
             name: string;
+        };
+        /** UnsubscribeIn */
+        UnsubscribeIn: {
+            /** Auth */
+            auth: string;
+            /** Endpoint */
+            endpoint: string;
         };
         /**
          * Upagraha
@@ -3490,6 +3599,88 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RectificationOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_key_v1_push_key_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushKeyOut"];
+                };
+            };
+        };
+    };
+    save_reminders_v1_push_subscription_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemindersIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsubscribe_v1_push_unsubscribe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnsubscribeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

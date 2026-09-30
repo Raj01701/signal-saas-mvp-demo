@@ -3668,6 +3668,58 @@
         "title": "Provenance",
         "type": "string"
       },
+      "PushKeyOut": {
+        "properties": {
+          "public_key": {
+            "title": "Public Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "public_key"
+        ],
+        "title": "PushKeyOut",
+        "type": "object"
+      },
+      "PushKeys": {
+        "properties": {
+          "auth": {
+            "maxLength": 50,
+            "title": "Auth",
+            "type": "string"
+          },
+          "p256dh": {
+            "maxLength": 100,
+            "title": "P256Dh",
+            "type": "string"
+          }
+        },
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeys",
+        "type": "object"
+      },
+      "PushSubscriptionIn": {
+        "description": "The browser's ``PushSubscription.toJSON()``.",
+        "properties": {
+          "endpoint": {
+            "maxLength": 2048,
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeys"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscriptionIn",
+        "type": "object"
+      },
       "ReadingsOut": {
         "description": "Natal readings: the classical result of each placement present in a chart.",
         "properties": {
@@ -4000,6 +4052,54 @@
           "events"
         ],
         "title": "RectifyRequest",
+        "type": "object"
+      },
+      "ReminderIn": {
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "body": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Body",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "title"
+        ],
+        "title": "ReminderIn",
+        "type": "object"
+      },
+      "RemindersIn": {
+        "properties": {
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderIn"
+            },
+            "maxItems": 60,
+            "title": "Reminders",
+            "type": "array"
+          },
+          "subscription": {
+            "$ref": "#/components/schemas/PushSubscriptionIn"
+          }
+        },
+        "required": [
+          "subscription",
+          "reminders"
+        ],
+        "title": "RemindersIn",
         "type": "object"
       },
       "Report": {
@@ -5096,6 +5196,26 @@
           "missing"
         ],
         "title": "UndecidedRuleOut",
+        "type": "object"
+      },
+      "UnsubscribeIn": {
+        "properties": {
+          "auth": {
+            "maxLength": 50,
+            "title": "Auth",
+            "type": "string"
+          },
+          "endpoint": {
+            "maxLength": 2048,
+            "title": "Endpoint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint",
+          "auth"
+        ],
+        "title": "UnsubscribeIn",
         "type": "object"
       },
       "Upagraha": {
@@ -6841,6 +6961,98 @@
           }
         ],
         "summary": "Person Rectify"
+      }
+    },
+    "/v1/push/key": {
+      "get": {
+        "description": "The key browsers subscribe with; 503 when push reminders are off.",
+        "operationId": "public_key_v1_push_key_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushKeyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Public Key",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/v1/push/subscription": {
+      "put": {
+        "description": "Save this browser's subscription and replace its pending reminders.",
+        "operationId": "save_reminders_v1_push_subscription_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemindersIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Reminders",
+        "tags": [
+          "push"
+        ]
+      }
+    },
+    "/v1/push/unsubscribe": {
+      "post": {
+        "description": "Forget a subscription and its reminders (idempotent).",
+        "operationId": "unsubscribe_v1_push_unsubscribe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnsubscribeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unsubscribe",
+        "tags": [
+          "push"
+        ]
       }
     },
     "/v1/rectify": {

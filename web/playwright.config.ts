@@ -26,6 +26,11 @@ export default defineConfig({
     {
       command: "uv run uvicorn jyotish_api.main:app --port 8000",
       cwd: "..",
+      // Push reminders on, with a key made for these tests only.
+      env: {
+        JYOTISH_API_VAPID_PRIVATE_KEY: "1ypyskHgkGWGLncUlqmpi1NcYYShxCsvE386QduyzYg",
+        JYOTISH_API_VAPID_SUBJECT: "mailto:e2e@example.org",
+      },
       url: "http://localhost:8000/ready",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
