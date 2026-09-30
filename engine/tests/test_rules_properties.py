@@ -12,11 +12,14 @@ from typing import Any
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from jyotish_engine.astro.bodies import Body
+from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.rules.catalogue import RuleResult, default_catalogue
 from jyotish_engine.rules.facts import SIGN_NAMES, ChartFacts
+from jyotish_engine.rules.schema import PERIOD_CATEGORIES, READING_CATEGORIES
+from jyotish_engine.rules.yogas import YOGA_CATEGORIES
 
 CATALOGUE = default_catalogue()
+NATAL = YOGA_CATEGORIES | READING_CATEGORIES
 SIGNS = list(SIGN_NAMES)
 SEVEN = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")
 LORDS = [
@@ -51,7 +54,7 @@ charts = st.fixed_dictionaries(
 
 def _evaluate(spec: dict[str, Any]) -> tuple[ChartFacts, dict[str, RuleResult]]:
     facts = ChartFacts.from_spec(spec)
-    return facts, {r.rule.id: r for r in CATALOGUE.evaluate(facts)}
+    return facts, {r.rule.id: r for r in CATALOGUE.evaluate(facts, NATAL)}
 
 
 def _holds(result: RuleResult) -> bool:
@@ -61,6 +64,20 @@ def _holds(result: RuleResult) -> bool:
 
 def _present(results: dict[str, RuleResult], prefix: str) -> list[str]:
     return [rid for rid, r in results.items() if rid.startswith(prefix) and r.present]
+
+
+@settings(max_examples=60, deadline=None)
+@given(charts)
+def test_period_rules_are_decided(spec: dict[str, Any]) -> None:
+    """With a dasha and transits, every period rule is decided, and each graha's transit
+    from the Moon matches exactly one gochara rule (present, or cancelled by vedha)."""
+    natal = ChartFacts.from_spec(spec)
+    facts = natal.with_period(dasha=(Body.SATURN, Body.MERCURY), transits=natal.positions)
+    results = {r.rule.id: r for r in CATALOGUE.evaluate(facts, PERIOD_CATEGORIES)}
+    assert all(r.missing is None for r in results.values())
+    for body in GRAHAS:
+        prefix = f"transit.{body.value}_h"
+        assert sum(_holds(r) for rid, r in results.items() if rid.startswith(prefix)) == 1
 
 
 @settings(max_examples=150, deadline=None)
