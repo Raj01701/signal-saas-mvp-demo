@@ -29,7 +29,8 @@ def chart() -> ChartResult:
 
 def test_yogas_of_a_real_chart(chart: ChartResult) -> None:
     yogas = compute_yogas(chart)
-    assert yogas.catalogue_size == sum(r.rule.category in YOGA_CATEGORIES for r in default_catalogue())
+    yoga_rules = [r for r in default_catalogue() if r.rule.category in YOGA_CATEGORIES]
+    assert yogas.catalogue_size == len(yoga_rules)
     assert not any(y.category not in YOGA_CATEGORIES for y in yogas.present)
     ids = [y.id for y in yogas.present + yogas.cancelled]
     assert len(ids) == len(set(ids))
