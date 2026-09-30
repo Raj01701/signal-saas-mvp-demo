@@ -17,7 +17,7 @@ A precise, explainable Vedic astrology (Jyotish) platform:
 - **Explainable readings:** every statement cites the rule and classical text behind it.
 - **Honest accuracy:** no guaranteed predictions. Hit rates are measured against controls.
 
-Read [`docs/RESEARCH.md`](docs/RESEARCH.md) for the research behind these choices, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for milestones and status.
+Read [`docs/RESEARCH.md`](docs/RESEARCH.md) for the research behind these choices, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, [`docs/ROADMAP.md`](docs/ROADMAP.md) for milestones and status, and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) and [`docs/SECURITY.md`](docs/SECURITY.md) for deployment and the security review.
 
 ## Develop
 

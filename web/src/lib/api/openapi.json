@@ -660,6 +660,8 @@
       "ChatMessage": {
         "properties": {
           "content": {
+            "maxLength": 4000,
+            "minLength": 1,
             "title": "Content",
             "type": "string"
           },

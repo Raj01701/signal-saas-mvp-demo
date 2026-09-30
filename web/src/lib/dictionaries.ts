@@ -21,6 +21,11 @@ export const en = {
     panchanga: "Today's panchanga",
     match: "Match two charts",
   },
+  footer: {
+    privacy: "Privacy",
+    terms: "Terms",
+    note: "Traditional Jyotish interpretations, not certainties or professional advice.",
+  },
   common: {
     calculating: "Calculating…",
     tones: { favourable: "favourable", mixed: "mixed", challenging: "challenging" },
@@ -157,6 +162,11 @@ export const hi: Dictionary = {
     pro: "ज्योतिषी वर्कबेंच",
     panchanga: "आज का पंचांग",
     match: "दो कुंडलियों का मिलान",
+  },
+  footer: {
+    privacy: "गोपनीयता",
+    terms: "शर्तें",
+    note: "पारंपरिक ज्योतिषीय व्याख्याएँ, निश्चितताएँ या पेशेवर सलाह नहीं।",
   },
   common: {
     calculating: "गणना हो रही है…",

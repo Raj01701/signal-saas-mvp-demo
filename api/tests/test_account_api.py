@@ -14,7 +14,7 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 
 from jyotish_api.config import ApiSettings
-from jyotish_api.db import Base
+from jyotish_api.db import Base, make_engine
 from jyotish_api.main import create_app
 
 SECRET = "test-secret-with-enough-length-for-hs256"
@@ -127,6 +127,12 @@ def test_postgres_round_trip() -> None:
     config.set_main_option("sqlalchemy.url", url)
     command.upgrade(config, "head")
     command.check(config)
+    with make_engine(url).connect() as connection:  # Supabase's REST roles see nothing
+        rows = connection.exec_driver_sql(
+            "SELECT relname, relrowsecurity FROM pg_class WHERE relname IN "
+            "('users', 'people', 'life_events', 'alembic_version')"
+        ).all()
+    assert len(rows) == 4 and all(secured for _, secured in rows)
     client = TestClient(create_app(ApiSettings(database_url=url, supabase_jwt_secret=SECRET)))
     me = _token(f"pg-{time.time_ns()}")
     person = client.post("/v1/people", json={"name": "Asha", "birth": BIRTH}, headers=me).json()

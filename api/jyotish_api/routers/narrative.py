@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import Field
 
 from jyotish_api.charts import ChartCache, resolve_settings
@@ -26,6 +26,7 @@ from jyotish_api.narrative.service import (
     chat_with_claude,
     write_report,
 )
+from jyotish_api.ratelimit import narrative_quota
 from jyotish_api.schemas import ChartRequest
 from jyotish_engine.models import ChartResult
 
@@ -67,7 +68,7 @@ def _inputs(
     return chart, bundle
 
 
-@router.post("/charts/report")
+@router.post("/charts/report", dependencies=[Depends(narrative_quota)])
 def report(request: Request, body: ReportRequest) -> NarrativeOut:
     """A reading in plain language; every paragraph cites the engine evidence behind it."""
     _, bundle = _inputs(request, body, body.include_sensitive)
@@ -77,7 +78,7 @@ def report(request: Request, body: ReportRequest) -> NarrativeOut:
         raise HTTPException(502, str(error)) from error
 
 
-@router.post("/charts/chat")
+@router.post("/charts/chat", dependencies=[Depends(narrative_quota)])
 def chat(request: Request, body: ChatRequest) -> ChatOut:
     """Answer a question about the chart from the evidence only, citing it."""
     if body.messages[-1].role != "user":

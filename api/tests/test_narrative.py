@@ -199,3 +199,19 @@ def test_eval_harness_passes_with_the_template(monkeypatch: pytest.MonkeyPatch) 
         assert result.cases == 3 and result.passed == 3
     finally:
         sys.modules.pop("narrative_eval", None)
+
+
+def test_narrative_routes_have_their_own_quota() -> None:
+    client = TestClient(
+        create_app(ApiSettings(rate_limit="1000/minute", narrative_rate_limit="1/hour"))
+    )
+    question = [{"role": "user", "content": "How is my career?"}]
+    body = {"birth": BIRTH, "today": "2026-09-30", "messages": question}
+    assert client.post("/v1/charts/chat", json=body).status_code == 200
+    refused = client.post("/v1/charts/chat", json=body)
+    assert refused.status_code == 429 and "1/hour" in refused.json()["detail"]
+    too_long = {**body, "messages": [{"role": "user", "content": "x" * 4001}]}
+    assert (
+        TestClient(create_app(ApiSettings())).post("/v1/charts/chat", json=too_long).status_code
+        == 422
+    )

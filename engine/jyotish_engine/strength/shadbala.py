@@ -224,7 +224,8 @@ def tribhaga_lord(fraction_of_day: float | None, fraction_of_night: float | None
     """Lord of the third of the day (or night) in which the birth falls."""
     if fraction_of_day is not None:
         return (Body.MERCURY, Body.SUN, Body.SATURN)[min(int(fraction_of_day * 3), 2)]
-    assert fraction_of_night is not None
+    if fraction_of_night is None:
+        raise ValueError("the fraction of the day or of the night is needed")
     return (Body.MOON, Body.VENUS, Body.MARS)[min(int(fraction_of_night * 3), 2)]
 
 

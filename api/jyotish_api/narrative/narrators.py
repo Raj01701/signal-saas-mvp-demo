@@ -104,6 +104,8 @@ class TemplateNarrator:
 
 
 def http_transport(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dict[str, Any]:
+    if not url.startswith("https://"):
+        raise ValueError("the narrative transport only calls https URLs")
     request = urllib.request.Request(
         url, data=json.dumps(payload).encode(), headers=headers, method="POST"
     )

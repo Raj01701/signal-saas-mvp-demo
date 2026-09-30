@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from jyotish_api.narrative.evidence import EvidenceBundle, EvidenceItem, _rule_item
 from jyotish_api.narrative.narrators import (
@@ -51,7 +51,7 @@ def write_report(
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(min_length=1, max_length=4000)
 
 
 class ChatOut(BaseModel):

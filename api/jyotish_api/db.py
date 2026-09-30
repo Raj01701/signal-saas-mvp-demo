@@ -7,6 +7,7 @@ tests; production uses Postgres through the pg8000 driver
 
 from __future__ import annotations
 
+import ssl
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, date, datetime
@@ -92,7 +93,18 @@ class LifeEvent(Base):
     person: Mapped[Person] = relationship(back_populates="events")
 
 
-def make_engine(url: str) -> Engine:
+def tls_connect_args(url: str, tls: str = "prefer", ca_file: str | None = None) -> dict[str, Any]:
+    """pg8000 arguments for "verify-full": TLS required, certificate and host name checked.
+
+    Without an SSL context pg8000 encrypts only when the server offers TLS and does not
+    check the certificate (libpq's "prefer").
+    """
+    if tls != "verify-full" or url.startswith("sqlite"):
+        return {}
+    return {"ssl_context": ssl.create_default_context(cafile=ca_file)}
+
+
+def make_engine(url: str, tls: str = "prefer", ca_file: str | None = None) -> Engine:
     if url.startswith("sqlite"):
         options: dict[str, Any] = {"connect_args": {"check_same_thread": False}}
         if ":memory:" in url or url.rstrip("/").endswith("sqlite:"):
@@ -104,7 +116,7 @@ def make_engine(url: str) -> Engine:
             connection.execute("PRAGMA foreign_keys=ON")
 
         return engine
-    return create_engine(url, pool_pre_ping=True)
+    return create_engine(url, pool_pre_ping=True, connect_args=tls_connect_args(url, tls, ca_file))
 
 
 def session_factory(engine: Engine) -> sessionmaker[Session]:

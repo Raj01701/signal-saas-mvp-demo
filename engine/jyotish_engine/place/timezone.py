@@ -128,7 +128,8 @@ def zone_interpretations(local: datetime, zone: str) -> tuple[list[TimeInterpret
     for fold in (0, 1):
         aware = local.replace(tzinfo=tz, fold=fold)
         offset = aware.utcoffset()
-        assert offset is not None
+        if offset is None:
+            raise ValueError(f"time zone {tz} gives no UTC offset")
         utc = aware.astimezone(UTC)
         interp = TimeInterpretation(
             TimeStandard.ZONE, f"{zone} (tz database)", utc, offset.total_seconds()

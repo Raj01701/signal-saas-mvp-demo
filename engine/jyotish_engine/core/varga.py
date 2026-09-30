@@ -174,7 +174,8 @@ def varga_sign_index(
     reverse = method is VargaMethod.PARASHARA_EVEN_REVERSE and not _is_odd(sign)
     if reverse and n in _COUNT_BACKWARD_FROM_START:
         start = _parashara_start(n, sign)
-        assert start is not None
+        if start is None:
+            raise ValueError(f"D{n} has no Parashara starting sign")
         return (start - p) % 12
     q = n - 1 - p if reverse else p
     if n == 2:

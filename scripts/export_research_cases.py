@@ -37,7 +37,8 @@ def main() -> int:
     if len(sys.argv) != 2:
         print(__doc__)
         return 2
-    engine = make_engine(ApiSettings().database_url)
+    settings = ApiSettings()
+    engine = make_engine(settings.database_url, settings.database_tls, settings.database_ca_file)
     with Session(engine) as session:
         cases = export(session)
     Path(sys.argv[1]).write_text("".join(json.dumps(c) + "\n" for c in cases), encoding="utf-8")
