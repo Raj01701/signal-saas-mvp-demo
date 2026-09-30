@@ -126,3 +126,16 @@ Milestone target: ingress times within one minute. The true node's reversals are
 * True sidereal year (Mesha sankranti to Mesha sankranti): the engine is within 0.24 s of an exact Swiss Ephemeris bisection on every chart. PyJHora's own value is off by up to 168 s, because it interpolates each sankranti from sunrise samples, and on 1 chart(s) by 0.9 days (a wrong sankranti day); its dasha dates move accordingly.
 * Applicability of the conditional dashas: 280 of 280 verdicts agree (7 systems; PyJHora has no rule for Shodashottari or Shattrimsha Sama).
 * Yogini dasha follows BPHS's formula, (birth nakshatra + 3) mod 8; a cyclic count from Ardra gives different lords for births in Ashwini to Mrigashira.
+
+## Jaimini sign dashas (M3) versus PyJHora 4.8.7
+
+60 charts, identical positions. Chara dasha (K.N. Rao): mahadasha signs, lengths and dates match exactly on 51 charts. Narayana dasha (both rounds, mahadashas and antardashas): exact on 49 charts.
+
+Every other chart differs only through one of these reference behaviours, which `test_sign_dasha_golden.py` detects chart by chart (the engine follows the rule as written):
+
+* Mercury in Virgo is not treated as exalted (BPHS: exalted), so Gemini and Virgo dashas are a year shorter;
+* the lagna is counted as a planet when choosing between co-lords;
+* in the stronger-sign test (rule 2), Jupiter or Mercury is counted twice when it also rules the sign, and a lord in its own sign is missed;
+* when the co-lord rules tie, the co-lord whose own sign has the longer dasha wins, rather than the one that gives the sign in question the longer dasha.
+
+PyJHora also gives every Chara mahadasha the same antardasha order, starting from the lagna; the engine uses K.N. Rao's order (from the sign after the dasha sign, ending with the dasha sign), so Chara antardashas are not compared.

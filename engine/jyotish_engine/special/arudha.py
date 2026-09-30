@@ -16,10 +16,13 @@ Approach*, applied in this order:
 3. An exalted lord beats one that is not exalted.
 4. A lord in a dual sign beats one in a fixed sign, which beats one in a movable
    sign.
-5. The lord more advanced in its sign is stronger.
+5. For dasha calculations only: the lord that gives the longer dasha is stronger.
+6. The lord more advanced in its sign is stronger.
 """
 
 from __future__ import annotations
+
+from collections.abc import Callable
 
 from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.core.aspects import rashi_aspected_signs
@@ -29,8 +32,17 @@ from jyotish_engine.core.zodiac import SIGN_LORDS, Sign
 _NATURE_RANK = {0: 1, 1: 2, 2: 3}  # movable, fixed, dual
 
 
-def stronger_co_lord(sign: Sign, sidereal: dict[Body, float]) -> Body:
-    """Lord of ``sign``, choosing between the two co-lords of Scorpio or Aquarius."""
+def stronger_co_lord(
+    sign: Sign,
+    sidereal: dict[Body, float],
+    tie_break: Callable[[Body], float] | None = None,
+) -> Body:
+    """Lord of ``sign``, choosing between the two co-lords of Scorpio or Aquarius.
+
+    ``tie_break``, when given, is compared (larger wins) before the final rule of
+    advancement in the sign; dasha calculations use it for the co-lord that gives
+    the longer dasha.
+    """
     if sign not in CO_LORDS:
         return SIGN_LORDS[sign]
     a, b = CO_LORDS[sign]
@@ -73,6 +85,11 @@ def stronger_co_lord(sign: Sign, sidereal: dict[Body, float]) -> Body:
     na, nb = _NATURE_RANK[sign_of[a] % 3], _NATURE_RANK[sign_of[b] % 3]
     if na != nb:
         return a if na > nb else b
+
+    if tie_break is not None:
+        ta, tb = tie_break(a), tie_break(b)
+        if ta != tb:
+            return a if ta > tb else b
 
     return a if sidereal[a] % 30.0 > sidereal[b] % 30.0 else b
 

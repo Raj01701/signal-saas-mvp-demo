@@ -4,11 +4,26 @@ from __future__ import annotations
 
 import math
 
-from jyotish_engine.astro.bodies import Body
+from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.time import jd_to_datetime
+from jyotish_engine.core.zodiac import Sign
 from jyotish_engine.dasha.base import Period, SubPeriodRule, active_chain, subdivide
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
-from jyotish_engine.models import ChartResult, DashaPeriodOut, DashaTableOut
+from jyotish_engine.dasha.sign import (
+    LABELS,
+    SignDasha,
+    SignPeriod,
+    sign_mahadashas,
+    sign_running_periods,
+    sign_sub_periods,
+)
+from jyotish_engine.models import (
+    ChartResult,
+    DashaPeriodOut,
+    DashaTableOut,
+    SignDashaPeriodOut,
+    SignDashaTableOut,
+)
 
 #: Tables list the mahadashas that start within this many years of birth.
 SPAN_YEARS = 120.0
@@ -112,3 +127,66 @@ def running_periods(
         periods, jd_ut, definition.sequence, depth, rule or definition.sub_period_rule
     )
     return [period_out(p) for p in chain]
+
+
+def sign_period_out(period: SignPeriod) -> SignDashaPeriodOut:
+    return SignDashaPeriodOut(
+        signs=[Sign(s) for s in period.signs],
+        start=jd_to_datetime(period.start_jd),
+        end=jd_to_datetime(period.end_jd),
+        start_jd_ut=period.start_jd,
+        end_jd_ut=period.end_jd,
+    )
+
+
+def _chart_positions(chart: ChartResult) -> dict[Body, float]:
+    return {g.body: g.sidereal_longitude for g in chart.grahas if g.body in GRAHAS}
+
+
+def chart_sign_dasha_table(
+    chart: ChartResult, system: SignDasha, depth: int = 2
+) -> SignDashaTableOut:
+    """Both rounds of a sign dasha, each period followed by its sub-periods."""
+    if not 1 <= depth <= MAX_TABLE_DEPTH:
+        raise ValueError(f"table depth must be 1 to {MAX_TABLE_DEPTH}")
+    sidereal = _chart_positions(chart)
+    periods = sign_mahadashas(
+        system,
+        chart.ascendant.sidereal_longitude,
+        sidereal,
+        chart.time.jd_ut,
+        chart.dashas.year_days,
+    )
+
+    def expand(level: list[SignPeriod], remaining: int) -> list[SignPeriod]:
+        out: list[SignPeriod] = []
+        for period in level:
+            out.append(period)
+            if remaining > 1:
+                out += expand(sign_sub_periods(system, period, sidereal), remaining - 1)
+        return out
+
+    return SignDashaTableOut(
+        system=system.value,
+        label=LABELS[system],
+        year_days=chart.dashas.year_days,
+        first_sign=Sign(periods[0].sign),
+        periods=[sign_period_out(p) for p in expand(periods, depth)],
+    )
+
+
+def running_sign_periods(
+    chart: ChartResult, system: SignDasha, jd_ut: float, depth: int = 3
+) -> list[SignDashaPeriodOut]:
+    if not 1 <= depth <= MAX_DEPTH:
+        raise ValueError(f"depth must be 1 to {MAX_DEPTH}")
+    chain = sign_running_periods(
+        system,
+        chart.ascendant.sidereal_longitude,
+        _chart_positions(chart),
+        chart.time.jd_ut,
+        chart.dashas.year_days,
+        jd_ut,
+        depth,
+    )
+    return [sign_period_out(p) for p in chain]

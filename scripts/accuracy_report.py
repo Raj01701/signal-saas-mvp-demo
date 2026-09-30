@@ -34,6 +34,7 @@ from jyotish_engine.core.varga import VargaMethod, varga_sign_index
 from jyotish_engine.dasha.base import Period, SubPeriodRule, subdivide
 from jyotish_engine.dasha.conditions import applicability
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
+from jyotish_engine.dasha.sign import SignDasha, SignPeriod, sign_mahadashas, sign_sub_periods
 from jyotish_engine.dasha.years import true_sidereal_year_days
 from jyotish_engine.settings import Settings
 from jyotish_engine.transit.search import sign_ingresses, stations
@@ -240,6 +241,51 @@ def _dasha_section() -> list[str]:
     return lines
 
 
+def _sign_matches(case: dict[str, Any], ours: list[SignPeriod], rows: list[Any]) -> bool:
+    return all(
+        list(p.signs) == signs and abs(p.start_jd - case["jd_ut"] - offset) * 86400 < 1.0
+        for p, (signs, offset) in zip(ours, rows, strict=False)
+    )
+
+
+def _sign_dasha_section() -> list[str]:
+    """M3: Jaimini sign dashas versus PyJHora, given identical positions."""
+    fixture = ROOT / "engine" / "tests" / "fixtures" / "sign_dashas_pyjhora.json"
+    cases: list[dict[str, Any]] = json.loads(fixture.read_text("utf-8"))["cases"]
+    chara = narayana = 0
+    for case in cases:
+        sidereal = dict(zip(GRAHAS, case["grahas"], strict=True))
+        args = (case["ascendant"], sidereal, case["jd_ut"], case["year_days"])
+        chara += _sign_matches(case, sign_mahadashas(SignDasha.CHARA, *args), case["chara_kn_rao"])
+        mahas = sign_mahadashas(SignDasha.NARAYANA, *args)
+        subs = [x for m in mahas for x in sign_sub_periods(SignDasha.NARAYANA, m, sidereal)]
+        narayana += _sign_matches(case, subs, case["narayana"])
+    return [
+        "## Jaimini sign dashas (M3) versus PyJHora 4.8.7",
+        "",
+        f"{len(cases)} charts, identical positions. Chara dasha (K.N. Rao): mahadasha "
+        f"signs, lengths and dates match exactly on {chara} charts. Narayana dasha "
+        f"(both rounds, mahadashas and antardashas): exact on {narayana} charts.",
+        "",
+        "Every other chart differs only through one of these reference behaviours, which "
+        "`test_sign_dasha_golden.py` detects chart by chart (the engine follows the rule "
+        "as written):",
+        "",
+        "* Mercury in Virgo is not treated as exalted (BPHS: exalted), so Gemini and Virgo "
+        "dashas are a year shorter;",
+        "* the lagna is counted as a planet when choosing between co-lords;",
+        "* in the stronger-sign test (rule 2), Jupiter or Mercury is counted twice when it "
+        "also rules the sign, and a lord in its own sign is missed;",
+        "* when the co-lord rules tie, the co-lord whose own sign has the longer dasha wins, "
+        "rather than the one that gives the sign in question the longer dasha.",
+        "",
+        "PyJHora also gives every Chara mahadasha the same antardasha order, starting from "
+        "the lagna; the engine uses K.N. Rao's order (from the sign after the dasha sign, "
+        "ending with the dasha sign), so Chara antardashas are not compared.",
+        "",
+    ]
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -366,6 +412,7 @@ def main() -> None:
     lines += _jyotish_section()
     lines += _transit_section()
     lines += _dasha_section()
+    lines += _sign_dasha_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

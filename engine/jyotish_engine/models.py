@@ -258,6 +258,25 @@ class DashaTableOut(BaseModel):
     periods: list[DashaPeriodOut]
 
 
+class SignDashaPeriodOut(BaseModel):
+    """One sign dasha period; ``signs`` runs from the mahadasha sign down."""
+
+    signs: list[Sign]
+    start: datetime
+    end: datetime
+    start_jd_ut: float
+    end_jd_ut: float
+
+
+class SignDashaTableOut(BaseModel):
+    system: str
+    label: str
+    year_days: float
+    first_sign: Sign
+    #: Periods depth-first: each mahadasha, then its sub-periods, and so on.
+    periods: list[SignDashaPeriodOut]
+
+
 class DashaApplicabilityOut(BaseModel):
     system: str
     applicable: bool | None
