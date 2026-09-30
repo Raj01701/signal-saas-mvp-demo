@@ -10,7 +10,7 @@ export function PlanetTable({ chart }: { chart: Chart }) {
     ...chart.grahas.map((g) => ({ key: g.body, name: title(g.body), point: g, extra: g })),
   ];
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Planet positions">
       <table className="w-full min-w-[40rem] text-left text-sm">
         <caption className="sr-only">Planet positions</caption>
         <thead className="border-b border-zinc-300 text-xs uppercase text-zinc-500 dark:border-zinc-700">

@@ -33,6 +33,7 @@ from jyotish_engine.models import (
     KpChartOut,
     MatchOut,
     PanchangaOut,
+    SensitivityOut,
     StrengthsOut,
     TithiPraveshaOut,
     VarshaphalOut,
@@ -41,6 +42,7 @@ from jyotish_engine.models import (
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import Place, search_places
 from jyotish_engine.rules.yogas import compute_yogas
+from jyotish_engine.sensitivity import compute_sensitivity
 from jyotish_engine.settings import Preset, preset
 from jyotish_engine.strength.strengths import compute_strengths
 from jyotish_engine.transit.gochara import DoubleTransit, double_transits
@@ -81,6 +83,12 @@ def geo_search(
 def chart(request: Request, body: ChartRequest) -> ChartResult:
     """The birth chart: positions, houses, divisional charts, special points, Vimshottari."""
     return _chart(request, body)
+
+
+@router.post("/charts/sensitivity")
+def sensitivity(request: Request, body: ChartRequest) -> SensitivityOut:
+    """How many minutes each time-sensitive factor holds before and after the birth time."""
+    return compute_sensitivity(_chart(request, body))
 
 
 @router.post("/charts/yogas")

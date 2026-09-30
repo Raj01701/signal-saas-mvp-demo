@@ -125,6 +125,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/charts/sensitivity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sensitivity
+         * @description How many minutes each time-sensitive factor holds before and after the birth time.
+         */
+        post: operations["sensitivity_v1_charts_sensitivity_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts/strengths": {
         parameters: {
             query?: never;
@@ -1404,6 +1424,26 @@ export interface components {
          * @enum {string}
          */
         School: "parashari" | "jaimini" | "tajika";
+        /** SensitiveFactorOut */
+        SensitiveFactorOut: {
+            /** Fragile */
+            fragile: boolean;
+            /** Minutes After */
+            minutes_after: number | null;
+            /** Minutes Before */
+            minutes_before: number | null;
+            /** Name */
+            name: string;
+            /** Value */
+            value: string;
+        };
+        /** SensitivityOut */
+        SensitivityOut: {
+            /** Factors */
+            factors: components["schemas"]["SensitiveFactorOut"][];
+            /** Uncertainty Minutes */
+            uncertainty_minutes: number;
+        };
         /**
          * Settings
          * @description How a chart is calculated. Defaults are the Classic Parashari preset.
@@ -2026,6 +2066,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KpChartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sensitivity_v1_charts_sensitivity_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SensitivityOut"];
                 };
             };
             /** @description Validation Error */

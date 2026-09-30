@@ -53,6 +53,8 @@ def test_chart_derived_routes(client: TestClient) -> None:
     assert transits["saturn"]["sade_sati"] and transits["double_from_moon"]
     annual = _post(client, "/v1/charts/annual", {"birth": BIRTH, "years_completed": 30})
     assert annual["varshaphal"]["years_completed"] == 30 and annual["tithi_pravesha"]["jd_ut"]
+    sensitivity = _post(client, "/v1/charts/sensitivity", {"birth": BIRTH})
+    assert sensitivity["factors"][0]["name"] == "Lagna"
     kp = _post(client, "/v1/charts/kp", {"birth": BIRTH})
     assert len(kp["cusps"]) == 12 and kp["ruling_planets"]
 

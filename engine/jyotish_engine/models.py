@@ -674,6 +674,22 @@ class KpChartOut(BaseModel):
     horary_cusp_jd_ut: float | None = None
 
 
+class SensitiveFactorOut(BaseModel):
+    name: str
+    value: str
+    #: Minutes the factor has held before the birth time, and will hold after it;
+    #: None when it holds beyond the search span.
+    minutes_before: float | None
+    minutes_after: float | None
+    #: It would change within the birth time's uncertainty.
+    fragile: bool
+
+
+class SensitivityOut(BaseModel):
+    uncertainty_minutes: float
+    factors: list[SensitiveFactorOut]
+
+
 class YogaOut(BaseModel):
     """A knowledge-base rule (yoga or dosha) found in a chart, with its evidence."""
 

@@ -2916,6 +2916,74 @@
         "title": "School",
         "type": "string"
       },
+      "SensitiveFactorOut": {
+        "properties": {
+          "fragile": {
+            "title": "Fragile",
+            "type": "boolean"
+          },
+          "minutes_after": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes After"
+          },
+          "minutes_before": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes Before"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "minutes_before",
+          "minutes_after",
+          "fragile"
+        ],
+        "title": "SensitiveFactorOut",
+        "type": "object"
+      },
+      "SensitivityOut": {
+        "properties": {
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/SensitiveFactorOut"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "uncertainty_minutes": {
+            "title": "Uncertainty Minutes",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uncertainty_minutes",
+          "factors"
+        ],
+        "title": "SensitivityOut",
+        "type": "object"
+      },
       "Settings": {
         "additionalProperties": false,
         "description": "How a chart is calculated. Defaults are the Classic Parashari preset.",
@@ -4369,6 +4437,45 @@
           }
         },
         "summary": "Kp"
+      }
+    },
+    "/v1/charts/sensitivity": {
+      "post": {
+        "description": "How many minutes each time-sensitive factor holds before and after the birth time.",
+        "operationId": "sensitivity_v1_charts_sensitivity_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensitivityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sensitivity"
       }
     },
     "/v1/charts/strengths": {

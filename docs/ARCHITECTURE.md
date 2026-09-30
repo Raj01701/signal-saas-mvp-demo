@@ -41,7 +41,8 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `match/` | Ashtakoota (36 points) with Nadi, Bhakoot and Gana doshas and their exceptions; Raman's ten South Indian kutas with his reliefs; Kuja dosha of both charts from the knowledge base; koota tables kept as cited, named profiles because sources differ (`tables.py`); `compute_match(groom, bride)` |
 | `rules/` | Chart facts (from a chart or a compact test spec); the rule language (safe parser and evaluator with evidence); the rule schema; the catalogue loader, which checks citations against `knowledge/sources.yaml` and orders rules that refer to each other; `compute_yogas(chart)` |
 | `predict/` | Promise × period × trigger timeline; convergence; confidence |
-| `rectify/` | Candidate grid, event scoring, classical priors, sensitivity |
+| `rectify/` | Candidate grid, event scoring, classical priors |
+| `sensitivity.py` | How many minutes each time-sensitive factor (D1, D9, D10 and D60 lagnas, the Moon's nakshatra pada) holds before and after the birth time, flagged when it would change within the time's uncertainty |
 | `models.py` | Public input and output models (pydantic, JSON-serialisable) |
 | `settings.py` | Calculation settings, presets and the settings fingerprint |
 | `chart.py` | `compute_chart(BirthInput, Settings) -> ChartResult`: about 80 ms per chart |
