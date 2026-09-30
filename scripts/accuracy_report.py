@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import statistics
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -44,6 +44,8 @@ from jyotish_engine.dasha.conditions import applicability
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
 from jyotish_engine.dasha.sign import SignDasha, SignPeriod, sign_mahadashas, sign_sub_periods
 from jyotish_engine.dasha.years import true_sidereal_year_days
+from jyotish_engine.rules.catalogue import default_catalogue
+from jyotish_engine.rules.facts import ChartFacts
 from jyotish_engine.settings import Settings
 from jyotish_engine.transit.search import sign_ingresses, stations
 
@@ -363,6 +365,62 @@ def _annual_section() -> list[str]:
     ]
 
 
+def _strength_and_rules_section() -> list[str]:
+    """M4: strength checks, and the yoga catalogue run against its own test charts."""
+    catalogue = default_catalogue()
+    charts = passed = 0
+    for compiled in catalogue:
+        tests = compiled.rule.tests
+        for kind, specs in (
+            ("positive", tests.positive),
+            ("negative", tests.negative),
+            ("cancelled", tests.cancelled),
+        ):
+            for spec in specs:
+                result = catalogue.evaluate_rule(compiled, ChartFacts.from_spec(spec))
+                expected = {
+                    "positive": result.present,
+                    "negative": not (result.present or result.cancelled),
+                    "cancelled": result.cancelled and not result.present,
+                }[kind]
+                charts += 1
+                passed += expected
+    categories = Counter(r.rule.category.value for r in catalogue)
+    provenance = Counter(r.rule.provenance.value for r in catalogue)
+    citations = [c for r in catalogue for c in r.rule.sources]
+    lines = [
+        "## Strength (M4)",
+        "",
+        "* Ashtakavarga: identical to P.V.R. Narasimha Rao's worked Chart 7, before and "
+        "after both reductions (`test_ashtakavarga.py`).",
+        "* Shadbala: every component of B.V. Raman's and V.P. Jain's worked examples within "
+        "1 virupa, apart from the book slips and method differences listed in "
+        "`test_shadbala.py`.",
+        "",
+        "## Yogas and doshas (M4)",
+        "",
+        f"{len(catalogue)} rules in `knowledge/yogas/`, all `draft` until a qualified "
+        f"Jyotishi reviews them. They carry {len(citations)} citations, "
+        f"{sum(c.verified for c in citations)} checked against their edition so far. "
+        f"Provenance: {provenance['classical']} classical, {provenance['traditional']} "
+        f"traditional (documented by modern authors, classical source not yet identified), "
+        f"{provenance['modern']} modern.",
+        "",
+        "| Category | Rules |",
+        "|---|---|",
+        *(f"| {name} | {count} |" for name, count in categories.most_common()),
+        "",
+        f"* Test charts: {passed} of {charts} behave as each rule specifies (present, "
+        "absent, or present but cancelled).",
+        "* Property tests on random charts check catalogue invariants (for example, "
+        "exactly one of Sunapha, Anapha, Durudhura and Kemadruma holds) and compare the "
+        "Mahapurusha, Parivartana, Gajakesari, Kala Sarpa and lunar yogas with separate "
+        "plain-Python implementations (`test_rules_properties.py`).",
+        "",
+    ]
+    return lines
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -491,6 +549,7 @@ def main() -> None:
     lines += _dasha_section()
     lines += _sign_dasha_section()
     lines += _annual_section()
+    lines += _strength_and_rules_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

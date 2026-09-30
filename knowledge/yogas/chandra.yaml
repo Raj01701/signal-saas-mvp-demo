@@ -1,0 +1,280 @@
+# Yogas judged from the Moon (Chandra yogas).
+# "Star planets" below means Mars, Mercury, Jupiter, Venus and Saturn: the Sun and
+# the nodes do not form Sunapha, Anapha, Durudhura or Kemadruma.
+defaults:
+  category: chandra
+  school: parashari
+  provenance: classical
+
+rules:
+  - id: chandra.sunapha
+    name: Sunapha Yoga
+    description: >-
+      A star planet occupies the 2nd house from the Moon, and none occupies the 12th
+      from it.
+    when: >-
+      any_in_houses([mars, mercury, jupiter, venus, saturn], [2], moon)
+      and not any_in_houses([mars, mercury, jupiter, venus, saturn], [12], moon)
+    participants: placed_in([mars, mercury, jupiter, venus, saturn], [2], moon)
+    effects:
+      domains: [wealth, character]
+      polarity: positive
+      strength: moderate
+      summary: >-
+        Self-earned wealth and property, intelligence and a good name; the planet in
+        the 2nd from the Moon colours the result.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, jupiter: leo, rest: sagittarius}
+      negative:
+        - {lagna: aries, moon: cancer, rest: sagittarius}
+        - {lagna: aries, moon: cancer, sun: leo, rest: sagittarius}
+        - {lagna: aries, moon: cancer, jupiter: leo, venus: gemini, rest: sagittarius}
+
+  - id: chandra.anapha
+    name: Anapha Yoga
+    description: >-
+      A star planet occupies the 12th house from the Moon, and none occupies the 2nd
+      from it.
+    when: >-
+      any_in_houses([mars, mercury, jupiter, venus, saturn], [12], moon)
+      and not any_in_houses([mars, mercury, jupiter, venus, saturn], [2], moon)
+    participants: placed_in([mars, mercury, jupiter, venus, saturn], [12], moon)
+    effects:
+      domains: [health, character, fame]
+      polarity: positive
+      strength: moderate
+      summary: >-
+        Good health, a pleasing personality, renown and comforts; the planet in the
+        12th from the Moon colours the result.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, venus: gemini, rest: sagittarius}
+      negative:
+        - {lagna: aries, moon: cancer, sun: gemini, rest: sagittarius}
+        - {lagna: aries, moon: cancer, venus: gemini, mars: leo, rest: sagittarius}
+
+  - id: chandra.durudhura
+    name: Durudhura Yoga
+    description: Star planets occupy both the 2nd and the 12th houses from the Moon.
+    when: >-
+      any_in_houses([mars, mercury, jupiter, venus, saturn], [2], moon)
+      and any_in_houses([mars, mercury, jupiter, venus, saturn], [12], moon)
+    participants: placed_in([mars, mercury, jupiter, venus, saturn], [2, 12], moon)
+    effects:
+      domains: [wealth, fortune]
+      polarity: positive
+      strength: moderate
+      summary: >-
+        Wealth, comforts, vehicles and a generous nature; among the most favourable of
+        the lunar yogas.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, jupiter: leo, venus: gemini, rest: sagittarius}
+      negative:
+        - {lagna: aries, moon: cancer, jupiter: leo, rest: sagittarius}
+
+  - id: chandra.kemadruma
+    name: Kemadruma Yoga
+    description: >-
+      No star planet occupies the 2nd or the 12th house from the Moon. It is
+      cancelled when a planet occupies a kendra from the lagna or from the Moon
+      (including the Moon's own sign).
+    when: not any_in_houses([mars, mercury, jupiter, venus, saturn], [2, 12], moon)
+    cancel_when: >-
+      any_in_houses(without(seven, [moon]), kendras)
+      or any_in_houses(without(seven, [moon]), kendras, moon)
+    participants: "[moon]"
+    effects:
+      domains: [wealth, character]
+      polarity: negative
+      strength: moderate
+      summary: >-
+        Want, loneliness and struggle despite effort, unless cancelled; the Moon lacks
+        support on either side.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+      - {text: raman_300, locator: Kemadruma Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: taurus, rest: virgo}
+      negative:
+        - {lagna: aries, moon: taurus, mars: gemini, rest: virgo}
+      cancelled:
+        - {lagna: aries, moon: taurus, jupiter: leo, rest: virgo}
+        - {lagna: aries, moon: taurus, sun: libra, rest: virgo}
+
+  - id: chandra.adhi
+    name: Adhi Yoga (from the Moon)
+    description: >-
+      The natural benefics (Jupiter, Venus, and Mercury when benefic) all occupy the
+      6th, 7th and 8th houses from the Moon, together or spread across them.
+    when: all_in_houses(without(benefics, [moon]), [6, 7, 8], moon)
+    participants: placed_in(without(benefics, [moon]), [6, 7, 8], moon)
+    notes: >-
+      The texts grade the result by how many of the three houses hold benefics;
+      the evidence lists the houses.
+    effects:
+      domains: [status, wealth]
+      polarity: positive
+      strength: major
+      summary: >-
+        Leadership, command or ministerial rank, comfort and victory over rivals;
+        strongest when benefics hold all three houses.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: aries, jupiter: virgo, venus: libra, mercury: scorpio, rest: leo}
+      negative:
+        - {lagna: aries, moon: aries, venus: libra, mercury: scorpio, rest: leo}
+
+  - id: chandra.gajakesari
+    name: Gajakesari Yoga
+    description: >-
+      Jupiter occupies a kendra (1st, 4th, 7th or 10th) from the Moon. It is
+      cancelled when Jupiter is debilitated, combust or in an enemy's sign.
+    when: in_kendra(jupiter, moon)
+    cancel_when: debilitated(jupiter) or combust(jupiter) or enemy_sign(jupiter)
+    participants: "[jupiter, moon]"
+    notes: >-
+      BPHS and Raman also want a benefic to join or aspect Jupiter; that refinement
+      is not encoded.
+    effects:
+      domains: [fame, wealth, intellect]
+      polarity: positive
+      strength: major
+      summary: >-
+        Intelligence, eloquence, lasting fame and prosperity; respected by people in
+        authority.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Gaja-Kesari Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: aries, jupiter: cancer, rest: leo}
+        - {lagna: aries, moon: sagittarius, jupiter: sagittarius, rest: leo}
+      negative:
+        - {lagna: aries, moon: aries, jupiter: taurus, rest: leo}
+      cancelled:
+        - {lagna: aries, moon: cancer, jupiter: capricorn, rest: leo}
+        - {lagna: aries, moon: aries, jupiter: cancer, sun: cancer, rest: leo}
+
+  - id: chandra.sakata
+    name: Sakata Yoga
+    description: >-
+      The Moon occupies the 6th, 8th or 12th house from Jupiter. It is cancelled when
+      the Moon is in a kendra from the lagna.
+    when: house(moon, jupiter) in [6, 8, 12]
+    cancel_when: in_kendra(moon)
+    participants: "[moon, jupiter]"
+    effects:
+      domains: [wealth, fortune]
+      polarity: negative
+      strength: moderate
+      summary: >-
+        Fortune rises and falls like a turning cart wheel: periods of loss and
+        obscurity alternate with recovery.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: raman_300, locator: Sakata Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: aries, moon: virgo, rest: leo}
+      negative:
+        - {lagna: aries, jupiter: aries, moon: leo, rest: leo}
+      cancelled:
+        - {lagna: aries, jupiter: taurus, moon: aries, rest: leo}
+
+  - id: chandra.chandra_mangala
+    name: Chandra-Mangala Yoga
+    provenance: traditional
+    description: The Moon and Mars occupy the same sign.
+    when: conjunct(moon, mars)
+    participants: "[moon, mars]"
+    effects:
+      domains: [wealth, character]
+      polarity: mixed
+      strength: moderate
+      summary: >-
+        Earnings through enterprise and trade and a restless, forceful temperament;
+        money may come through unconventional means.
+    sources:
+      - {text: raman_300, locator: Chandra-Mangala Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: leo, mars: leo, rest: capricorn}
+      negative:
+        - {lagna: aries, moon: leo, mars: virgo, rest: capricorn}
+
+  - id: chandra.moon_kendra_from_sun
+    name: Moon in a kendra from the Sun
+    description: >-
+      The Moon occupies a kendra (1st, 4th, 7th or 10th house) from the Sun. With the
+      next two rules this grades wealth, learning and skill by the Moon's distance
+      from the Sun.
+    when: in_kendra(moon, sun)
+    participants: "[moon, sun]"
+    effects:
+      domains: [wealth, education]
+      polarity: negative
+      strength: minor
+      summary: Wealth, learning and skill are modest.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: cancer, rest: leo}
+      negative:
+        - {lagna: aries, sun: aries, moon: taurus, rest: leo}
+
+  - id: chandra.moon_panaphara_from_sun
+    name: Moon in a panaphara from the Sun
+    description: The Moon occupies the 2nd, 5th, 8th or 11th house from the Sun.
+    when: house(moon, sun) in [2, 5, 8, 11]
+    participants: "[moon, sun]"
+    effects:
+      domains: [wealth, education]
+      polarity: mixed
+      strength: minor
+      summary: Wealth, learning and skill are middling.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, rest: leo}
+      negative:
+        - {lagna: aries, sun: aries, moon: gemini, rest: leo}
+
+  - id: chandra.moon_apoklima_from_sun
+    name: Moon in an apoklima from the Sun
+    description: The Moon occupies the 3rd, 6th, 9th or 12th house from the Sun.
+    when: house(moon, sun) in [3, 6, 9, 12]
+    participants: "[moon, sun]"
+    effects:
+      domains: [wealth, education]
+      polarity: positive
+      strength: minor
+      summary: Wealth, learning and skill are excellent.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 13, verified: false}
+      - {text: bphs, edition: santhanam, chapter: 37, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: gemini, rest: leo}
+      negative:
+        - {lagna: aries, sun: aries, moon: aries, rest: leo}

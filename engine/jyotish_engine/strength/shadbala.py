@@ -52,6 +52,7 @@ from jyotish_engine.core.dignity import (
     deep_exaltation_longitude,
 )
 from jyotish_engine.core.dignity import in_moolatrikona as _in_moolatrikona
+from jyotish_engine.core.nature import natural_benefics
 from jyotish_engine.core.varga import varga_sign
 from jyotish_engine.core.zodiac import SIGN_LORDS, Sign
 from jyotish_engine.models import ChartResult
@@ -207,15 +208,8 @@ def nathonnata_bala(body: Body, hours_from_midnight: float) -> float:
 
 
 def benefics(sidereal: Mapping[Body, float]) -> set[Body]:
-    """Natural benefics of the chart (see the module docstring)."""
-    signs = {b: _sign(lon) for b, lon in sidereal.items()}
-    waxing = (sidereal[Body.MOON] - sidereal[Body.SUN]) % 360.0 < 180.0
-    good = {Body.JUPITER, Body.VENUS} | ({Body.MOON} if waxing else set())
-    bad = {Body.SUN, Body.MARS, Body.SATURN, *NODES} | (set() if waxing else {Body.MOON})
-    company = [b for b, s in signs.items() if s == signs[Body.MERCURY] and b is not Body.MERCURY]
-    if sum(b in good for b in company) >= sum(b in bad for b in company):
-        good.add(Body.MERCURY)
-    return good
+    """Natural benefics of the chart (see ``core.nature``)."""
+    return natural_benefics(sidereal)
 
 
 def paksha_bala(body: Body, sidereal: Mapping[Body, float], benefic: set[Body]) -> float:

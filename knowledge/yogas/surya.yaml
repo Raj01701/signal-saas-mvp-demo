@@ -1,0 +1,102 @@
+# Yogas judged from the Sun (Surya yogas). As with the lunar yogas, only the star
+# planets (Mars, Mercury, Jupiter, Venus, Saturn) count; the Moon and nodes do not.
+defaults:
+  category: surya
+  school: parashari
+  provenance: classical
+
+rules:
+  - id: surya.vesi
+    name: Vesi Yoga
+    description: >-
+      A star planet occupies the 2nd house from the Sun, and none occupies the 12th
+      from it.
+    when: >-
+      any_in_houses([mars, mercury, jupiter, venus, saturn], [2], sun)
+      and not any_in_houses([mars, mercury, jupiter, venus, saturn], [12], sun)
+    participants: placed_in([mars, mercury, jupiter, venus, saturn], [2], sun)
+    effects:
+      domains: [character, wealth]
+      polarity: positive
+      strength: minor
+      summary: >-
+        Truthful, balanced and industrious, with steady means; the planet in the 2nd
+        from the Sun colours the result.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 38, verified: false}
+      - {text: raman_300, locator: Vesi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, mars: virgo, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: leo, moon: virgo, rest: capricorn}
+        - {lagna: aries, sun: leo, mars: virgo, venus: cancer, rest: capricorn}
+
+  - id: surya.vasi
+    name: Vasi Yoga
+    description: >-
+      A star planet occupies the 12th house from the Sun, and none occupies the 2nd
+      from it.
+    when: >-
+      any_in_houses([mars, mercury, jupiter, venus, saturn], [12], sun)
+      and not any_in_houses([mars, mercury, jupiter, venus, saturn], [2], sun)
+    participants: placed_in([mars, mercury, jupiter, venus, saturn], [12], sun)
+    effects:
+      domains: [character, status]
+      polarity: positive
+      strength: minor
+      summary: >-
+        Skilful, charitable and well regarded by those in authority; the planet in the
+        12th from the Sun colours the result.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 38, verified: false}
+      - {text: raman_300, locator: Vasi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, venus: cancer, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: leo, rest: capricorn}
+
+  - id: surya.ubhayachari
+    name: Ubhayachari Yoga
+    description: Star planets occupy both the 2nd and the 12th houses from the Sun.
+    when: >-
+      any_in_houses([mars, mercury, jupiter, venus, saturn], [2], sun)
+      and any_in_houses([mars, mercury, jupiter, venus, saturn], [12], sun)
+    participants: placed_in([mars, mercury, jupiter, venus, saturn], [2, 12], sun)
+    effects:
+      domains: [status, wealth]
+      polarity: positive
+      strength: moderate
+      summary: Eloquent, prosperous and respected, with the bearing of a leader.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 38, verified: false}
+      - {text: raman_300, locator: Obhayachari Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, mercury: virgo, venus: cancer, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: leo, mercury: virgo, rest: capricorn}
+
+  - id: surya.budha_aditya
+    name: Budha-Aditya Yoga
+    aliases: [Nipuna Yoga]
+    description: The Sun and Mercury occupy the same sign.
+    when: conjunct(sun, mercury)
+    participants: "[sun, mercury]"
+    notes: >-
+      Mercury is often combust in this position; many astrologers expect the full
+      result only when it is not, which is not encoded.
+    effects:
+      domains: [intellect, career, fame]
+      polarity: positive
+      strength: moderate
+      summary: Intelligence, skill in work and a good reputation.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 14, verified: false}
+      - {text: raman_300, locator: Budha-Aditya Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, mercury: leo, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: leo, mercury: virgo, rest: capricorn}

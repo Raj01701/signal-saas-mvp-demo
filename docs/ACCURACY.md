@@ -153,3 +153,33 @@ PyJHora also gives every Chara mahadasha the same antardasha order, starting fro
 
 * Patyayini dasha (annual), given PyJHora's krisamsas and year: 40 of 40 tables identical, mahadashas and antardashas to the second.
 * Mudda dasha is Vimshottari compressed into the Tajika year, built on the same period tree as the natal dashas above; PyJHora scales its balance and periods differently (a 360-day balance within a sidereal-year cycle), so it is not compared.
+
+## Strength (M4)
+
+* Ashtakavarga: identical to P.V.R. Narasimha Rao's worked Chart 7, before and after both reductions (`test_ashtakavarga.py`).
+* Shadbala: every component of B.V. Raman's and V.P. Jain's worked examples within 1 virupa, apart from the book slips and method differences listed in `test_shadbala.py`.
+
+## Yogas and doshas (M4)
+
+312 rules in `knowledge/yogas/`, all `draft` until a qualified Jyotishi reviews them. They carry 493 citations, 0 checked against their edition so far. Provenance: 235 classical, 57 traditional (documented by modern authors, classical source not yet identified), 20 modern.
+
+| Category | Rules |
+|---|---|
+| parivartana | 66 |
+| conjunction | 56 |
+| named | 40 |
+| nabhasa | 32 |
+| bhava | 23 |
+| dosha | 23 |
+| dhana | 14 |
+| malika | 12 |
+| raja | 12 |
+| chandra | 11 |
+| neecha_bhanga | 7 |
+| mahapurusha | 5 |
+| birth | 4 |
+| surya | 4 |
+| viparita | 3 |
+
+* Test charts: 736 of 736 behave as each rule specifies (present, absent, or present but cancelled).
+* Property tests on random charts check catalogue invariants (for example, exactly one of Sunapha, Anapha, Durudhura and Kemadruma holds) and compare the Mahapurusha, Parivartana, Gajakesari, Kala Sarpa and lunar yogas with separate plain-Python implementations (`test_rules_properties.py`).

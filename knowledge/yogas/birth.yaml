@@ -1,0 +1,87 @@
+# Births at times the classical texts treat as inauspicious, for which they prescribe
+# propitiatory rites (shanti). Tithi, karana and gandanta come from the Sun and Moon.
+defaults:
+  category: birth
+  school: parashari
+  provenance: classical
+  sources:
+    - text: bphs
+      edition: santhanam
+      locator: Chapters on births at inauspicious times and their remedies
+      verified: false
+
+rules:
+  - id: birth.amavasya
+    name: Amavasya birth
+    description: Birth on the new-moon day (the 30th tithi).
+    when: tithi() == 30
+    participants: "[sun, moon]"
+    effects:
+      domains: [fortune]
+      polarity: negative
+      strength: minor
+      summary: >-
+        Birth on the new-moon day; the texts prescribe propitiatory rites for the
+        family.
+    tests:
+      positive:
+        - {lagna: aries, sun: leo 10, moon: leo 5, rest: taurus}
+      negative:
+        - {lagna: aries, sun: leo 10, moon: leo 20, rest: taurus}
+
+  - id: birth.krishna_chaturdashi
+    name: Krishna Chaturdashi birth
+    description: Birth on the 14th day of the dark fortnight (the 29th tithi).
+    when: tithi() == 29
+    participants: "[sun, moon]"
+    effects:
+      domains: [fortune]
+      polarity: negative
+      strength: minor
+      summary: >-
+        Birth on the 14th day of the waning Moon; the texts prescribe propitiatory
+        rites.
+    tests:
+      positive:
+        - {lagna: aries, sun: leo 10, moon: cancer 25, rest: taurus}
+      negative:
+        - {lagna: aries, sun: leo 10, moon: cancer 5, rest: taurus}
+
+  - id: birth.moon_gandanta
+    name: Gandanta birth (Moon)
+    description: >-
+      The Moon lies within one nakshatra pada of a junction between a water sign and
+      the following fire sign (Cancer-Leo, Scorpio-Sagittarius, Pisces-Aries).
+    when: gandanta(moon)
+    participants: "[moon]"
+    effects:
+      domains: [fortune, health]
+      polarity: negative
+      strength: minor
+      summary: >-
+        The Moon at a water-fire junction; the texts treat the birth as needing
+        propitiation.
+    tests:
+      positive:
+        - {lagna: aries, moon: pisces 28, rest: leo}
+        - {lagna: aries, moon: leo 1, rest: taurus}
+      negative:
+        - {lagna: aries, moon: pisces 20, rest: leo}
+
+  - id: birth.vishti_karana
+    name: Vishti karana birth
+    aliases: [Bhadra birth]
+    description: Birth during Vishti (Bhadra), the seventh of the movable karanas.
+    when: karana() == 'vishti'
+    participants: "[sun, moon]"
+    effects:
+      domains: [fortune]
+      polarity: negative
+      strength: minor
+      summary: >-
+        Birth in Vishti (Bhadra) karana, traditionally inauspicious and propitiated.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries 0, moon: taurus 15, rest: leo}
+      negative:
+        - {lagna: aries, sun: aries 0, moon: taurus 20, rest: leo}

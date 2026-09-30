@@ -1,0 +1,565 @@
+# Nabhasa yogas: 32 patterns formed by the seven planets (Sun to Saturn; the nodes
+# are ignored). Brihat Jataka and BPHS group them as 3 Ashraya (sign quality),
+# 2 Dala (benefics or malefics in kendras), 20 Akriti (shapes) and 7 Sankhya
+# (number of signs occupied).
+#
+# Reading used here: an Akriti yoga's houses are exactly the houses the seven
+# planets occupy, so each named house holds at least one planet and no other house
+# does. The seven-house shapes therefore coincide with the Malika yogas of the same
+# arc. A Sankhya yoga is declared only when no Dala or Akriti yoga is present, as the
+# texts direct; Ashraya yogas may accompany it.
+defaults:
+  category: nabhasa
+  school: parashari
+  provenance: classical
+  sources:
+    - {text: brihat_jataka, edition: sastri, chapter: 12, verified: false}
+    - {text: bphs, edition: santhanam, chapter: 35, verified: false}
+  participants: seven
+
+rules:
+  # --- Ashraya ---------------------------------------------------------------------
+  - id: nabhasa.ashraya.rajju
+    name: Rajju Yoga
+    description: All seven planets occupy movable signs.
+    when: "all(p in seven: movable(p))"
+    effects:
+      domains: [travel, character]
+      polarity: mixed
+      strength: minor
+      summary: Restless and fond of travel; earns away from home.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: cancer, mars: libra, mercury: capricorn, jupiter: aries, venus: cancer, saturn: libra, rest: aries}
+      negative:
+        - {lagna: aries, sun: aries, moon: cancer, mars: libra, mercury: capricorn, jupiter: aries, venus: cancer, saturn: taurus, rest: aries}
+
+  - id: nabhasa.ashraya.musala
+    name: Musala Yoga
+    description: All seven planets occupy fixed signs.
+    when: "all(p in seven: fixed(p))"
+    effects:
+      domains: [character, wealth]
+      polarity: positive
+      strength: minor
+      summary: Steady, proud, learned and wealthy, with a firm reputation.
+    tests:
+      positive:
+        - {lagna: aries, rest: taurus}
+        - {lagna: aries, sun: leo, moon: scorpio, rest: aquarius}
+      negative:
+        - {lagna: aries, moon: gemini, rest: taurus}
+
+  - id: nabhasa.ashraya.nala
+    name: Nala Yoga
+    description: All seven planets occupy dual signs.
+    when: "all(p in seven: dual(p))"
+    effects:
+      domains: [character, wealth]
+      polarity: mixed
+      strength: minor
+      summary: Adaptable and clever, helpful to relatives; fortunes built through skill.
+    tests:
+      positive:
+        - {lagna: aries, rest: gemini}
+      negative:
+        - {lagna: aries, sun: leo, rest: gemini}
+
+  # --- Dala -------------------------------------------------------------------------
+  - id: nabhasa.dala.mala
+    name: Mala Yoga
+    aliases: [Srik Yoga]
+    description: >-
+      At least three kendras are occupied, each only by natural benefics (among the
+      seven planets).
+    when: >-
+      count(h in kendras: count(only(occupants(h), seven)) > 0
+      and all(p in only(occupants(h), seven): benefic(p))) >= 3
+    participants: placed_in(benefics, kendras)
+    effects:
+      domains: [wealth, marriage]
+      polarity: positive
+      strength: moderate
+      summary: Comforts, vehicles, fine possessions and a happy married life.
+    tests:
+      positive:
+        - {lagna: aries, jupiter: aries, venus: cancer, mercury: libra, rest: taurus}
+      negative:
+        - {lagna: aries, jupiter: aries, venus: cancer, saturn: cancer, mercury: libra, rest: taurus}
+
+  - id: nabhasa.dala.sarpa
+    name: Sarpa Yoga
+    aliases: [Bhujanga Yoga]
+    description: >-
+      At least three kendras are occupied, each only by natural malefics (among the
+      seven planets).
+    when: >-
+      count(h in kendras: count(only(occupants(h), seven)) > 0
+      and all(p in only(occupants(h), seven): malefic(p))) >= 3
+    participants: placed_in(only(malefics, seven), kendras)
+    effects:
+      domains: [fortune, character]
+      polarity: negative
+      strength: moderate
+      summary: Hardship, harshness and dependence on others; a life of struggle.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, mars: cancer, saturn: libra, rest: taurus}
+      negative:
+        - {lagna: aries, sun: aries, mars: cancer, saturn: libra, jupiter: libra, rest: taurus}
+
+  # --- Akriti -----------------------------------------------------------------------
+  - id: nabhasa.akriti.gada
+    name: Gada Yoga
+    description: The seven planets occupy exactly two successive kendras.
+    when: houses_of(seven) in [[1, 4], [4, 7], [7, 10], [1, 10]]
+    effects:
+      domains: [wealth, spirituality]
+      polarity: positive
+      strength: minor
+      summary: Wealth through steady effort; devoted to religious rites and learning.
+    tests:
+      positive:
+        - {lagna: aries, jupiter: cancer, rest: aries}
+        - {lagna: aries, sun: aries, rest: capricorn}
+      negative:
+        - {lagna: aries, jupiter: libra, rest: aries}
+
+  - id: nabhasa.akriti.sakata
+    name: Sakata Yoga (Nabhasa)
+    description: The seven planets occupy exactly the 1st and 7th houses.
+    when: houses_of(seven) == [1, 7]
+    effects:
+      domains: [wealth, health]
+      polarity: negative
+      strength: minor
+      summary: A hard-working life with uneven fortunes and bouts of ill health.
+    tests:
+      positive:
+        - {lagna: aries, saturn: libra, rest: aries}
+      negative:
+        - {lagna: aries, rest: aries}
+        - {lagna: aries, saturn: libra, mars: cancer, rest: aries}
+
+  - id: nabhasa.akriti.vihaga
+    name: Vihaga Yoga
+    aliases: [Pakshi Yoga, Andaja Yoga]
+    description: The seven planets occupy exactly the 4th and 10th houses.
+    when: houses_of(seven) == [4, 10]
+    effects:
+      domains: [travel, career]
+      polarity: mixed
+      strength: minor
+      summary: Much travel; work as a messenger, envoy or go-between.
+    tests:
+      positive:
+        - {lagna: aries, sun: capricorn, rest: cancer}
+      negative:
+        - {lagna: aries, sun: aries, rest: cancer}
+
+  - id: nabhasa.akriti.sringataka
+    name: Sringataka Yoga
+    description: The seven planets occupy exactly the 1st, 5th and 9th houses.
+    when: houses_of(seven) == [1, 5, 9]
+    effects:
+      domains: [fortune, character]
+      polarity: positive
+      strength: minor
+      summary: Happiness and prosperity in later life; combative but fortunate.
+    tests:
+      positive:
+        - {lagna: aries, moon: leo, jupiter: sagittarius, rest: aries}
+      negative:
+        - {lagna: aries, moon: leo, rest: aries}
+
+  - id: nabhasa.akriti.hala
+    name: Hala Yoga
+    description: >-
+      The seven planets occupy exactly one of the other three trine groups: houses 2,
+      6 and 10; 3, 7 and 11; or 4, 8 and 12.
+    when: houses_of(seven) in [[2, 6, 10], [3, 7, 11], [4, 8, 12]]
+    effects:
+      domains: [career, wealth]
+      polarity: mixed
+      strength: minor
+      summary: A livelihood from the land or hard physical work; modest means.
+    tests:
+      positive:
+        - {lagna: aries, moon: virgo, jupiter: capricorn, rest: taurus}
+      negative:
+        - {lagna: aries, moon: leo, jupiter: sagittarius, rest: aries}
+
+  - id: nabhasa.akriti.vajra
+    name: Vajra Yoga
+    description: >-
+      All the benefics occupy the 1st and 7th houses (both held), and all the malefics
+      among the seven occupy the 4th and 10th (both held).
+    when: houses_of(benefics) == [1, 7] and houses_of(only(malefics, seven)) == [4, 10]
+    effects:
+      domains: [fortune, character]
+      polarity: mixed
+      strength: minor
+      summary: Happy at the beginning and end of life, with a troubled middle; brave.
+    tests:
+      positive:
+        - {lagna: aries, jupiter: aries, mercury: aries, venus: libra, sun: cancer, moon: capricorn, mars: capricorn, saturn: capricorn, rest: taurus}
+      negative:
+        - {lagna: aries, jupiter: aries, mercury: aries, venus: libra, sun: cancer, moon: capricorn, mars: capricorn, saturn: aries, rest: taurus}
+
+  - id: nabhasa.akriti.yava
+    name: Yava Yoga
+    description: >-
+      All the malefics among the seven occupy the 1st and 7th houses (both held), and
+      all the benefics occupy the 4th and 10th (both held).
+    when: houses_of(only(malefics, seven)) == [1, 7] and houses_of(benefics) == [4, 10]
+    effects:
+      domains: [fortune, character]
+      polarity: mixed
+      strength: minor
+      summary: Happiest in middle age; charitable and steady.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, mars: aries, saturn: libra, moon: libra, jupiter: cancer, venus: capricorn, mercury: capricorn, rest: taurus}
+      negative:
+        - {lagna: aries, sun: aries, mars: aries, saturn: libra, moon: libra, jupiter: aries, venus: capricorn, mercury: capricorn, rest: taurus}
+
+  - id: nabhasa.akriti.kamala
+    name: Kamala Yoga
+    aliases: [Padma Yoga]
+    description: The seven planets occupy exactly the four kendras.
+    when: houses_of(seven) == [1, 4, 7, 10]
+    effects:
+      domains: [fame, character, longevity]
+      polarity: positive
+      strength: major
+      summary: Virtue, a long life and wide renown; a leader of people.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: cancer, mars: libra, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: aries, moon: cancer, rest: capricorn}
+
+  - id: nabhasa.akriti.vapi
+    name: Vapi Yoga
+    description: >-
+      The seven planets occupy exactly the four panapharas (2, 5, 8, 11) or exactly
+      the four apoklimas (3, 6, 9, 12).
+    when: houses_of(seven) in [[2, 5, 8, 11], [3, 6, 9, 12]]
+    effects:
+      domains: [wealth]
+      polarity: positive
+      strength: minor
+      summary: Accumulates and keeps wealth; comfortable but not generous.
+    tests:
+      positive:
+        - {lagna: aries, sun: taurus, moon: leo, mars: scorpio, rest: aquarius}
+        - {lagna: aries, sun: gemini, moon: virgo, mars: sagittarius, rest: pisces}
+      negative:
+        - {lagna: aries, sun: taurus, moon: leo, rest: aquarius}
+
+  - id: nabhasa.akriti.yupa
+    name: Yupa Yoga
+    description: The seven planets occupy exactly the houses 1 to 4.
+    when: houses_of(seven) == [1, 2, 3, 4]
+    effects:
+      domains: [spirituality, character]
+      polarity: positive
+      strength: minor
+      summary: Charitable, self-controlled and devoted to sacred duties.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, rest: cancer}
+      negative:
+        - {lagna: aries, sun: aries, moon: taurus, rest: cancer}
+
+  - id: nabhasa.akriti.ishu
+    name: Ishu Yoga
+    aliases: [Sara Yoga]
+    description: The seven planets occupy exactly the houses 4 to 7.
+    when: houses_of(seven) == [4, 5, 6, 7]
+    effects:
+      domains: [career, character]
+      polarity: mixed
+      strength: minor
+      summary: A tough, practical nature; work involving force, weapons or custody.
+    tests:
+      positive:
+        - {lagna: aries, sun: cancer, moon: leo, mars: virgo, rest: libra}
+      negative:
+        - {lagna: aries, sun: cancer, moon: leo, mars: virgo, rest: scorpio}
+
+  - id: nabhasa.akriti.shakti
+    name: Shakti Yoga
+    description: The seven planets occupy exactly the houses 7 to 10.
+    when: houses_of(seven) == [7, 8, 9, 10]
+    effects:
+      domains: [character, longevity]
+      polarity: mixed
+      strength: minor
+      summary: Long-lived and capable in conflict, but often short of money and ease.
+    tests:
+      positive:
+        - {lagna: aries, sun: libra, moon: scorpio, mars: sagittarius, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: libra, moon: scorpio, rest: capricorn}
+
+  - id: nabhasa.akriti.danda
+    name: Danda Yoga
+    description: The seven planets occupy exactly the houses 10, 11, 12 and 1.
+    when: houses_of(seven) == [1, 10, 11, 12]
+    effects:
+      domains: [career, marriage]
+      polarity: negative
+      strength: minor
+      summary: Serves others; separation from family and a humble livelihood.
+    tests:
+      positive:
+        - {lagna: aries, sun: capricorn, moon: aquarius, mars: pisces, rest: aries}
+      negative:
+        - {lagna: aries, sun: capricorn, moon: aquarius, mars: pisces, rest: taurus}
+
+  - id: nabhasa.akriti.nauka
+    name: Nauka Yoga
+    description: The seven planets occupy the houses 1 to 7, one in each.
+    when: houses_of(seven) == arc(1, 7)
+    effects:
+      domains: [wealth, fame]
+      polarity: mixed
+      strength: minor
+      summary: Earnings connected with water, trade or transport; famous but restless.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: libra, rest: aries}
+      negative:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: scorpio, rest: aries}
+
+  - id: nabhasa.akriti.kuta
+    name: Kuta Yoga
+    description: The seven planets occupy the houses 4 to 10, one in each.
+    when: houses_of(seven) == arc(4, 7)
+    effects:
+      domains: [character, wealth]
+      polarity: negative
+      strength: minor
+      summary: Unreliable dealings and modest means; associated with guards and prisons.
+    tests:
+      positive:
+        - {lagna: aries, sun: cancer, moon: leo, mars: virgo, mercury: libra, jupiter: scorpio, venus: sagittarius, saturn: capricorn, rest: aries}
+      negative:
+        - {lagna: aries, sun: cancer, moon: leo, mars: virgo, mercury: libra, jupiter: scorpio, venus: sagittarius, saturn: aquarius, rest: aries}
+
+  - id: nabhasa.akriti.chatra
+    name: Chatra Yoga
+    description: The seven planets occupy the houses 7 to 1 (7, 8, ... 12, 1), one in each.
+    when: houses_of(seven) == arc(7, 7)
+    effects:
+      domains: [character, fortune]
+      polarity: positive
+      strength: minor
+      summary: Kind, intelligent and a support to relatives; happy early and late in life.
+    tests:
+      positive:
+        - {lagna: aries, sun: libra, moon: scorpio, mars: sagittarius, mercury: capricorn, jupiter: aquarius, venus: pisces, saturn: aries, rest: aries}
+      negative:
+        - {lagna: aries, sun: libra, moon: scorpio, mars: sagittarius, mercury: capricorn, jupiter: aquarius, venus: pisces, saturn: taurus, rest: aries}
+
+  - id: nabhasa.akriti.chapa
+    name: Chapa Yoga
+    aliases: [Dhanus Yoga, Karmuka Yoga]
+    description: The seven planets occupy the houses 10 to 4 (10, 11, 12, 1, 2, 3, 4), one in each.
+    when: houses_of(seven) == arc(10, 7)
+    effects:
+      domains: [character, fortune]
+      polarity: mixed
+      strength: minor
+      summary: Secretive and adventurous; fortunes improve in the middle of life.
+    tests:
+      positive:
+        - {lagna: aries, sun: capricorn, moon: aquarius, mars: pisces, mercury: aries, jupiter: taurus, venus: gemini, saturn: cancer, rest: aries}
+      negative:
+        - {lagna: aries, sun: capricorn, moon: aquarius, mars: pisces, mercury: aries, jupiter: taurus, venus: gemini, saturn: leo, rest: aries}
+
+  - id: nabhasa.akriti.ardha_chandra
+    name: Ardha Chandra Yoga
+    description: >-
+      The seven planets occupy seven consecutive houses, one in each, starting from a
+      house that is not a kendra.
+    when: >-
+      houses_of(seven) in [arc(2, 7), arc(3, 7), arc(5, 7), arc(6, 7), arc(8, 7),
+      arc(9, 7), arc(11, 7), arc(12, 7)]
+    effects:
+      domains: [status, wealth]
+      polarity: positive
+      strength: moderate
+      summary: Handsome and respected; leads others and enjoys wealth and ornaments.
+    tests:
+      positive:
+        - {lagna: aries, sun: taurus, moon: gemini, mars: cancer, mercury: leo, jupiter: virgo, venus: libra, saturn: scorpio, rest: aries}
+        - {lagna: aries, sun: aquarius, moon: pisces, mars: aries, mercury: taurus, jupiter: gemini, venus: cancer, saturn: leo, rest: aries}
+      negative:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: libra, rest: aries}
+
+  - id: nabhasa.akriti.chakra
+    name: Chakra Yoga
+    description: The seven planets occupy exactly the six odd houses (1, 3, 5, 7, 9, 11).
+    when: houses_of(seven) == [1, 3, 5, 7, 9, 11]
+    effects:
+      domains: [status, fame]
+      polarity: positive
+      strength: major
+      summary: Great authority and renown; honoured by other leaders.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: gemini, mars: leo, mercury: libra, jupiter: sagittarius, venus: aquarius, saturn: aries, rest: aries}
+      negative:
+        - {lagna: aries, sun: aries, moon: gemini, mars: leo, mercury: libra, jupiter: sagittarius, venus: aquarius, saturn: taurus, rest: aries}
+
+  - id: nabhasa.akriti.samudra
+    name: Samudra Yoga
+    description: The seven planets occupy exactly the six even houses (2, 4, 6, 8, 10, 12).
+    when: houses_of(seven) == [2, 4, 6, 8, 10, 12]
+    effects:
+      domains: [wealth, fortune]
+      polarity: positive
+      strength: major
+      summary: Abundant wealth and enjoyments; prosperous like a ruler.
+    tests:
+      positive:
+        - {lagna: aries, sun: taurus, moon: cancer, mars: virgo, mercury: scorpio, jupiter: capricorn, venus: pisces, saturn: taurus, rest: aries}
+      negative:
+        - {lagna: aries, sun: taurus, moon: cancer, mars: virgo, mercury: scorpio, jupiter: capricorn, venus: pisces, saturn: aries, rest: aries}
+
+  # --- Sankhya ----------------------------------------------------------------------
+  - id: nabhasa.sankhya.vallaki
+    name: Vallaki Yoga
+    aliases: [Veena Yoga]
+    description: >-
+      The seven planets occupy seven different signs, and no Dala or Akriti yoga is
+      present.
+    when: >-
+      signs_occupied(seven) == 7 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [character, wealth]
+      polarity: positive
+      strength: minor
+      summary: Fond of music and the arts, with many friends and a comfortable life.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: scorpio, rest: aries}
+      negative:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: libra, rest: aries}
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: aries, rest: aries}
+
+  - id: nabhasa.sankhya.dama
+    name: Dama Yoga
+    aliases: [Damini Yoga]
+    description: >-
+      The seven planets occupy six different signs, and no Dala or Akriti yoga is
+      present.
+    when: >-
+      signs_occupied(seven) == 6 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [character, wealth]
+      polarity: positive
+      strength: minor
+      summary: Generous and helpful to others; wealthy and well known.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, jupiter: leo, venus: virgo, saturn: aries, rest: aries}
+      negative:
+        - {lagna: aries, sun: taurus, moon: cancer, mars: virgo, mercury: scorpio, jupiter: capricorn, venus: pisces, saturn: taurus, rest: aries}
+
+  - id: nabhasa.sankhya.pasa
+    name: Pasa Yoga
+    description: >-
+      The seven planets occupy five different signs, and no Dala or Akriti yoga is
+      present.
+    when: >-
+      signs_occupied(seven) == 5 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [character, career]
+      polarity: mixed
+      strength: minor
+      summary: Talkative and resourceful, with many dependants; gains by any means.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, mercury: cancer, rest: leo}
+      negative:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, rest: leo}
+
+  - id: nabhasa.sankhya.kedara
+    name: Kedara Yoga
+    description: >-
+      The seven planets occupy four different signs, and no Dala or Akriti yoga is
+      present.
+    when: >-
+      signs_occupied(seven) == 4 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [wealth, character]
+      polarity: positive
+      strength: minor
+      summary: Useful to many, prospers through land and agriculture.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, mars: gemini, rest: leo}
+      negative:
+        - {lagna: aries, sun: aries, moon: cancer, mars: libra, rest: capricorn}
+
+  - id: nabhasa.sankhya.shoola
+    name: Shoola Yoga
+    description: >-
+      The seven planets occupy three different signs, and no Dala or Akriti yoga is
+      present.
+    when: >-
+      signs_occupied(seven) == 3 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [character, conflict]
+      polarity: negative
+      strength: minor
+      summary: Sharp, combative and prone to injuries; struggles for money.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: taurus, rest: leo}
+      negative:
+        - {lagna: aries, moon: leo, jupiter: sagittarius, rest: aries}
+
+  - id: nabhasa.sankhya.yuga
+    name: Yuga Yoga
+    description: >-
+      The seven planets occupy two different signs, and no Dala or Akriti yoga is
+      present.
+    when: >-
+      signs_occupied(seven) == 2 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [fortune, character]
+      polarity: negative
+      strength: minor
+      summary: Unconventional beliefs, few means and little support from others.
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, rest: taurus}
+      negative:
+        - {lagna: aries, saturn: libra, rest: aries}
+
+  - id: nabhasa.sankhya.gola
+    name: Gola Yoga
+    description: All seven planets occupy a single sign.
+    when: >-
+      signs_occupied(seven) == 1 and not fires("nabhasa.dala.*")
+      and not fires("nabhasa.akriti.*")
+    effects:
+      domains: [wealth, fortune]
+      polarity: negative
+      strength: minor
+      summary: Poverty, wandering and lack of learning in the traditional reading.
+    tests:
+      positive:
+        - {lagna: aries, rest: leo}
+      negative:
+        - {lagna: aries, moon: virgo, rest: leo}

@@ -39,7 +39,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `kp/` | KP significators and ruling planets |
 | `panchanga/` | Panchanga elements, their end times, muhurta periods, calendar |
 | `match/` | Ashtakoota, Dashakoota, Manglik |
-| `rules/` | Rule DSL parser and safe evaluator; converts a chart into facts |
+| `rules/` | Chart facts (from a chart or a compact test spec); the rule language (safe parser and evaluator with evidence); the rule schema; the catalogue loader, which checks citations against `knowledge/sources.yaml` and orders rules that refer to each other; `compute_yogas(chart)` |
 | `predict/` | Promise × period × trigger timeline; convergence; confidence |
 | `rectify/` | Candidate grid, event scoring, classical priors, sensitivity |
 | `models.py` | Public input and output models (pydantic, JSON-serialisable) |
@@ -62,6 +62,15 @@ tz database, plus curated Indian rules (Bombay Time, Calcutta Time, local mean
 time, war-time advisories). Every resolution returns the alternatives it rejected,
 a confidence level and warnings, so ambiguous records are surfaced rather than
 silently guessed.
+
+## Knowledge base (`knowledge/`)
+
+Rules are data: YAML files validated against `rules/schema.py`, each with citations
+(text, edition, chapter or locator), provenance (classical, traditional or modern),
+review status and its own positive, negative and cancelled test charts. The
+catalogue is loaded once per process (`JYOTISH_KNOWLEDGE_DIR` overrides the
+location) and evaluates all 312 current rules in about 4 ms per chart.
+[`knowledge/README.md`](../knowledge/README.md) is the authoring guide.
 
 ## Oracle harness (`oracle/`)
 

@@ -16,6 +16,15 @@ from jyotish_engine.core.varga import VargaMethod
 from jyotish_engine.core.zodiac import Sign, degrees_in_sign, sign_of
 from jyotish_engine.kp.subdivisions import kp_lords
 from jyotish_engine.place.timezone import Confidence, TimeInterpretation, TimeStandard
+from jyotish_engine.rules.schema import (
+    Category,
+    Domain,
+    Polarity,
+    Provenance,
+    School,
+    Status,
+    Strength,
+)
 from jyotish_engine.settings import DashaYear, Settings
 from jyotish_engine.special.karakas import Karaka
 from jyotish_engine.special.upagraha import Upagraha
@@ -440,3 +449,51 @@ class StrengthsOut(BaseModel):
     ashtakavarga: AshtakavargaOut
     #: Vimshopaka bala (out of 20) under each varga scheme.
     vimshopaka: dict[str, dict[Body, float]]
+
+
+class CitationOut(BaseModel):
+    text: str
+    edition: str | None
+    chapter: int | str | None
+    verses: str | None
+    locator: str | None
+    #: Whether someone has checked the citation against that edition.
+    verified: bool
+
+
+class YogaOut(BaseModel):
+    """A knowledge-base rule (yoga or dosha) found in a chart, with its evidence."""
+
+    id: str
+    name: str
+    category: Category
+    school: School
+    provenance: Provenance
+    status: Status
+    description: str
+    domains: list[Domain]
+    polarity: Polarity
+    strength: Strength
+    summary: str
+    #: The chart facts that made the rule true, in rule-language terms.
+    evidence: list[str]
+    #: For a cancelled rule, the facts that cancelled it.
+    cancel_evidence: list[str]
+    #: Planets forming the yoga; their dashas are when it is expected to act.
+    participants: list[Body]
+    sources: list[CitationOut]
+
+
+class UndecidedRuleOut(BaseModel):
+    id: str
+    name: str
+    #: The birth fact the rule needs, for example "gender".
+    missing: str
+
+
+class YogasOut(BaseModel):
+    #: Number of rules evaluated.
+    catalogue_size: int
+    present: list[YogaOut]
+    cancelled: list[YogaOut]
+    undecided: list[UndecidedRuleOut]
