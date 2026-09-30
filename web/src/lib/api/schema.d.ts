@@ -145,6 +145,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/charts/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predictions
+         * @description Promise × period × trigger for each life domain, month by month, with windows.
+         */
+        post: operations["predictions_v1_charts_predictions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts/readings": {
         parameters: {
             query?: never;
@@ -791,6 +811,28 @@ export interface components {
          * @enum {string}
          */
         Domain: "self" | "character" | "intellect" | "wealth" | "career" | "status" | "fame" | "marriage" | "children" | "parents" | "siblings" | "property" | "education" | "health" | "longevity" | "fortune" | "spirituality" | "travel" | "conflict";
+        /** DomainPromiseOut */
+        DomainPromiseOut: {
+            /** Factors */
+            factors: components["schemas"]["PredictionFactorOut"][];
+            /** Score */
+            score: number;
+        };
+        /** DomainTimelineOut */
+        DomainTimelineOut: {
+            domain: components["schemas"]["Domain"];
+            /** Houses */
+            houses: number[];
+            /** Karakas */
+            karakas: components["schemas"]["Body"][];
+            promise: components["schemas"]["DomainPromiseOut"];
+            /** Scores */
+            scores: number[];
+            /** Tones */
+            tones: number[];
+            /** Windows */
+            windows: components["schemas"]["PredictionWindowOut"][];
+        };
         /** DoubleTransit */
         DoubleTransit: {
             /** End Jd Ut */
@@ -1468,6 +1510,109 @@ export interface components {
          * @enum {string}
          */
         PositionType: "apparent" | "true";
+        /**
+         * PredictionFactorOut
+         * @description One scored input to a prediction, with its reason in words.
+         */
+        PredictionFactorOut: {
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /**
+             * Rules
+             * @default []
+             */
+            rules?: string[];
+            /** Score */
+            score: number;
+            /** Weight */
+            weight: number;
+        };
+        /**
+         * PredictionRuleOut
+         * @description A dasha or transit rule that holds at a window's peak.
+         */
+        PredictionRuleOut: {
+            /** Evidence */
+            evidence: string[];
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            polarity: components["schemas"]["Polarity"];
+            /** Summary */
+            summary: string;
+        };
+        /** PredictionWindowOut */
+        PredictionWindowOut: {
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "strong" | "moderate" | "weak";
+            /** Dasha */
+            dasha: components["schemas"]["Body"][];
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Factors */
+            factors: components["schemas"]["PredictionFactorOut"][];
+            /**
+             * Peak
+             * Format: date
+             */
+            peak: string;
+            /** Rules */
+            rules: components["schemas"]["PredictionRuleOut"][];
+            /** Score */
+            score: number;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Tone */
+            tone: number;
+        };
+        /**
+         * PredictionsOut
+         * @description Promise × period × trigger for each life domain, month by month.
+         */
+        PredictionsOut: {
+            /** Domains */
+            domains: components["schemas"]["DomainTimelineOut"][];
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Months */
+            months: string[];
+            /** Notes */
+            notes: string[];
+            /** Periods */
+            periods: components["schemas"]["DashaPeriodOut"][];
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+        };
+        /** PredictionsRequest */
+        PredictionsRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /** End */
+            end?: string | null;
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+            /** Start */
+            start?: string | null;
+        };
         /**
          * Preset
          * @enum {string}
@@ -2207,6 +2352,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PeriodReadingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictions_v1_charts_predictions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PredictionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PredictionsOut"];
                 };
             };
             /** @description Validation Error */

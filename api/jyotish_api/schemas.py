@@ -37,6 +37,14 @@ class PeriodRequest(ChartRequest):
     include_sensitive: bool = False
 
 
+class PredictionsRequest(ChartRequest):
+    #: First month of the timeline (default: the birth month).
+    start: date | None = None
+    #: The first day after the timeline (default: 60 years after the start).
+    end: date | None = None
+    gender: Literal["male", "female"] | None = None
+
+
 class DashaRequest(ChartRequest):
     #: A nakshatra dasha (e.g. "vimshottari"), a sign dasha (e.g. "chara") or "kalachakra".
     system: str

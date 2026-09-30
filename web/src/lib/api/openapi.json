@@ -1091,6 +1091,83 @@
         "title": "Domain",
         "type": "string"
       },
+      "DomainPromiseOut": {
+        "properties": {
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionFactorOut"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "score",
+          "factors"
+        ],
+        "title": "DomainPromiseOut",
+        "type": "object"
+      },
+      "DomainTimelineOut": {
+        "properties": {
+          "domain": {
+            "$ref": "#/components/schemas/Domain"
+          },
+          "houses": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Houses",
+            "type": "array"
+          },
+          "karakas": {
+            "items": {
+              "$ref": "#/components/schemas/Body"
+            },
+            "title": "Karakas",
+            "type": "array"
+          },
+          "promise": {
+            "$ref": "#/components/schemas/DomainPromiseOut"
+          },
+          "scores": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Scores",
+            "type": "array"
+          },
+          "tones": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Tones",
+            "type": "array"
+          },
+          "windows": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionWindowOut"
+            },
+            "title": "Windows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "domain",
+          "houses",
+          "karakas",
+          "promise",
+          "scores",
+          "tones",
+          "windows"
+        ],
+        "title": "DomainTimelineOut",
+        "type": "object"
+      },
       "DoubleTransit": {
         "properties": {
           "end_jd_ut": {
@@ -2962,6 +3039,274 @@
         "title": "PositionType",
         "type": "string"
       },
+      "PredictionFactorOut": {
+        "description": "One scored input to a prediction, with its reason in words.",
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "rules": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "score",
+          "weight"
+        ],
+        "title": "PredictionFactorOut",
+        "type": "object"
+      },
+      "PredictionRuleOut": {
+        "description": "A dasha or transit rule that holds at a window's peak.",
+        "properties": {
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "polarity": {
+            "$ref": "#/components/schemas/Polarity"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "summary",
+          "polarity",
+          "evidence"
+        ],
+        "title": "PredictionRuleOut",
+        "type": "object"
+      },
+      "PredictionWindowOut": {
+        "properties": {
+          "confidence": {
+            "enum": [
+              "strong",
+              "moderate",
+              "weak"
+            ],
+            "title": "Confidence",
+            "type": "string"
+          },
+          "dasha": {
+            "items": {
+              "$ref": "#/components/schemas/Body"
+            },
+            "title": "Dasha",
+            "type": "array"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionFactorOut"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "peak": {
+            "format": "date",
+            "title": "Peak",
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionRuleOut"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          },
+          "tone": {
+            "title": "Tone",
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "peak",
+          "score",
+          "tone",
+          "confidence",
+          "dasha",
+          "factors",
+          "rules"
+        ],
+        "title": "PredictionWindowOut",
+        "type": "object"
+      },
+      "PredictionsOut": {
+        "description": "Promise \u00d7 period \u00d7 trigger for each life domain, month by month.",
+        "properties": {
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainTimelineOut"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "months": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/DashaPeriodOut"
+            },
+            "title": "Periods",
+            "type": "array"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "months",
+          "periods",
+          "domains",
+          "notes"
+        ],
+        "title": "PredictionsOut",
+        "type": "object"
+      },
+      "PredictionsRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          }
+        },
+        "required": [
+          "birth"
+        ],
+        "title": "PredictionsRequest",
+        "type": "object"
+      },
       "Preset": {
         "enum": [
           "classic_parashari",
@@ -4682,6 +5027,45 @@
           }
         },
         "summary": "Period"
+      }
+    },
+    "/v1/charts/predictions": {
+      "post": {
+        "description": "Promise \u00d7 period \u00d7 trigger for each life domain, month by month, with windows.",
+        "operationId": "predictions_v1_charts_predictions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predictions"
       }
     },
     "/v1/charts/readings": {

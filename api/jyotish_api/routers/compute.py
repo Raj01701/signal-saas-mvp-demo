@@ -16,6 +16,7 @@ from jyotish_api.schemas import (
     MatchRequest,
     PanchangaRequest,
     PeriodRequest,
+    PredictionsRequest,
     ReadingsRequest,
     TransitRequest,
     YogasRequest,
@@ -36,6 +37,7 @@ from jyotish_engine.models import (
     MatchOut,
     PanchangaOut,
     PeriodReadingsOut,
+    PredictionsOut,
     ReadingsOut,
     SensitivityOut,
     StrengthsOut,
@@ -45,6 +47,7 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import Place, search_places
+from jyotish_engine.predict import compute_predictions
 from jyotish_engine.rules.periods import compute_period_readings
 from jyotish_engine.rules.readings import compute_readings
 from jyotish_engine.rules.yogas import compute_yogas
@@ -116,6 +119,12 @@ def period(request: Request, body: PeriodRequest) -> PeriodReadingsOut:
     return compute_period_readings(
         _chart(request, body), body.moment, include_sensitive=body.include_sensitive
     )
+
+
+@router.post("/charts/predictions")
+def predictions(request: Request, body: PredictionsRequest) -> PredictionsOut:
+    """Promise × period × trigger for each life domain, month by month, with windows."""
+    return compute_predictions(_chart(request, body), body.start, body.end, gender=body.gender)
 
 
 @router.post("/charts/strengths")

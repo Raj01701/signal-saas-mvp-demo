@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -760,3 +761,72 @@ class PeriodReadingsOut(BaseModel):
     #: Rules whose condition holds but which are cancelled, such as a favourable transit
     #: obstructed by vedha; ``cancel_evidence`` gives the reason.
     cancelled: list[YogaOut]
+
+
+class PredictionFactorOut(BaseModel):
+    """One scored input to a prediction, with its reason in words."""
+
+    #: "promise", "period", "trigger" or "convergence".
+    kind: str
+    label: str
+    #: -1 to 1 for promise factors; 0 to 1 for period, trigger and convergence factors.
+    score: float
+    weight: float
+    #: Knowledge-base rules behind the factor, if any.
+    rules: list[str] = []
+
+
+class PredictionRuleOut(BaseModel):
+    """A dasha or transit rule that holds at a window's peak."""
+
+    id: str
+    name: str
+    summary: str
+    polarity: Polarity
+    evidence: list[str]
+
+
+class PredictionWindowOut(BaseModel):
+    start: date
+    #: The first day after the window.
+    end: date
+    peak: date
+    score: float
+    #: -1 (challenging) to 1 (favourable).
+    tone: float
+    #: Strong: two dasha systems agree and a transit confirms.
+    confidence: Literal["strong", "moderate", "weak"]
+    #: Vimshottari lords at the peak: mahadasha, antardasha, pratyantardasha.
+    dasha: list[Body]
+    factors: list[PredictionFactorOut]
+    rules: list[PredictionRuleOut]
+
+
+class DomainPromiseOut(BaseModel):
+    #: 0 to 1; 0.5 is neutral.
+    score: float
+    factors: list[PredictionFactorOut]
+
+
+class DomainTimelineOut(BaseModel):
+    domain: Domain
+    houses: list[int]
+    karakas: list[Body]
+    promise: DomainPromiseOut
+    #: One value per month of ``PredictionsOut.months``.
+    scores: list[float]
+    tones: list[float]
+    windows: list[PredictionWindowOut]
+
+
+class PredictionsOut(BaseModel):
+    """Promise × period × trigger for each life domain, month by month."""
+
+    start: date
+    #: The first day after the range.
+    end: date
+    months: list[date]
+    #: Vimshottari mahadashas and antardashas overlapping the range.
+    periods: list[DashaPeriodOut]
+    domains: list[DomainTimelineOut]
+    notes: list[str]
