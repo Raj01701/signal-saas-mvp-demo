@@ -187,3 +187,20 @@ The 36 sahams of Rao's table on 300 random sets of positions, day and night: 101
 
 * Test charts: 736 of 736 behave as each rule specifies (present, absent, or present but cancelled).
 * Property tests on random charts check catalogue invariants (for example, exactly one of Sunapha, Anapha, Durudhura and Kemadruma holds) and compare the Mahapurusha, Parivartana, Gajakesari, Kala Sarpa and lunar yogas with separate plain-Python implementations (`test_rules_properties.py`).
+
+## Panchanga (M5) versus Swiss Ephemeris
+
+Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise). 560 civil dates from 1950 to 2040: 100 each at New Delhi, Mumbai, Chennai, Kolkata and Bengaluru, and 20 each at London, New York and Sydney. The reference finds every event independently: rise and set with its own routine, and each change of tithi, nakshatra, yoga and karana by bisection on its positions. Limb changes are compared in TT, because Delta T for future dates is a prediction that differs between tools by about a second.
+
+| Event | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| Sunrise (Hindu: disc centre, no refraction) | 560 | 0.0865 s | 0.0093 s | ≤ 60 s |
+| Sunset (Hindu) | 560 | 0.1097 s | 0.0078 s | ≤ 60 s |
+| Moonrise (upper limb, refraction, topocentric) | 560 | 0.0896 s | 0.0084 s | ≤ 60 s |
+| Moonset (upper limb, refraction, topocentric) | 560 | 0.0923 s | 0.0047 s | ≤ 60 s |
+| Tithi changes | 1125 | 0.0205 s | 0.0069 s | ≤ 60 s |
+| Nakshatra changes | 1116 | 0.0176 s | 0.0062 s | ≤ 60 s |
+| Yoga changes | 1158 | 0.0168 s | 0.0057 s | ≤ 60 s |
+| Karana changes | 1688 | 0.0205 s | 0.0069 s | ≤ 60 s |
+
+Every limb span the engine reports from sunrise to the next sunrise matches a change in the reference (0 unmatched). The milestone target is one minute against Drik Panchang with the same sunrise definition; Drik Panchang cannot be reached from this environment, so that comparison is left to the manual spot checks.

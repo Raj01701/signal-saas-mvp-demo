@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -463,6 +463,70 @@ class StrengthsOut(BaseModel):
     ashtakavarga: AshtakavargaOut
     #: Vimshopaka bala (out of 20) under each varga scheme.
     vimshopaka: dict[str, dict[Body, float]]
+
+
+class LimbSpanOut(BaseModel):
+    """One tithi, nakshatra, yoga or karana, with its full start and end."""
+
+    limb: str
+    #: 1-based: tithi 1-30, nakshatra and yoga 1-27, karana 1-60 within the month.
+    number: int
+    name: str
+    #: For tithis: "shukla" (bright half) or "krishna" (dark half).
+    paksha: str | None = None
+    start: datetime
+    end: datetime
+    start_jd_ut: float
+    end_jd_ut: float
+
+
+class PeriodOut(BaseModel):
+    name: str
+    start: datetime
+    end: datetime
+    start_jd_ut: float
+    end_jd_ut: float
+    lord: Body | None = None
+    #: For choghadiyas: "good", "neutral" or "bad".
+    quality: str | None = None
+
+
+class PanchangaOut(BaseModel):
+    """The panchanga of one Hindu day, from sunrise to the next sunrise.
+
+    Times are UTC; ``utc_offset_seconds`` gives the local offset at the start of the
+    civil date. Each limb lists every span overlapping the day.
+    """
+
+    civil_date: date
+    place: PlaceInput
+    settings: Settings
+    zone: str | None
+    utc_offset_seconds: float
+    #: 0 = Sunday.
+    weekday: int
+    vara: str
+    vara_lord: Body
+    sunrise: datetime
+    sunrise_jd_ut: float
+    sunset: datetime
+    sunset_jd_ut: float
+    next_sunrise: datetime
+    next_sunrise_jd_ut: float
+    #: Within the civil date (local midnight to midnight), if the Moon rises or sets.
+    moonrise: datetime | None
+    moonset: datetime | None
+    tithis: list[LimbSpanOut]
+    nakshatras: list[LimbSpanOut]
+    yogas: list[LimbSpanOut]
+    karanas: list[LimbSpanOut]
+    #: Rahu kalam, Yamaganda and Gulika kalam.
+    kalams: list[PeriodOut]
+    abhijit: PeriodOut
+    brahma_muhurta: PeriodOut
+    durmuhurtas: list[PeriodOut]
+    horas: list[PeriodOut]
+    choghadiyas: list[PeriodOut]
 
 
 class CitationOut(BaseModel):

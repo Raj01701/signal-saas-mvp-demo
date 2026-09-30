@@ -8,7 +8,9 @@
 * ``DISC_CENTRE_REFRACTION``: the centre of the disc on the apparent horizon.
 
 The last two model standard atmospheric refraction (1013.25 hPa, 15 C) at the
-horizon, and use the Sun's apparent semi-diameter from its distance.
+horizon, and use the Sun's apparent semi-diameter from its distance. Moonrise and
+moonset use the same definitions (the refracted ones topocentric, with the Moon's
+parallax and semi-diameter); almanacs quote the upper limb with refraction.
 """
 
 from __future__ import annotations
@@ -48,12 +50,26 @@ class RiseSet:
     set: Instant | None
 
 
-def _geocentric_altitudes(jd_ut: Any, latitude: float, longitude: float) -> Any:
-    """Altitude of the Sun's geocentric apparent centre (no refraction), degrees."""
+#: Mean radius of the Moon (km) and the astronomical unit (km), for the Moon's
+#: apparent semi-diameter.
+MOON_RADIUS_KM = 1737.4
+AU_KM = 149_597_870.7
+
+
+def _semidiameter_deg(body: Body, distance_au: Any) -> Any:
+    if body is Body.MOON:
+        return np.degrees(np.arcsin(MOON_RADIUS_KM / (np.asarray(distance_au) * AU_KM)))
+    return SOLAR_SEMIDIAMETER_1AU_ARCSEC / np.asarray(distance_au) / 3600.0
+
+
+def _geocentric_altitudes(
+    jd_ut: Any, latitude: float, longitude: float, body: Body = Body.SUN
+) -> Any:
+    """Altitude of the body's geocentric apparent centre (no refraction), degrees."""
     ts = timescale()
     eph = get_ephemeris()
     times = ts.ut1_jd(jd_ut)
-    apparent = eph.earth.at(times).observe(eph.target(Body.SUN)).apparent()
+    apparent = eph.earth.at(times).observe(eph.target(body)).apparent()
     ra, dec, _ = apparent.radec(epoch=times)
     gast = np.asarray(times.gast) * 15.0
     hour_angle = np.radians(gast + longitude - np.asarray(ra.hours) * 15.0)
@@ -64,35 +80,41 @@ def _geocentric_altitudes(jd_ut: Any, latitude: float, longitude: float) -> Any:
 
 
 def _topocentric_altitudes(
-    jd_ut: Any, latitude: float, longitude: float, elevation_m: float
+    jd_ut: Any, latitude: float, longitude: float, elevation_m: float, body: Body = Body.SUN
 ) -> tuple[Any, Any]:
-    """Altitude of the Sun's topocentric apparent centre (no refraction), degrees."""
+    """Altitude of the body's topocentric apparent centre (no refraction), degrees."""
     ts = timescale()
     eph = get_ephemeris()
     times = ts.ut1_jd(jd_ut)
     observer = eph.earth + wgs84.latlon(latitude, longitude, elevation_m=elevation_m)
-    alt, _, distance = observer.at(times).observe(eph.target(Body.SUN)).apparent().altaz()
+    alt, _, distance = observer.at(times).observe(eph.target(body)).apparent().altaz()
     return np.asarray(alt.degrees), np.asarray(distance.au)
 
 
 def _event_function(
-    definition: SunriseDefinition, latitude: float, longitude: float, elevation_m: float
+    definition: SunriseDefinition,
+    latitude: float,
+    longitude: float,
+    elevation_m: float,
+    body: Body = Body.SUN,
 ) -> Any:
-    """Return f(jd_ut) that is zero at the event and positive when the Sun is up."""
+    """Return f(jd_ut) that is zero at the event and positive when the body is up."""
     if definition is SunriseDefinition.HINDU:
 
         def hindu(jd_ut: Any) -> Any:
-            return _geocentric_altitudes(jd_ut, latitude, longitude)
+            return _geocentric_altitudes(jd_ut, latitude, longitude, body)
 
         return hindu
 
     refraction = HORIZON_REFRACTION_ARCMIN / 60.0
 
     def refracted(jd_ut: Any) -> Any:
-        altitude, distance_au = _topocentric_altitudes(jd_ut, latitude, longitude, elevation_m)
+        altitude, distance_au = _topocentric_altitudes(
+            jd_ut, latitude, longitude, elevation_m, body
+        )
         horizon = -refraction
         if definition is SunriseDefinition.UPPER_LIMB_REFRACTION:
-            horizon -= SOLAR_SEMIDIAMETER_1AU_ARCSEC / distance_au / 3600.0
+            horizon = horizon - _semidiameter_deg(body, distance_au)
         return altitude - horizon
 
     return refracted
@@ -176,6 +198,35 @@ def next_rise_and_set(
         rise=next_sunrise(start, latitude, longitude, elevation_m, definition, max_days),
         set=next_sunset(start, latitude, longitude, elevation_m, definition, max_days),
     )
+
+
+def next_moonrise(
+    start: Instant,
+    latitude: float,
+    longitude: float,
+    elevation_m: float = 0.0,
+    definition: SunriseDefinition = SunriseDefinition.UPPER_LIMB_REFRACTION,
+    max_days: float = 2.0,
+) -> Instant | None:
+    """First moonrise after ``start``. The refracted definitions are topocentric, so they
+    include the Moon's parallax; ``HINDU`` uses the geocentric centre, unrefracted."""
+    f = _event_function(definition, latitude, longitude, elevation_m, Body.MOON)
+    jd = _scan(f, start.jd_ut, max_days, rising=True)
+    return Instant.from_jd_ut(jd) if jd is not None else None
+
+
+def next_moonset(
+    start: Instant,
+    latitude: float,
+    longitude: float,
+    elevation_m: float = 0.0,
+    definition: SunriseDefinition = SunriseDefinition.UPPER_LIMB_REFRACTION,
+    max_days: float = 2.0,
+) -> Instant | None:
+    """First moonset after ``start`` (see ``next_moonrise``)."""
+    f = _event_function(definition, latitude, longitude, elevation_m, Body.MOON)
+    jd = _scan(f, start.jd_ut, max_days, rising=False)
+    return Instant.from_jd_ut(jd) if jd is not None else None
 
 
 def local_sidereal_degrees(instant: Instant, longitude: float) -> float:

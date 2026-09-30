@@ -36,7 +36,13 @@ from jyotish_engine.astro.positions import (
     tropical_positions,
     true_node_position,
 )
-from jyotish_engine.astro.riseset import SunriseDefinition, next_sunrise, next_sunset
+from jyotish_engine.astro.riseset import (
+    SunriseDefinition,
+    next_moonrise,
+    next_moonset,
+    next_sunrise,
+    next_sunset,
+)
 from jyotish_engine.astro.series import jd_ut_to_tt
 from jyotish_engine.astro.time import Instant
 from jyotish_engine.core.varga import VargaMethod, varga_sign_index
@@ -45,6 +51,8 @@ from jyotish_engine.dasha.conditions import applicability
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
 from jyotish_engine.dasha.sign import SignDasha, SignPeriod, sign_mahadashas, sign_sub_periods
 from jyotish_engine.dasha.years import true_sidereal_year_days
+from jyotish_engine.panchanga.elements import Limb
+from jyotish_engine.panchanga.timing import all_limb_spans
 from jyotish_engine.rules.catalogue import default_catalogue
 from jyotish_engine.rules.facts import ChartFacts
 from jyotish_engine.settings import Settings
@@ -54,6 +62,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "astro_swisseph.json"
 OUT = ROOT / "docs" / "ACCURACY.md"
 SAHAM_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "sahams_pyjhora.json"
+PANCHANGA_FIXTURE = ROOT / "engine" / "tests" / "fixtures" / "panchanga_swisseph.json"
 
 
 def _row(name: str, values: list[float], unit: str, target: str) -> str:
@@ -441,6 +450,67 @@ def _strength_and_rules_section() -> list[str]:
     return lines
 
 
+def _panchanga_section() -> list[str]:
+    """M5: rise and set of the Sun and Moon, and limb end times, versus Swiss Ephemeris."""
+    data: dict[str, Any] = json.loads(PANCHANGA_FIXTURE.read_text("utf-8"))
+    cases: list[dict[str, Any]] = data["cases"]
+    errors: dict[str, list[float]] = defaultdict(list)
+    unmatched = 0
+    for case in cases:
+        lat, lon, elevation = case["latitude"], case["longitude"], case["elevation_m"]
+        midnight = Instant.from_jd_ut(case["midnight_jd_ut"])
+        rise = next_sunrise(midnight, lat, lon, elevation)
+        assert rise is not None
+        events = {
+            "sunrise": rise,
+            "sunset": next_sunset(rise, lat, lon, elevation),
+            "moonrise": next_moonrise(midnight, lat, lon, elevation),
+            "moonset": next_moonset(midnight, lat, lon, elevation),
+        }
+        for name, event in events.items():
+            assert event is not None
+            errors[name].append(abs(event.jd_ut - case[name]) * 86400)
+        spans = all_limb_spans(case["sunrise"], case["next_sunrise"])
+        for limb in Limb:
+            theirs: dict[int, list[float]] = defaultdict(list)
+            for jd_ut, _, after, delta_t_days in case["changes"][limb.value]:
+                theirs[int(after)].append(jd_ut + delta_t_days)
+            starts = jd_ut_to_tt([s.start_jd_ut for s in spans[limb]])
+            for span, ours in zip(spans[limb], starts, strict=True):
+                if not theirs[span.index]:
+                    unmatched += 1
+                    continue
+                errors[limb.value].append(min(abs(ours - t) for t in theirs[span.index]) * 86400)
+    labels = {
+        "sunrise": "Sunrise (Hindu: disc centre, no refraction)",
+        "sunset": "Sunset (Hindu)",
+        "moonrise": "Moonrise (upper limb, refraction, topocentric)",
+        "moonset": "Moonset (upper limb, refraction, topocentric)",
+        **{limb.value: f"{limb.value.title()} changes" for limb in Limb},
+    }
+    return [
+        "## Panchanga (M5) versus Swiss Ephemeris",
+        "",
+        f"Reference: {data['reference']}. {len(cases)} civil dates from 1950 to 2040: 100 "
+        "each at New Delhi, Mumbai, Chennai, Kolkata and Bengaluru, and 20 each at London, "
+        "New York and Sydney. The reference finds every event independently: rise and set "
+        "with its own routine, and each change of tithi, nakshatra, yoga and karana by "
+        "bisection on its positions. Limb changes are compared in TT, because Delta T for "
+        "future dates is a prediction that differs between tools by about a second.",
+        "",
+        "| Event | Cases | Max | Median | Target |",
+        "|---|---|---|---|---|",
+        *(_row(label, errors[key], " s", "≤ 60 s") for key, label in labels.items()),
+        "",
+        f"Every limb span the engine reports from sunrise to the next sunrise matches a "
+        f"change in the reference ({unmatched} unmatched). The milestone target is one "
+        "minute against Drik Panchang with the same sunrise definition; Drik Panchang "
+        "cannot be reached from this environment, so that comparison is left to the manual "
+        "spot checks.",
+        "",
+    ]
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -570,6 +640,7 @@ def main() -> None:
     lines += _sign_dasha_section()
     lines += _annual_section()
     lines += _strength_and_rules_section()
+    lines += _panchanga_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

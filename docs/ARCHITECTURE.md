@@ -28,7 +28,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 
 | Module | Responsibility |
 |---|---|
-| `astro/` | Time scales and ΔT; ephemeris loading (DE440 → DE421 fallback); apparent positions and speeds; mean and true nodes; ayanamsa family; house systems; rise and set; fixed stars |
+| `astro/` | Time scales and ΔT; ephemeris loading (DE440 → DE421 fallback); apparent positions and speeds; mean and true nodes; ayanamsa family; house systems; rise and set of the Sun (two sunrise definitions) and the Moon (topocentric, with its semidiameter); fixed stars |
 | `place/` | Geocoding (GeoNames); timezone from coordinates; historical time overrides (`overrides/*.yaml`); local time → UTC resolution with ambiguity flags |
 | `core/` | Signs, nakshatras, padas, KP subdivisions; divisional charts and their variants; dignity; planetary relationships; avasthas; combustion; planetary war |
 | `special/` | Upagrahas, special lagnas, arudha padas, chara karakas, sahams |
@@ -37,7 +37,7 @@ Next.js web (pro workbench + consumer app) ──typed client (OpenAPI)──►
 | `transit/` | Ingress, longitude-crossing and station search on vectorised sidereal positions (`astro/series.py`); Sade Sati; double transit; Ashtakavarga transit scoring |
 | `annual/` | Varsha Pravesha and the annual chart, Muntha, office-bearers, Tajika aspects (ithasala, isarapha), pancha-vargiya bala and the lord of the year, the 36 sahams, Mudda and Patyayini dashas, Tithi Pravesha |
 | `kp/` | KP significators and ruling planets |
-| `panchanga/` | Panchanga elements, their end times, muhurta periods, calendar |
+| `panchanga/` | Limb names and indices (`elements.py`); limb start and end times, all four limbs bisected together on shared Sun and Moon evaluations (`timing.py`); Rahu kalam, Yamaganda, Gulika, Abhijit, Brahma muhurta, durmuhurtas, horas and choghadiyas (`muhurta.py`); `compute_panchanga(date, place)`, the Hindu day from sunrise to sunrise, in about 250 ms (`day.py`) |
 | `match/` | Ashtakoota, Dashakoota, Manglik |
 | `rules/` | Chart facts (from a chart or a compact test spec); the rule language (safe parser and evaluator with evidence); the rule schema; the catalogue loader, which checks citations against `knowledge/sources.yaml` and orders rules that refer to each other; `compute_yogas(chart)` |
 | `predict/` | Promise × period × trigger timeline; convergence; confidence |
