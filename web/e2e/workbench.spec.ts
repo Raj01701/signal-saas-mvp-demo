@@ -32,6 +32,13 @@ test("calculates and shows a chart", async ({ page }) => {
   await page.getByRole("button", { name: "Marriage" }).click();
   await expect(page.getByRole("list", { name: "Marriage windows" }).locator("li").first()).toBeVisible();
   await expectAccessible(page);
+  await page.getByRole("tab", { name: "Report" }).click();
+  await expect(page.getByRole("heading", { name: "The present period" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Evidence" })).toBeVisible();
+  await page.getByLabel("Question").fill("How is my career now?");
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  await expect(page.getByText(/not certainties/)).toBeVisible();
+  await expectAccessible(page);
   await page.getByRole("tab", { name: "Strengths" }).click();
   await expect(page.getByText("Shadbala (rupas)")).toBeVisible();
   await page.getByRole("tab", { name: "KP" }).click();

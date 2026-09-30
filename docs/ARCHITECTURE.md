@@ -57,13 +57,14 @@ FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configurati
 - Account routes (`routers/account.py`, sign-in required): profile and research consent, saved people with birth data, life events for rectification and backtesting, `GET /v1/me/export` and `DELETE /v1/me` (everything saved is deleted). A minor's data needs the guardian's consent (DPDP Act).
 - Supabase access tokens are verified locally with the project's HS256 secret or its JWKS (`auth.py`); the first request from a user creates their account.
 - SQLAlchemy 2 models (`db.py`) with Alembic migrations (`api/migrations`, run `alembic upgrade head` from `api/`); SQLite for development and tests, Postgres in production through the pg8000 driver (the LGPL psycopg drivers are excluded by the licence guard). A test fails if models and migrations drift; a Postgres round trip runs when `JYOTISH_API_TEST_POSTGRES_URL` is set.
+- Narratives (`narrative/`, `routers/narrative.py`): `build_bundle` gathers the engine's evidence for a chart, each item with a stable ID (`rule:…`, `promise:career`, `window:career:2027-03`, `now:dasha`, …). A narrator turns the bundle into a report: the offline `TemplateNarrator` by default, or `ClaudeNarrator` when `JYOTISH_API_ANTHROPIC_API_KEY` is set (`JYOTISH_API_NARRATIVE_PROVIDER` chooses). The Claude call caches the system prompt and forces the `Report` schema through a tool call. Before anything is returned, `report.check` rejects evidence IDs outside the bundle and banned claims (death timing, medical, legal or financial directives, guarantees, fear-based remedies); a failed report is retried once. Chat answers are grounded the same way, and Claude may call `period_at(date)` for any date. `scripts/narrative_eval.py` measures both on 50 bundles.
 - `scripts/export_openapi.py` writes `web/src/lib/api/openapi.json`, and `pnpm -C web api:types` generates `schema.d.ts` from it; CI fails when either is stale.
 
 ## Web (`web/`)
 
 Next.js (App Router) with Tailwind. The pages are client components that call the API directly with `openapi-fetch`, typed by the generated `src/lib/api/schema.d.ts`; `NEXT_PUBLIC_API_URL` points them at the API.
 
-- `/workbench`: chart, dashas, yogas, natal readings, the prediction timeline (with what the running dasha and transits say now), strengths, transits, KP and birth-time sensitivity for one birth.
+- `/workbench`: chart, dashas, yogas, natal readings, a cited plain-language report with questions answered from the evidence, the prediction timeline (with what the running dasha and transits say now), strengths, transits, KP and birth-time sensitivity for one birth.
 - `/panchanga`: the Hindu day for a date and place, with times shown in the place's local time.
 - `/match`: horoscope matching of two births.
 - `/rectify`: birth-time rectification from dated life events, with a scan of the window and the ranked candidates.

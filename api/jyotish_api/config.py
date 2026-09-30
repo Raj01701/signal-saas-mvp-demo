@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -22,6 +23,10 @@ class ApiSettings(BaseSettings):
     supabase_jwt_secret: str | None = None
     supabase_jwks_url: str | None = None
     supabase_audience: str = "authenticated"
+    #: Narratives: "template" (offline, free), "claude", or "auto" (Claude when a key is set).
+    narrative_provider: Literal["auto", "template", "claude"] = "auto"
+    anthropic_api_key: str | None = None
+    narrative_model: str = "claude-opus-5-5"
 
 
 @lru_cache(maxsize=1)

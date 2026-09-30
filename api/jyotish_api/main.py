@@ -18,7 +18,7 @@ from jyotish_api import __version__ as api_version
 from jyotish_api.charts import ChartCache
 from jyotish_api.config import ApiSettings, get_settings
 from jyotish_api.db import make_engine, session_factory
-from jyotish_api.routers import account, compute
+from jyotish_api.routers import account, compute, narrative
 from jyotish_engine import ENGINE_VERSION
 from jyotish_engine.place.geocode import gazetteer
 
@@ -75,6 +75,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
 
     app.include_router(compute.router)
     app.include_router(account.router)
+    app.include_router(narrative.router)
     return app
 
 

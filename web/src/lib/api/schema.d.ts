@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/charts/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat
+         * @description Answer a question about the chart from the evidence only, citing it.
+         */
+        post: operations["chat_v1_charts_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts/dashas": {
         parameters: {
             query?: never;
@@ -179,6 +199,26 @@ export interface paths {
          * @description The classical result of each placement: rising sign, Moon's nakshatra, grahas, lords.
          */
         post: operations["readings_v1_charts_readings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/charts/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report
+         * @description A reading in plain language; every paragraph cites the engine evidence behind it.
+         */
+        post: operations["report_v1_charts_report_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -725,6 +765,37 @@ export interface components {
             /** Vargas */
             vargas: components["schemas"]["VargaChartOut"][];
         };
+        /** ChatMessage */
+        ChatMessage: {
+            /** Content */
+            content: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+        };
+        /** ChatOut */
+        ChatOut: {
+            /** Answer */
+            answer: string;
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceItem"][];
+            /** Narrator */
+            narrator: string;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+            /** Today */
+            today?: string | null;
+        };
         /** CitationOut */
         CitationOut: {
             /** Chapter */
@@ -947,6 +1018,34 @@ export interface components {
              * @enum {string}
              */
             precision?: "day" | "month" | "year";
+        };
+        /** EvidenceItem */
+        EvidenceItem: {
+            /**
+             * Domains
+             * @default []
+             */
+            domains?: string[];
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "yoga" | "reading" | "promise" | "window" | "dasha" | "transit";
+            /** Period */
+            period?: string | null;
+            /** Polarity */
+            polarity?: string | null;
+            /**
+             * Sources
+             * @default []
+             */
+            sources?: string[];
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
         };
         /** Export */
         Export: {
@@ -1266,6 +1365,25 @@ export interface components {
             /** Pada */
             pada: number;
         };
+        /** NarrativeOut */
+        NarrativeOut: {
+            /**
+             * Disclaimer
+             * @default This reading describes traditional Jyotish interpretations computed from the birth data. It is not a prediction of certain outcomes and not medical, legal or financial advice.
+             */
+            disclaimer?: string;
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceItem"][];
+            /** Language */
+            language: string;
+            /** Narrator */
+            narrator: string;
+            report: components["schemas"]["Report"];
+            /** Usage */
+            usage?: {
+                [key: string]: number;
+            } | null;
+        };
         /**
          * NodeType
          * @enum {string}
@@ -1362,6 +1480,13 @@ export interface components {
             settings?: components["schemas"]["Settings"] | null;
             /** Zone */
             zone?: string | null;
+        };
+        /** Paragraph */
+        Paragraph: {
+            /** Evidence Ids */
+            evidence_ids: string[];
+            /** Text */
+            text: string;
         };
         /** PeriodOut */
         PeriodOut: {
@@ -1813,6 +1938,34 @@ export interface components {
              */
             uncertainty_minutes?: number;
         };
+        /** Report */
+        Report: {
+            /** Sections */
+            sections: components["schemas"]["Section"][];
+            /** Title */
+            title: string;
+        };
+        /** ReportRequest */
+        ReportRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            /**
+             * Include Sensitive
+             * @default false
+             */
+            include_sensitive?: boolean;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language?: "en" | "hi";
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+            /** Today */
+            today?: string | null;
+        };
         /** SahamOut */
         SahamOut: {
             /** Meaning */
@@ -1842,6 +1995,13 @@ export interface components {
          * @enum {string}
          */
         School: "parashari" | "jaimini" | "tajika";
+        /** Section */
+        Section: {
+            /** Heading */
+            heading: string;
+            /** Paragraphs */
+            paragraphs: components["schemas"]["Paragraph"][];
+        };
         /** SensitiveFactorOut */
         SensitiveFactorOut: {
             /** Fragile */
@@ -2442,6 +2602,39 @@ export interface operations {
             };
         };
     };
+    chat_v1_charts_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dashas_v1_charts_dashas_post: {
         parameters: {
             query?: never;
@@ -2594,6 +2787,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_v1_charts_report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NarrativeOut"];
                 };
             };
             /** @description Validation Error */

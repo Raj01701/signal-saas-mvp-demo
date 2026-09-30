@@ -657,6 +657,123 @@
         "title": "ChartResult",
         "type": "object"
       },
+      "ChatMessage": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "ChatOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "narrator": {
+            "title": "Narrator",
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer",
+          "evidence",
+          "narrator"
+        ],
+        "title": "ChatOut",
+        "type": "object"
+      },
+      "ChatRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "today": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
+          }
+        },
+        "required": [
+          "birth",
+          "messages"
+        ],
+        "title": "ChatRequest",
+        "type": "object"
+      },
       "CitationOut": {
         "properties": {
           "chapter": {
@@ -1372,6 +1489,80 @@
           "created_at"
         ],
         "title": "EventOut",
+        "type": "object"
+      },
+      "EvidenceItem": {
+        "properties": {
+          "domains": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "yoga",
+              "reading",
+              "promise",
+              "window",
+              "dasha",
+              "transit"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "polarity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Polarity"
+          },
+          "sources": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "text"
+        ],
+        "title": "EvidenceItem",
         "type": "object"
       },
       "Export": {
@@ -2261,6 +2452,55 @@
         "title": "NakshatraOut",
         "type": "object"
       },
+      "NarrativeOut": {
+        "properties": {
+          "disclaimer": {
+            "default": "This reading describes traditional Jyotish interpretations computed from the birth data. It is not a prediction of certain outcomes and not medical, legal or financial advice.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "narrator": {
+            "title": "Narrator",
+            "type": "string"
+          },
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "required": [
+          "report",
+          "evidence",
+          "narrator",
+          "language"
+        ],
+        "title": "NarrativeOut",
+        "type": "object"
+      },
       "NodeType": {
         "enum": [
           "mean",
@@ -2541,6 +2781,29 @@
           "place"
         ],
         "title": "PanchangaRequest",
+        "type": "object"
+      },
+      "Paragraph": {
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "title": "Paragraph",
         "type": "object"
       },
       "PeriodOut": {
@@ -3737,6 +4000,101 @@
         "title": "RectifyRequest",
         "type": "object"
       },
+      "Report": {
+        "properties": {
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/Section"
+            },
+            "minItems": 1,
+            "title": "Sections",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "sections"
+        ],
+        "title": "Report",
+        "type": "object"
+      },
+      "ReportRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "include_sensitive": {
+            "default": false,
+            "title": "Include Sensitive",
+            "type": "boolean"
+          },
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "hi"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "today": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
+          }
+        },
+        "required": [
+          "birth"
+        ],
+        "title": "ReportRequest",
+        "type": "object"
+      },
       "SahamOut": {
         "properties": {
           "meaning": {
@@ -3805,6 +4163,28 @@
         ],
         "title": "School",
         "type": "string"
+      },
+      "Section": {
+        "properties": {
+          "heading": {
+            "title": "Heading",
+            "type": "string"
+          },
+          "paragraphs": {
+            "items": {
+              "$ref": "#/components/schemas/Paragraph"
+            },
+            "minItems": 1,
+            "title": "Paragraphs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "heading",
+          "paragraphs"
+        ],
+        "title": "Section",
+        "type": "object"
       },
       "SensitiveFactorOut": {
         "properties": {
@@ -5282,6 +5662,48 @@
         "summary": "Annual"
       }
     },
+    "/v1/charts/chat": {
+      "post": {
+        "description": "Answer a question about the chart from the evidence only, citing it.",
+        "operationId": "chat_v1_charts_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Chat",
+        "tags": [
+          "narrative"
+        ]
+      }
+    },
     "/v1/charts/dashas": {
       "post": {
         "description": "Any supported dasha system: a nakshatra dasha to ``depth`` levels, a sign dasha,\nor Kalachakra.",
@@ -5475,6 +5897,48 @@
           }
         },
         "summary": "Readings"
+      }
+    },
+    "/v1/charts/report": {
+      "post": {
+        "description": "A reading in plain language; every paragraph cites the engine evidence behind it.",
+        "operationId": "report_v1_charts_report_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NarrativeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report",
+        "tags": [
+          "narrative"
+        ]
       }
     },
     "/v1/charts/sensitivity": {
