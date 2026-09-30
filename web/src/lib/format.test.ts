@@ -59,3 +59,24 @@ describe("prediction timeline", () => {
     expect([toneOf(0.5), toneOf(0), toneOf(-0.5)]).toEqual(["favourable", "mixed", "challenging"]);
   });
 });
+
+describe("calendar export", () => {
+  it("writes all-day events with escaped text", async () => {
+    const { icsCalendar } = await import("./ics");
+    const text = icsCalendar([{ date: "2026-10-11", summary: "Career window, strong; good" }], "20260930T000000Z");
+    expect(text).toContain("DTSTART;VALUE=DATE:20261011");
+    expect(text).toContain("SUMMARY:Career window\\, strong\\; good");
+    expect(text.startsWith("BEGIN:VCALENDAR\r\n") && text.endsWith("END:VCALENDAR\r\n")).toBe(true);
+  });
+});
+
+describe("dictionaries", () => {
+  it("give Hindi for every English key", async () => {
+    const { en, hi } = await import("./dictionaries");
+    const keys = (o: object, prefix = ""): string[] =>
+      Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? keys(v, `${prefix}${k}.`) : [`${prefix}${k}`]));
+    expect(keys(hi)).toEqual(keys(en));
+    expect(hi.dashboard.moon(3, "अनुकूल")).toBe("चंद्रमा आपकी जन्म राशि से 3वें भाव में है: अनुकूल।");
+    expect(en.dashboard.moon(3, "favourable")).toBe("The Moon passes the 3rd house from your Moon sign: favourable.");
+  });
+});

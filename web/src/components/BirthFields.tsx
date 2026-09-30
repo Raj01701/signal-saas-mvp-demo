@@ -4,6 +4,7 @@ import { useId } from "react";
 
 import { input, NEW_DELHI, PlaceField, type PlaceValue } from "@/components/PlaceField";
 import type { Preset, Schemas } from "@/lib/api/client";
+import { useI18n } from "@/lib/i18n";
 
 /** Birth date and local time as the form holds them, plus the place. */
 export interface BirthValue {
@@ -32,10 +33,11 @@ export function toBirthInput({ date, time, location }: BirthValue): Schemas["Bir
 /** Date, local time and place of birth: five cells of a two-column grid. */
 export function BirthFields({ value, onChange }: { value: BirthValue; onChange: (value: BirthValue) => void }) {
   const id = useId();
+  const { t } = useI18n();
   return (
     <>
       <label className="grid gap-1 text-sm font-medium" htmlFor={`${id}-date`}>
-        Date of birth
+        {t.fields.date}
         <input
           id={`${id}-date`}
           type="date"
@@ -46,7 +48,7 @@ export function BirthFields({ value, onChange }: { value: BirthValue; onChange: 
         />
       </label>
       <label className="grid gap-1 text-sm font-medium" htmlFor={`${id}-time`}>
-        Time of birth (local)
+        {t.fields.time}
         <input
           id={`${id}-time`}
           type="time"
@@ -57,7 +59,7 @@ export function BirthFields({ value, onChange }: { value: BirthValue; onChange: 
           className={input}
         />
       </label>
-      <PlaceField label="Place of birth" value={value.location} onChange={(location) => onChange({ ...value, location })} />
+      <PlaceField label={t.fields.place} value={value.location} onChange={(location) => onChange({ ...value, location })} />
     </>
   );
 }
@@ -65,9 +67,10 @@ export function BirthFields({ value, onChange }: { value: BirthValue; onChange: 
 /** The calculation-settings preset select. */
 export function PresetField({ value, onChange }: { value: Preset; onChange: (value: Preset) => void }) {
   const id = useId();
+  const { t } = useI18n();
   return (
     <label className="grid gap-1 text-sm font-medium sm:col-span-2" htmlFor={`${id}-preset`}>
-      Calculation settings
+      {t.fields.settings}
       <select id={`${id}-preset`} value={value} onChange={(e) => onChange(e.target.value as Preset)} className={input}>
         {PRESETS.map((p) => (
           <option key={p.value} value={p.value}>

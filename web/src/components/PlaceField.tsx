@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 
 import { api, type Schemas } from "@/lib/api/client";
+import { useI18n } from "@/lib/i18n";
 
 /** A place and, when it came from the gazetteer, its IANA time zone. */
 export interface PlaceValue {
@@ -30,6 +31,7 @@ export function PlaceField({
   onChange: (value: PlaceValue) => void;
 }) {
   const id = useId();
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Schemas["Place"][]>([]);
   const { place } = value;
@@ -44,7 +46,7 @@ export function PlaceField({
   }, [query]);
 
   const coordinate = (key: "latitude" | "longitude", text: string) =>
-    onChange({ place: { ...place, name: "Custom place", [key]: Number(text) }, zone: null });
+    onChange({ place: { ...place, name: t.fields.custom, [key]: Number(text) }, zone: null });
 
   return (
     <>
@@ -53,7 +55,7 @@ export function PlaceField({
         <input
           id={`${id}-place`}
           type="search"
-          placeholder={`${place.name} (type to search)`}
+          placeholder={t.fields.search(place.name ?? "")}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -64,7 +66,7 @@ export function PlaceField({
           autoComplete="off"
         />
         {results.length > 0 && (
-          <ul id={`${id}-results`} className="rounded-md border border-zinc-200 dark:border-zinc-700" aria-label="Matching places">
+          <ul id={`${id}-results`} className="rounded-md border border-zinc-200 dark:border-zinc-700" aria-label={t.fields.matches}>
             {results.map((r) => (
               <li key={r.geonames_id}>
                 <button
@@ -87,7 +89,7 @@ export function PlaceField({
         )}
       </div>
       <label className="grid gap-1 text-sm font-medium" htmlFor={`${id}-lat`}>
-        Latitude
+        {t.fields.latitude}
         <input
           id={`${id}-lat`}
           type="number"
@@ -101,7 +103,7 @@ export function PlaceField({
         />
       </label>
       <label className="grid gap-1 text-sm font-medium" htmlFor={`${id}-lon`}>
-        Longitude
+        {t.fields.longitude}
         <input
           id={`${id}-lon`}
           type="number"

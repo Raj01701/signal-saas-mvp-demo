@@ -23,8 +23,8 @@ export function clock(iso: string, offsetSeconds: number, day: string): string {
 }
 
 /** A day as "30 September 2026". */
-export function longDate(day: string): string {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
+export function longDate(day: string, locale = "en-GB"): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",

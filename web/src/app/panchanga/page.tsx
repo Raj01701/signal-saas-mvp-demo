@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHeading } from "@/components/PageHeading";
 import { PanchangaView } from "@/components/PanchangaView";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function PanchangaPage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Panchanga</h1>
+      <PageHeading page="panchanga" />
       <PanchangaView />
     </main>
   );

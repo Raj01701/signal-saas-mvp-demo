@@ -68,6 +68,8 @@ Next.js (App Router) with Tailwind. The pages are client components that call th
 - `/panchanga`: the Hindu day for a date and place, with times shown in the place's local time.
 - `/match`: horoscope matching of two births.
 - `/rectify`: birth-time rectification from dated life events, with a scan of the window and the ranked candidates.
+- `/my`: the consumer app. Onboarding records the birth details and how certain the time is (source and ± minutes, sent as `time_source` and `uncertainty_minutes`); the dashboard shows today, this month and the year ahead from `/v1/panchanga`, `/v1/charts/period` and `/v1/charts/predictions`, with reminders and a calendar export. The profile stays in the browser (`lib/profile.ts`).
+- Languages: English and Hindi from typed dictionaries (`lib/dictionaries.ts`, `lib/i18n.ts`; the Hindi dictionary must have the English one's shape, which a unit test checks) and localized names (`lib/names.ts`). The choice is remembered per device; the server renders English and the page switches after hydration.
 - Shared form pieces: `PlaceField` (gazetteer search with a coordinates fallback) and `BirthFields` (date, time and place), both controlled; pure formatting helpers live in `lib/format.ts`.
 
 - Chart drawings are SVG (`components/ChartDiagram.tsx`); their geometry for the North, South and East Indian styles is pure and unit-tested (`lib/chart-layout.ts`).

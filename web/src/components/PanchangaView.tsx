@@ -7,6 +7,8 @@ import { Status, title } from "@/components/common";
 import { input, NEW_DELHI, PlaceField } from "@/components/PlaceField";
 import { api, type Preset, type Schemas } from "@/lib/api/client";
 import { clock, longDate, offsetLabel } from "@/lib/format";
+import { type Lang, useI18n } from "@/lib/i18n";
+import { nakshatraName, planetName, tithiName as tithiLabel, varaName } from "@/lib/names";
 import { useLoad } from "@/lib/use-load";
 
 type Panchanga = Schemas["PanchangaOut"];
@@ -20,6 +22,28 @@ const LIMBS = [
   ["Karana", "karanas"],
 ] as const;
 
+const HINDI: Record<string, string> = {
+  Vara: "वार",
+  Tithi: "तिथि",
+  Nakshatra: "नक्षत्र",
+  Yoga: "योग",
+  Karana: "करण",
+  Choghadiyas: "चौघड़िया",
+  Horas: "होरा",
+  "Month (amanta)": "मास (अमांत)",
+  "Month (purnimanta)": "मास (पूर्णिमांत)",
+  Paksha: "पक्ष",
+  Samvatsara: "संवत्सर",
+  Years: "वर्ष",
+  Ritu: "ऋतु",
+  Ayana: "अयन",
+  "Tamil date": "तमिल तिथि",
+  "Kshaya tithi": "क्षय तिथि",
+  "Vriddhi tithi": "वृद्धि तिथि",
+};
+/** A fixed label in the interface language. */
+const label = (english: string, lang: Lang) => (lang === "hi" ? (HINDI[english] ?? english) : english);
+
 const subscribeNever = () => () => {};
 
 /** Today's date in the browser's time zone, YYYY-MM-DD. */
@@ -31,6 +55,7 @@ function localToday(): string {
 /** Today's panchanga for a place, or any date's: limbs with end times, the calendar and muhurtas. */
 export function PanchangaView() {
   const id = useId();
+  const { t } = useI18n();
   const today = useSyncExternalStore(subscribeNever, localToday, () => "");
   const [date, setDate] = useState<string | null>(null);
   const [location, setLocation] = useState(NEW_DELHI);
@@ -46,10 +71,10 @@ export function PanchangaView() {
   return (
     <div className="grid gap-8">
       <section aria-labelledby="panchanga-form" className="rounded-lg border border-zinc-200 p-4 print:hidden dark:border-zinc-800">
-        <h2 id="panchanga-form" className="mb-3 text-lg font-semibold">Date and place</h2>
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" aria-label="Date and place">
+        <h2 id="panchanga-form" className="mb-3 text-lg font-semibold">{t.panchanga.form}</h2>
+        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2" aria-label={t.panchanga.form}>
           <label className="grid gap-1 text-sm font-medium sm:col-span-2" htmlFor={`${id}-date`}>
-            Date
+            {t.panchanga.date}
             <input
               id={`${id}-date`}
               type="date"
@@ -59,11 +84,11 @@ export function PanchangaView() {
               className={`${input} sm:w-1/2`}
             />
           </label>
-          <PlaceField label="Place" value={location} onChange={setLocation} />
+          <PlaceField label={t.panchanga.place} value={location} onChange={setLocation} />
           <PresetField value={preset} onChange={setPreset} />
           <div className="sm:col-span-2">
             <button type="submit" className="rounded-md bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800">
-              Show panchanga
+              {t.panchanga.show}
             </button>
           </div>
         </form>
@@ -75,54 +100,62 @@ export function PanchangaView() {
 
 function PanchangaResult({ request }: { request: PanchangaRequest }) {
   const { data, error, loading } = useLoad(JSON.stringify(request), () => api.POST("/v1/panchanga", { body: request }));
+  const { t, lang } = useI18n();
   if (!data) return <Status loading={loading} error={error} />;
+  const p = t.panchanga;
+  const hindi = lang === "hi";
   const at = (iso: string) => clock(iso, data.utc_offset_seconds, data.civil_date);
-  const span = (p: Period) => `${at(p.start)} to ${at(p.end)}`;
+  const span = (period: Period) =>
+    hindi ? `${at(period.start)} से ${at(period.end)} तक` : `${at(period.start)} to ${at(period.end)}`;
+  const until = (iso: string) => (hindi ? `${at(iso)} ${p.until}` : `${p.until} ${at(iso)}`);
+  const limbName = (key: string, s: Schemas["LimbSpanOut"]) =>
+    key === "tithis" ? tithiLabel(s.number, s.name, lang) : key === "nakshatras" ? nakshatraName(s.number, s.name, lang) : s.name;
+  const paksha = (value: string) =>
+    hindi ? ` (${value === "krishna" ? "कृष्ण" : "शुक्ल"} पक्ष)` : ` (${value} paksha)`;
   return (
     <div className="grid gap-8">
       <section aria-labelledby="day-heading" className="grid gap-3">
         <h2 id="day-heading" className="text-xl font-semibold">
-          {data.vara}, {longDate(data.civil_date)}
+          {varaName(data.vara, lang)}, {longDate(data.civil_date, hindi ? "hi-IN" : "en-GB")}
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {data.place.name} ({data.place.latitude.toFixed(4)}, {data.place.longitude.toFixed(4)}). Times are local,{" "}
-          {offsetLabel(data.utc_offset_seconds)}
-          {data.zone ? ` (${data.zone})` : ""}; the Hindu day runs from sunrise to the next sunrise.
+          {data.place.name} ({data.place.latitude.toFixed(4)}, {data.place.longitude.toFixed(4)}).{" "}
+          {p.times(offsetLabel(data.utc_offset_seconds), data.zone ? ` (${data.zone})` : "")}
         </p>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-5">
           {[
-            ["Sunrise", data.sunrise],
-            ["Sunset", data.sunset],
-            ["Moonrise", data.moonrise],
-            ["Moonset", data.moonset],
-            ["Next sunrise", data.next_sunrise],
+            [p.sunrise, data.sunrise],
+            [p.sunset, data.sunset],
+            [p.moonrise, data.moonrise],
+            [p.moonset, data.moonset],
+            [p.nextSunrise, data.next_sunrise],
           ].map(([name, iso]) => (
             <div key={name}>
               <dt className="text-zinc-500">{name}</dt>
-              <dd className="font-medium">{iso ? at(iso) : "none this day"}</dd>
+              <dd className="font-medium">{iso ? at(iso) : p.none}</dd>
             </div>
           ))}
         </dl>
       </section>
 
       <section aria-labelledby="limbs-heading">
-        <h2 id="limbs-heading" className="mb-2 text-lg font-semibold">The five limbs</h2>
+        <h2 id="limbs-heading" className="mb-2 text-lg font-semibold">{p.limbs}</h2>
         <dl className="grid gap-2 text-sm">
           <div className="grid gap-1 sm:grid-cols-[8rem_1fr]">
-            <dt className="font-semibold">Vara</dt>
+            <dt className="font-semibold">{label("Vara", lang)}</dt>
             <dd>
-              {data.vara} (lord {title(data.vara_lord)})
+              {varaName(data.vara, lang)} ({hindi ? "स्वामी" : "lord"} {planetName(data.vara_lord, lang)})
             </dd>
           </div>
           {LIMBS.map(([name, key]) => (
             <div key={key} className="grid gap-1 sm:grid-cols-[8rem_1fr]">
-              <dt className="font-semibold">{name}</dt>
+              <dt className="font-semibold">{label(name, lang)}</dt>
               <dd>
                 <ul>
                   {data[key].map((s) => (
                     <li key={`${s.number}-${s.start}`}>
-                      {s.name}
-                      {s.paksha ? ` (${s.paksha} paksha)` : ""} <span className="text-zinc-500">until {at(s.end)}</span>
+                      {limbName(key, s)}
+                      {s.paksha ? paksha(s.paksha) : ""} <span className="text-zinc-500">{until(s.end)}</span>
                     </li>
                   ))}
                 </ul>
@@ -132,13 +165,13 @@ function PanchangaResult({ request }: { request: PanchangaRequest }) {
         </dl>
       </section>
 
-      <CalendarSection data={data} />
+      <CalendarSection data={data} lang={lang} heading={p.calendar} />
 
       <section aria-labelledby="muhurta-heading" className="grid gap-3 text-sm">
-        <h2 id="muhurta-heading" className="text-lg font-semibold">Muhurtas</h2>
+        <h2 id="muhurta-heading" className="text-lg font-semibold">{p.muhurtas}</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <h3 className="font-semibold">Favourable</h3>
+            <h3 className="font-semibold">{p.favourable}</h3>
             <ul>
               {[data.brahma_muhurta, data.abhijit].map((p) => (
                 <li key={p.name}>
@@ -148,7 +181,7 @@ function PanchangaResult({ request }: { request: PanchangaRequest }) {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold">Avoided</h3>
+            <h3 className="font-semibold">{p.avoided}</h3>
             <ul>
               {[...data.kalams, ...data.durmuhurtas].map((p) => (
                 <li key={`${p.name}-${p.start}`}>
@@ -159,15 +192,15 @@ function PanchangaResult({ request }: { request: PanchangaRequest }) {
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <PeriodTable caption="Choghadiyas" periods={data.choghadiyas} span={span} quality />
-          <PeriodTable caption="Horas" periods={data.horas} span={span} />
+          <PeriodTable caption={label("Choghadiyas", lang)} periods={data.choghadiyas} span={span} quality />
+          <PeriodTable caption={label("Horas", lang)} periods={data.horas} span={span} />
         </div>
       </section>
     </div>
   );
 }
 
-function CalendarSection({ data }: { data: Panchanga }) {
+function CalendarSection({ data, lang, heading }: { data: Panchanga; lang: Lang; heading: string }) {
   const c = data.calendar;
   const month = c.amanta.name + (c.amanta.adhika ? " (adhika)" : c.amanta.nija ? " (nija)" : "");
   const tithiName = (n: number) => data.tithis.find((t) => t.number === n)?.name ?? `tithi ${n}`;
@@ -185,11 +218,11 @@ function CalendarSection({ data }: { data: Panchanga }) {
   if (c.vriddhi_tithi) rows.push(["Vriddhi tithi", "the sunrise tithi also holds at the next sunrise"]);
   return (
     <section aria-labelledby="calendar-heading">
-      <h2 id="calendar-heading" className="mb-2 text-lg font-semibold">Calendar</h2>
+      <h2 id="calendar-heading" className="mb-2 text-lg font-semibold">{heading}</h2>
       <dl className="grid gap-2 text-sm">
         {rows.map(([name, value]) => (
           <div key={name} className="grid gap-1 sm:grid-cols-[10rem_1fr]">
-            <dt className="font-semibold">{name}</dt>
+            <dt className="font-semibold">{label(name, lang)}</dt>
             <dd>{value}</dd>
           </div>
         ))}
