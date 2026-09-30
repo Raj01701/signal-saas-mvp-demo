@@ -208,6 +208,36 @@ def nakshatra_ingresses(
     return ingresses(body, start_jd_ut, end_jd_ut, settings, NAKSHATRA_WIDTH)
 
 
+def angle_crossings(
+    angle: Callable[[FloatArray], FloatArray],
+    target: float,
+    start_jd_ut: float,
+    end_jd_ut: float,
+    step: float,
+) -> list[tuple[float, bool]]:
+    """Times (UT) an angle, given as a function of TT, passes ``target`` degrees.
+
+    Returns ``(jd_ut, increasing)`` pairs; ``step`` must be short enough that the
+    angle moves well under 180 degrees between samples.
+    """
+
+    def half(jd_tt: FloatArray) -> NDArray[np.int64]:
+        return np.floor(((angle(jd_tt) - target) % 360.0) / 180.0).astype(np.int64)
+
+    start_tt, end_tt = jd_ut_to_tt([start_jd_ut, end_jd_ut])
+    changes = find_changes(half, float(start_tt), float(end_tt), step)
+    # Half-circle changes also happen at the opposite point; keep those at the target.
+    kept = [
+        (t, before)
+        for t, before, _ in changes
+        if abs((angle(as_jd_array(t))[0] - target + 180.0) % 360.0 - 180.0) < 90.0
+    ]
+    if not kept:
+        return []
+    times_ut = jd_tt_to_ut([t for t, _ in kept])
+    return [(float(jd), before == 1) for jd, (_, before) in zip(times_ut, kept, strict=True)]
+
+
 def longitude_crossings(
     body: Body,
     target: float,
@@ -217,28 +247,31 @@ def longitude_crossings(
 ) -> list[Crossing]:
     """Every time ``body`` passes the sidereal longitude ``target`` (either direction)."""
     settings = settings or Settings()
-    longitude = _longitude_function(body, settings)
-
-    def half(jd_tt: FloatArray) -> NDArray[np.int64]:
-        return np.floor(((longitude(jd_tt) - target) % 360.0) / 180.0).astype(np.int64)
-
-    start_tt, end_tt = jd_ut_to_tt([start_jd_ut, end_jd_ut])
-    changes = find_changes(half, float(start_tt), float(end_tt), _grid_step(body, 180.0, settings))
-    # Half-circle changes also happen at the opposite point; keep those at the target.
-    kept = [
-        (t, before)
-        for t, before, _ in changes
-        if abs((longitude(as_jd_array(t))[0] - target + 180.0) % 360.0 - 180.0) < 90.0
-    ]
-    if not kept:
-        return []
-    times_ut = jd_tt_to_ut([t for t, _ in kept])
+    found = angle_crossings(
+        _longitude_function(body, settings),
+        target,
+        start_jd_ut,
+        end_jd_ut,
+        _grid_step(body, 180.0, settings),
+    )
     return [
-        Crossing(
-            body, float(jd_ut), target % 360.0, Motion.DIRECT if before == 1 else Motion.RETROGRADE
-        )
-        for jd_ut, (_, before) in zip(times_ut, kept, strict=True)
+        Crossing(body, jd, target % 360.0, Motion.DIRECT if up else Motion.RETROGRADE)
+        for jd, up in found
     ]
+
+
+def elongation_crossings(
+    target: float, start_jd_ut: float, end_jd_ut: float, settings: Settings | None = None
+) -> list[float]:
+    """Times the Moon's elongation from the Sun (Moon minus Sun) equals ``target``."""
+    settings = settings or Settings()
+    moon = _longitude_function(Body.MOON, settings)
+    sun = _longitude_function(Body.SUN, settings)
+
+    def elongation(jd_tt: FloatArray) -> FloatArray:
+        return (moon(jd_tt) - sun(jd_tt)) % 360.0
+
+    return [jd for jd, _ in angle_crossings(elongation, target, start_jd_ut, end_jd_ut, 0.25)]
 
 
 def stations(

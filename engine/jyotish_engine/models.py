@@ -316,3 +316,58 @@ class ChartResult(BaseModel):
     special: SpecialPointsOut
     day: DayOut
     dashas: DashasOut
+
+
+class AnnualPeriodOut(BaseModel):
+    """A period of an annual-chart dasha; ``lords`` are planet names or "lagna"."""
+
+    lords: list[str]
+    start: datetime
+    end: datetime
+    start_jd_ut: float
+    end_jd_ut: float
+
+
+class TajikaRelationOut(BaseModel):
+    faster: Body
+    slower: Body
+    aspect: str
+    friendly: bool
+    gap: float
+    orb: float
+    yoga: str | None
+
+
+class OfficeBearersOut(BaseModel):
+    natal_lagna_lord: Body
+    varsha_lagna_lord: Body
+    muntha_lord: Body
+    tri_rashi_lord: Body
+    dina_ratri_lord: Body
+    candidates: list[Body]
+
+
+class VarshaphalOut(BaseModel):
+    """The Tajika annual chart for the year after ``years_completed`` years of life."""
+
+    years_completed: int
+    start: datetime
+    start_jd_ut: float
+    end: datetime
+    end_jd_ut: float
+    chart: ChartResult
+    muntha: Sign
+    muntha_lord: Body
+    by_day: bool | None
+    office_bearers: OfficeBearersOut
+    tajika: list[TajikaRelationOut]
+    mudda: list[AnnualPeriodOut]
+    patyayini: list[AnnualPeriodOut]
+
+
+class TithiPraveshaOut(BaseModel):
+    years_completed: int
+    moment: datetime
+    jd_ut: float
+    elongation: float
+    chart: ChartResult

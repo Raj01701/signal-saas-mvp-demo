@@ -44,6 +44,7 @@ from jyotish_engine.models import (
     EphemerisOut,
     GrahaOut,
     HousesOut,
+    PlaceInput,
     PlanetaryWarOut,
     PointOut,
     SpecialPointsOut,
@@ -52,7 +53,7 @@ from jyotish_engine.models import (
     VargaChartOut,
     VargaPlacement,
 )
-from jyotish_engine.place.timezone import resolve_local_time
+from jyotish_engine.place.timezone import TimeStandard, resolve_local_time
 from jyotish_engine.settings import Settings
 from jyotish_engine.special import lagnas
 from jyotish_engine.special.arudha import bhava_arudhas
@@ -64,7 +65,7 @@ from jyotish_engine.special.upagraha import (
 )
 
 # Re-exported for callers that import models from here.
-__all__ = ["BirthInput", "ChartResult", "compute_chart"]
+__all__ = ["BirthInput", "ChartResult", "compute_chart", "compute_chart_at"]
 
 
 def _sidereal_ascendant(
@@ -315,3 +316,17 @@ def compute_chart(birth: BirthInput, settings: Settings | None = None) -> ChartR
         ),
         dashas=_dashas(instant, settings, sidereal, ascendant.sidereal_longitude, born_during_day),
     )
+
+
+def compute_chart_at(
+    jd_ut: float, place: PlaceInput, settings: Settings | None = None
+) -> ChartResult:
+    """Chart for an exact moment (UT Julian day), such as an annual return."""
+    moment = Instant.from_jd_ut(jd_ut).utc_datetime()
+    birth = BirthInput(
+        local_datetime=moment.replace(tzinfo=None),
+        place=place,
+        time_standard=TimeStandard.FIXED_OFFSET,
+        utc_offset_seconds=0.0,
+    )
+    return compute_chart(birth, settings)

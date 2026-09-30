@@ -17,6 +17,13 @@ from pathlib import Path
 from typing import Any
 
 from jyotish_engine import ENGINE_VERSION
+from jyotish_engine.annual.dashas import (
+    SEVEN,
+    patyayini_dashas,
+    patyayini_scheme,
+    patyayini_sub_periods,
+)
+from jyotish_engine.annual.returns import tithi_pravesha, varsha_pravesha
 from jyotish_engine.astro.ayanamsa import EPOCH_SYSTEMS, STAR_SYSTEMS, true_ayanamsa
 from jyotish_engine.astro.bodies import EPHEMERIS_BODIES, GRAHAS, Body
 from jyotish_engine.astro.ephemeris import get_ephemeris
@@ -29,6 +36,7 @@ from jyotish_engine.astro.positions import (
     true_node_position,
 )
 from jyotish_engine.astro.riseset import SunriseDefinition, next_sunrise, next_sunset
+from jyotish_engine.astro.series import jd_ut_to_tt
 from jyotish_engine.astro.time import Instant
 from jyotish_engine.core.varga import VargaMethod, varga_sign_index
 from jyotish_engine.dasha.base import Period, SubPeriodRule, subdivide
@@ -295,6 +303,66 @@ def _sign_dasha_section() -> list[str]:
     ]
 
 
+def _annual_section() -> list[str]:
+    """M3: annual return moments versus Swiss Ephemeris, Patyayini versus PyJHora."""
+    fixture = ROOT / "engine" / "tests" / "fixtures" / "annual_swisseph.json"
+    data: dict[str, Any] = json.loads(fixture.read_text("utf-8"))
+    cases: list[dict[str, Any]] = data["cases"]
+    errors: dict[str, list[float]] = defaultdict(list)
+    names = {str(i): body.value for i, body in enumerate(SEVEN)} | {"lagna": "lagna"}
+    patyayini_ok = 0
+    for case in cases:
+        for key, ours in (
+            (
+                "varsha_pravesha",
+                varsha_pravesha(case["birth_jd_ut"], case["sun"], case["years_completed"]),
+            ),
+            (
+                "tithi_pravesha",
+                tithi_pravesha(
+                    case["birth_jd_ut"], case["sun"], case["moon"], case["years_completed"]
+                ),
+            ),
+        ):
+            theirs_tt = case[key] + case[f"{key}_delta_t_days"]
+            errors[key].append(abs(float(jd_ut_to_tt([ours])[0]) - theirs_tt) * 86400)
+        krisamsas = case["patyayini_krisamsas"]
+        sidereal = {Body(names[k]): v for k, v in krisamsas.items() if k != "lagna"}
+        scheme = patyayini_scheme(krisamsas["lagna"], sidereal)
+        start = case["varsha_pravesha"]
+        ours_rows = [
+            sub
+            for maha in patyayini_dashas(scheme, start, case["patyayini_year_days"])
+            for sub in patyayini_sub_periods(scheme, maha)
+        ]
+        patyayini_ok += all(
+            list(p.lords) == [names[str(x)] for x in lords]
+            and abs(p.start_jd - start - offset) * 86400 < 1.0
+            for p, (lords, offset) in zip(ours_rows, case["patyayini"], strict=True)
+        )
+    return [
+        "## Annual charts (M3)",
+        "",
+        f"{len(cases)} births, a random year of life each (up to 50 years on). The reference "
+        "finds each moment independently by bisecting Swiss Ephemeris positions (Lahiri, "
+        "apparent); times are compared in TT, because future Delta T is a prediction on "
+        "which tools differ by about a second in the 2030s.",
+        "",
+        "| Moment | Cases | Max | Median | Target |",
+        "|---|---|---|---|---|",
+        _row("Varsha Pravesha (solar return)", errors["varsha_pravesha"], " s", "≤ 1 s"),
+        _row("Tithi Pravesha", errors["tithi_pravesha"], " s", "≤ 1 s"),
+        "",
+        f"* Patyayini dasha (annual), given PyJHora's krisamsas and year: {patyayini_ok} of "
+        f"{len(cases)} tables identical, mahadashas and antardashas to the second.",
+        "* Mudda dasha is Vimshottari compressed into the Tajika year, built on the same "
+        "period tree as the natal dashas above; PyJHora scales its balance and periods "
+        "differently (a 360-day balance within a sidereal-year cycle), so it is not "
+        "compared.",
+        "",
+    ]
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -422,6 +490,7 @@ def main() -> None:
     lines += _transit_section()
     lines += _dasha_section()
     lines += _sign_dasha_section()
+    lines += _annual_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

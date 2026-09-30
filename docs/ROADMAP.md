@@ -7,8 +7,8 @@ Each milestone ends tested, committed and pushed. The status column is kept curr
 | M0 | Foundation: monorepo, tooling, CI, licence guard, research, README | Done |
 | M1 | Astronomy and place core, plus the oracle harness and golden fixtures | Done: see [ACCURACY.md](ACCURACY.md) |
 | M2 | Jyotish basics: nakshatras, vargas, dignity, avasthas, special points | Done: see [ACCURACY.md](ACCURACY.md) |
-| M3 | Timing: dashas, transits, Varshaphal and Tajika | In progress: 11 nakshatra dashas with applicability, dasha-year options (including the true sidereal year) and event search (ingresses, crossings, stations) are done and validated; next are Sade Sati and double transit, Jaimini sign dashas, Kalachakra, Varshaphal and Tithi Pravesha |
-| M4 | Strength and yogas: Shadbala, Ashtakavarga, rule DSL, 300+ yogas | Planned |
+| M3 | Timing: dashas, transits, Varshaphal and Tajika | Done: 11 nakshatra dashas with applicability and dasha-year options (including the true sidereal year); Chara (K.N. Rao) and Narayana sign dashas; Kalachakra; event search (ingresses, crossings, stations), Sade Sati and other Saturn transits, gochara with vedha, double transit; Varsha Pravesha and the annual chart, Muntha, office-bearers, Tajika aspects with ithasala and isarapha, Mudda and Patyayini dashas, Tithi Pravesha. See [ACCURACY.md](ACCURACY.md) |
+| M4 | Strength and yogas: Shadbala, Ashtakavarga, rule DSL, 300+ yogas | Planned. Also takes over from M3 the parts that rest on strengths or rules: Tajika pancha-vargiya bala and the choice of the lord of the year, the other Tajika yogas, sahams, Ashtakavarga transit scoring, and the remaining Jaimini sign dashas (Sthira, Shoola, Drig, Brahma and others) |
 | M5 | Panchanga, matchmaking, KP | Planned |
 | M6 | API and data layer: FastAPI, Postgres, auth, caching | Planned |
 | M7 | Pro workbench web app | Planned |
