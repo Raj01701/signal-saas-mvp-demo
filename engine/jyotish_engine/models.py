@@ -277,6 +277,15 @@ class SignDashaTableOut(BaseModel):
     periods: list[SignDashaPeriodOut]
 
 
+class KalachakraTableOut(SignDashaTableOut):
+    #: The Moon's pada at birth (0 = Ashwini 1 .. 107 = Revati 4), its span of life
+    #: and its deha (first) and jeeva (last) signs.
+    pada: int
+    paramayus: int
+    deha: Sign
+    jeeva: Sign
+
+
 class DashaApplicabilityOut(BaseModel):
     system: str
     applicable: bool | None

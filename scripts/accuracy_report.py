@@ -283,6 +283,15 @@ def _sign_dasha_section() -> list[str]:
         "the lagna; the engine uses K.N. Rao's order (from the sign after the dasha sign, "
         "ending with the dasha sign), so Chara antardashas are not compared.",
         "",
+        "**Kalachakra dasha** (same charts, same Moon): the signs, balance at birth and "
+        "proportional antardashas agree to the second wherever both follow the same "
+        "reading. The engine continues after the birth pada with the next pada in the "
+        "zodiac, where PyJHora switches to the paired nakshatra group (the same pada for "
+        "padas 1-3 and some pada-4 births); it runs the first mahadasha's antardashas from "
+        "the mahadasha's true start, where PyJHora squeezes them into the balance left at "
+        "birth; and a sign that occurs twice in a pada starts its antardashas from its own "
+        "place rather than its first occurrence.",
+        "",
     ]
 
 

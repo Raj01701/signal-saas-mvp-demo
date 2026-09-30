@@ -4,7 +4,9 @@ For random births (local time given as UTC, places near Greenwich) records the
 sidereal ascendant and graha longitudes, the dasha year PyJHora used, and:
 
 * Chara dasha, K.N. Rao method: mahadasha signs with start times;
-* Narayana dasha (rashi chart): mahadashas and antardashas, both cycles.
+* Narayana dasha (rashi chart): mahadashas and antardashas, both cycles;
+* Kalachakra dasha (PVR book method): mahadashas and antardashas, with the
+  Moon's longitude it was computed from.
 
 Only numbers are written, to ``engine/tests/fixtures/sign_dashas_pyjhora.json``.
 
@@ -24,7 +26,7 @@ from typing import Any
 import swisseph as swe
 from jhora import const, utils
 from jhora.horoscope.chart import charts
-from jhora.horoscope.dhasa.raasi import chara, narayana
+from jhora.horoscope.dhasa.raasi import chara, kalachakra, narayana
 from jhora.panchanga import drik
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -84,6 +86,17 @@ def main() -> None:
             )
             record["narayana"] = _rows(
                 narayana.narayana_dhasa_for_rasi_chart(
+                    dob,
+                    tob,
+                    place,
+                    dhasa_level_index=const.MAHA_DHASA_DEPTH.ANTARA,
+                    round_duration=False,
+                ),
+                jd,
+            )
+            record["moon"] = 30.0 * pp[2][1][0] + pp[2][1][1]
+            record["kalachakra"] = _rows(
+                kalachakra.get_dhasa_bhukthi(
                     dob,
                     tob,
                     place,

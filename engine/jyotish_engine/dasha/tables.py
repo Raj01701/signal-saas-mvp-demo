@@ -8,6 +8,15 @@ from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.time import jd_to_datetime
 from jyotish_engine.core.zodiac import Sign
 from jyotish_engine.dasha.base import Period, SubPeriodRule, active_chain, subdivide
+from jyotish_engine.dasha.kalachakra import (
+    KalachakraPeriod,
+    birth_position,
+    deha_jeeva,
+    kalachakra_mahadashas,
+    kalachakra_running,
+    kalachakra_sub_periods,
+    paramayus,
+)
 from jyotish_engine.dasha.nakshatra import DEFINITIONS, NakshatraDasha, mahadashas
 from jyotish_engine.dasha.sign import (
     LABELS,
@@ -21,6 +30,7 @@ from jyotish_engine.models import (
     ChartResult,
     DashaPeriodOut,
     DashaTableOut,
+    KalachakraTableOut,
     SignDashaPeriodOut,
     SignDashaTableOut,
 )
@@ -129,7 +139,7 @@ def running_periods(
     return [period_out(p) for p in chain]
 
 
-def sign_period_out(period: SignPeriod) -> SignDashaPeriodOut:
+def sign_period_out(period: SignPeriod | KalachakraPeriod) -> SignDashaPeriodOut:
     return SignDashaPeriodOut(
         signs=[Sign(s) for s in period.signs],
         start=jd_to_datetime(period.start_jd),
@@ -189,4 +199,43 @@ def running_sign_periods(
         jd_ut,
         depth,
     )
+    return [sign_period_out(p) for p in chain]
+
+
+def chart_kalachakra_table(chart: ChartResult, depth: int = 2) -> KalachakraTableOut:
+    """Kalachakra dashas from the one running at birth, ``SPAN_YEARS`` ahead."""
+    if not 1 <= depth <= MAX_TABLE_DEPTH:
+        raise ValueError(f"table depth must be 1 to {MAX_TABLE_DEPTH}")
+    moon = _moon(chart)
+    periods = kalachakra_mahadashas(moon, chart.time.jd_ut, chart.dashas.year_days, SPAN_YEARS)
+
+    def expand(level: list[KalachakraPeriod], remaining: int) -> list[KalachakraPeriod]:
+        out: list[KalachakraPeriod] = []
+        for period in level:
+            out.append(period)
+            if remaining > 1:
+                out += expand(kalachakra_sub_periods(period), remaining - 1)
+        return out
+
+    pada = birth_position(moon)[0]
+    deha, jeeva = deha_jeeva(pada)
+    return KalachakraTableOut(
+        system="kalachakra",
+        label="Kalachakra",
+        year_days=chart.dashas.year_days,
+        first_sign=Sign(periods[0].sign),
+        periods=[sign_period_out(p) for p in expand(periods, depth)],
+        pada=pada,
+        paramayus=paramayus(pada),
+        deha=Sign(deha),
+        jeeva=Sign(jeeva),
+    )
+
+
+def running_kalachakra(
+    chart: ChartResult, jd_ut: float, depth: int = 3
+) -> list[SignDashaPeriodOut]:
+    if not 1 <= depth <= MAX_DEPTH:
+        raise ValueError(f"depth must be 1 to {MAX_DEPTH}")
+    chain = kalachakra_running(_moon(chart), chart.time.jd_ut, chart.dashas.year_days, jd_ut, depth)
     return [sign_period_out(p) for p in chain]
