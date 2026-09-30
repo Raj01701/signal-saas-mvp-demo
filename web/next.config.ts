@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
-const api = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").origin;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// A path such as "/api" means the browser reaches the API through this site, which
+// forwards those requests to API_PROXY_TARGET (used where only one port is public).
+const proxied = apiUrl.startsWith("/");
+const api = proxied ? "" : ` ${new URL(apiUrl).origin}`;
 const production = process.env.NODE_ENV === "production";
 
 /** The browser may load code and styles only from this site and talk only to the API. */
@@ -11,7 +15,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  `connect-src 'self' ${api}`,
+  `connect-src 'self'${api}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -22,6 +26,10 @@ const nextConfig: NextConfig = {
   // sharp (LGPL libvips) is removed via pnpm overrides; charts are SVG anyway.
   images: { unoptimized: true },
   poweredByHeader: false,
+  async rewrites() {
+    const target = process.env.API_PROXY_TARGET;
+    return proxied && target ? [{ source: `${apiUrl}/:path*`, destination: `${target}/:path*` }] : [];
+  },
   async headers() {
     return [
       {

@@ -19,6 +19,12 @@ A precise, explainable Vedic astrology (Jyotish) platform:
 
 Read [`docs/RESEARCH.md`](docs/RESEARCH.md) for the research behind these choices, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, [`docs/ROADMAP.md`](docs/ROADMAP.md) for milestones and status, and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) and [`docs/SECURITY.md`](docs/SECURITY.md) for deployment and the security review.
 
+## Try it in the cloud
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Raj01701/signal-saas-mvp-demo?quickstart=1)
+
+A codespace installs everything, builds the web app and starts it together with the API. The first start takes a few minutes. The app then opens on port 3000, where any birth date, time and place can be entered. See [`.devcontainer/README.md`](.devcontainer/README.md) for details. To open a branch, choose it under **Code → Codespaces** on GitHub.
+
 ## Develop
 
 ```bash

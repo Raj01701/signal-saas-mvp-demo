@@ -67,7 +67,7 @@ FastAPI app built by `create_app(settings)` (`jyotish_api/main.py`); configurati
 
 ## Web (`web/`)
 
-Next.js (App Router) with Tailwind. The pages are client components that call the API directly with `openapi-fetch`, typed by the generated `src/lib/api/schema.d.ts`; `NEXT_PUBLIC_API_URL` points them at the API.
+Next.js (App Router) with Tailwind. The pages are client components that call the API directly with `openapi-fetch`, typed by the generated `src/lib/api/schema.d.ts`; `NEXT_PUBLIC_API_URL` points them at the API. It may instead be a path such as `/api`: the web server then forwards those requests to `API_PROXY_TARGET`, so one public port serves both. The codespace setup in `.devcontainer/` runs this way.
 
 - `/workbench`: chart, dashas, yogas, natal readings, a cited plain-language report with questions answered from the evidence, the prediction timeline (with what the running dasha and transits say now), strengths, transits, KP and birth-time sensitivity for one birth.
 - `/panchanga`: the Hindu day for a date and place, with times shown in the place's local time.
