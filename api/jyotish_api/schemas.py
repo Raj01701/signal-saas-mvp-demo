@@ -46,6 +46,14 @@ class PredictionsRequest(ChartRequest):
     gender: Literal["male", "female"] | None = None
 
 
+class LifeReadingRequest(ChartRequest):
+    gender: Literal["male", "female"] | None = None
+    #: The day the reading is written for (default: today).
+    today: date | None = None
+    #: Years told one by one after today.
+    years_ahead: int = Field(default=5, ge=1, le=10)
+
+
 class RectifyEventIn(BaseModel):
     kind: EventKind
     date: date

@@ -877,3 +877,58 @@ class RectificationOut(BaseModel):
     uncertainty_minutes: float
     priors: list[str]
     notes: list[str]
+
+
+Tone = Literal["good", "mixed", "hard"]
+
+
+class StoryLineOut(BaseModel):
+    """One statement of a life reading, in everyday language."""
+
+    text: str
+    #: The line's tenor when it has one: "good", "mixed" or "hard".
+    tone: Tone | None = None
+    #: The technical basis in brief, for astrologers.
+    basis: str = ""
+
+
+class StoryChapterOut(BaseModel):
+    """One Vimshottari mahadasha told as a chapter of life."""
+
+    lord: Body
+    start: date
+    end: date
+    #: Ages covered, such as "23 to 41".
+    ages: str
+    title: str
+    headline: str
+    tone: Tone
+    #: The areas of life that were (or will be) most active, with their years.
+    lines: list[StoryLineOut]
+    current: bool = False
+
+
+class YearOutlookOut(BaseModel):
+    year: int
+    headline: str
+    lines: list[StoryLineOut]
+
+
+class StoryPresentOut(BaseModel):
+    headline: str
+    lines: list[StoryLineOut]
+
+
+class LifeReadingOut(BaseModel):
+    """Past, present and future in plain words, built from the engine's own results."""
+
+    today: date
+    summary: list[str]
+    nature: list[StoryLineOut]
+    strengths: list[StoryLineOut]
+    cautions: list[StoryLineOut]
+    past: list[StoryChapterOut]
+    present: StoryPresentOut
+    future: list[YearOutlookOut]
+    chapters_ahead: list[StoryChapterOut]
+    notes: list[str]

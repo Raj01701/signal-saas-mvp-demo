@@ -145,6 +145,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/charts/life-reading": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Life
+         * @description Past, present and the years ahead in everyday language, from the engine's results.
+         */
+        post: operations["life_v1_charts_life_reading_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/charts/period": {
         parameters: {
             query?: never;
@@ -1287,6 +1307,49 @@ export interface components {
             present: string[];
         };
         /**
+         * LifeReadingOut
+         * @description Past, present and future in plain words, built from the engine's own results.
+         */
+        LifeReadingOut: {
+            /** Cautions */
+            cautions: components["schemas"]["StoryLineOut"][];
+            /** Chapters Ahead */
+            chapters_ahead: components["schemas"]["StoryChapterOut"][];
+            /** Future */
+            future: components["schemas"]["YearOutlookOut"][];
+            /** Nature */
+            nature: components["schemas"]["StoryLineOut"][];
+            /** Notes */
+            notes: string[];
+            /** Past */
+            past: components["schemas"]["StoryChapterOut"][];
+            present: components["schemas"]["StoryPresentOut"];
+            /** Strengths */
+            strengths: components["schemas"]["StoryLineOut"][];
+            /** Summary */
+            summary: string[];
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+        };
+        /** LifeReadingRequest */
+        LifeReadingRequest: {
+            birth: components["schemas"]["BirthInput"];
+            /** Gender */
+            gender?: ("male" | "female") | null;
+            preset?: components["schemas"]["Preset"] | null;
+            settings?: components["schemas"]["Settings"] | null;
+            /** Today */
+            today?: string | null;
+            /**
+             * Years Ahead
+             * @default 5
+             */
+            years_ahead?: number;
+        };
+        /**
          * LimbSpanOut
          * @description One tithi, nakshatra, yoga or karana, with its full start and end.
          */
@@ -2275,6 +2338,63 @@ export interface components {
          */
         Status: "draft" | "reviewed";
         /**
+         * StoryChapterOut
+         * @description One Vimshottari mahadasha told as a chapter of life.
+         */
+        StoryChapterOut: {
+            /** Ages */
+            ages: string;
+            /**
+             * Current
+             * @default false
+             */
+            current?: boolean;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Headline */
+            headline: string;
+            /** Lines */
+            lines: components["schemas"]["StoryLineOut"][];
+            lord: components["schemas"]["Body"];
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Title */
+            title: string;
+            /**
+             * Tone
+             * @enum {string}
+             */
+            tone: "good" | "mixed" | "hard";
+        };
+        /**
+         * StoryLineOut
+         * @description One statement of a life reading, in everyday language.
+         */
+        StoryLineOut: {
+            /**
+             * Basis
+             * @default
+             */
+            basis?: string;
+            /** Text */
+            text: string;
+            /** Tone */
+            tone?: ("good" | "mixed" | "hard") | null;
+        };
+        /** StoryPresentOut */
+        StoryPresentOut: {
+            /** Headline */
+            headline: string;
+            /** Lines */
+            lines: components["schemas"]["StoryLineOut"][];
+        };
+        /**
          * Strength
          * @enum {string}
          */
@@ -2540,6 +2660,15 @@ export interface components {
             /** Years Completed */
             years_completed: number;
         };
+        /** YearOutlookOut */
+        YearOutlookOut: {
+            /** Headline */
+            headline: string;
+            /** Lines */
+            lines: components["schemas"]["StoryLineOut"][];
+            /** Year */
+            year: number;
+        };
         /**
          * YogaOut
          * @description A knowledge-base rule (yoga or dosha) found in a chart, with its evidence.
@@ -2797,6 +2926,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KpChartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    life_v1_charts_life_reading_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifeReadingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifeReadingOut"];
                 };
             };
             /** @description Validation Error */

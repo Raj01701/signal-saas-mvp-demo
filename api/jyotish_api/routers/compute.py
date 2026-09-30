@@ -13,6 +13,7 @@ from jyotish_api.schemas import (
     ChartRequest,
     DashaRequest,
     HoraryRequest,
+    LifeReadingRequest,
     MatchRequest,
     PanchangaRequest,
     PeriodRequest,
@@ -35,6 +36,7 @@ from jyotish_engine.models import (
     ChartResult,
     DashaTableOut,
     KpChartOut,
+    LifeReadingOut,
     MatchOut,
     PanchangaOut,
     PeriodReadingsOut,
@@ -49,7 +51,7 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import Place, search_places
-from jyotish_engine.predict import compute_predictions
+from jyotish_engine.predict import compute_predictions, life_reading
 from jyotish_engine.rectify import LifeEvent, rectify
 from jyotish_engine.rules.periods import compute_period_readings
 from jyotish_engine.rules.readings import compute_readings
@@ -128,6 +130,14 @@ def period(request: Request, body: PeriodRequest) -> PeriodReadingsOut:
 def predictions(request: Request, body: PredictionsRequest) -> PredictionsOut:
     """Promise × period × trigger for each life domain, month by month, with windows."""
     return compute_predictions(_chart(request, body), body.start, body.end, gender=body.gender)
+
+
+@router.post("/charts/life-reading")
+def life(request: Request, body: LifeReadingRequest) -> LifeReadingOut:
+    """Past, present and the years ahead in everyday language, from the engine's results."""
+    return life_reading(
+        _chart(request, body), body.today, gender=body.gender, years_ahead=body.years_ahead
+    )
 
 
 @router.post("/rectify")

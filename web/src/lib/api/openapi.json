@@ -2094,6 +2094,155 @@
         "title": "KujaOut",
         "type": "object"
       },
+      "LifeReadingOut": {
+        "description": "Past, present and future in plain words, built from the engine's own results.",
+        "properties": {
+          "cautions": {
+            "items": {
+              "$ref": "#/components/schemas/StoryLineOut"
+            },
+            "title": "Cautions",
+            "type": "array"
+          },
+          "chapters_ahead": {
+            "items": {
+              "$ref": "#/components/schemas/StoryChapterOut"
+            },
+            "title": "Chapters Ahead",
+            "type": "array"
+          },
+          "future": {
+            "items": {
+              "$ref": "#/components/schemas/YearOutlookOut"
+            },
+            "title": "Future",
+            "type": "array"
+          },
+          "nature": {
+            "items": {
+              "$ref": "#/components/schemas/StoryLineOut"
+            },
+            "title": "Nature",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "past": {
+            "items": {
+              "$ref": "#/components/schemas/StoryChapterOut"
+            },
+            "title": "Past",
+            "type": "array"
+          },
+          "present": {
+            "$ref": "#/components/schemas/StoryPresentOut"
+          },
+          "strengths": {
+            "items": {
+              "$ref": "#/components/schemas/StoryLineOut"
+            },
+            "title": "Strengths",
+            "type": "array"
+          },
+          "summary": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Summary",
+            "type": "array"
+          },
+          "today": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          }
+        },
+        "required": [
+          "today",
+          "summary",
+          "nature",
+          "strengths",
+          "cautions",
+          "past",
+          "present",
+          "future",
+          "chapters_ahead",
+          "notes"
+        ],
+        "title": "LifeReadingOut",
+        "type": "object"
+      },
+      "LifeReadingRequest": {
+        "properties": {
+          "birth": {
+            "$ref": "#/components/schemas/BirthInput"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "enum": [
+                  "male",
+                  "female"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preset"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Settings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "today": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
+          },
+          "years_ahead": {
+            "default": 5,
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Years Ahead",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "birth"
+        ],
+        "title": "LifeReadingRequest",
+        "type": "object"
+      },
       "LimbSpanOut": {
         "description": "One tithi, nakshatra, yoga or karana, with its full start and end.",
         "properties": {
@@ -4732,6 +4881,125 @@
         "title": "Status",
         "type": "string"
       },
+      "StoryChapterOut": {
+        "description": "One Vimshottari mahadasha told as a chapter of life.",
+        "properties": {
+          "ages": {
+            "title": "Ages",
+            "type": "string"
+          },
+          "current": {
+            "default": false,
+            "title": "Current",
+            "type": "boolean"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/StoryLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "lord": {
+            "$ref": "#/components/schemas/Body"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "good",
+              "mixed",
+              "hard"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lord",
+          "start",
+          "end",
+          "ages",
+          "title",
+          "headline",
+          "tone",
+          "lines"
+        ],
+        "title": "StoryChapterOut",
+        "type": "object"
+      },
+      "StoryLineOut": {
+        "description": "One statement of a life reading, in everyday language.",
+        "properties": {
+          "basis": {
+            "default": "",
+            "title": "Basis",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "good",
+                  "mixed",
+                  "hard"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tone"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "StoryLineOut",
+        "type": "object"
+      },
+      "StoryPresentOut": {
+        "properties": {
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/StoryLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "headline",
+          "lines"
+        ],
+        "title": "StoryPresentOut",
+        "type": "object"
+      },
       "Strength": {
         "enum": [
           "minor",
@@ -5469,6 +5737,32 @@
         "title": "VarshaphalOut",
         "type": "object"
       },
+      "YearOutlookOut": {
+        "properties": {
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/StoryLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "headline",
+          "lines"
+        ],
+        "title": "YearOutlookOut",
+        "type": "object"
+      },
       "YogaOut": {
         "description": "A knowledge-base rule (yoga or dosha) found in a chart, with its evidence.",
         "properties": {
@@ -5902,6 +6196,45 @@
           }
         },
         "summary": "Kp"
+      }
+    },
+    "/v1/charts/life-reading": {
+      "post": {
+        "description": "Past, present and the years ahead in everyday language, from the engine's results.",
+        "operationId": "life_v1_charts_life_reading_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifeReadingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifeReadingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Life"
       }
     },
     "/v1/charts/period": {

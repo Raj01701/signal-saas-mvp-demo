@@ -26,6 +26,7 @@ from jyotish_engine.core.varga import varga_sign
 from jyotish_engine.models import BirthInput, BirthTimeSource, ChartResult, PlaceInput
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import search_places
+from jyotish_engine.predict import life_reading
 from jyotish_engine.predict.timeline import compute_predictions
 from jyotish_engine.rules.yogas import compute_yogas
 from jyotish_engine.sensitivity import compute_sensitivity
@@ -67,6 +68,27 @@ def sign_label(value: str) -> str:
     """ "sign 5" (1-based) as the sign's name; other values unchanged."""
     number = value.removeprefix("sign ").strip()
     return SIGN_NAMES[int(number) - 1] if value.startswith("sign ") and number.isdigit() else value
+
+
+def time_note(factors: list[Any]) -> str:
+    """How exact the birth time must be, in plain words."""
+    by_name = {f.name: f for f in factors}
+    notes = []
+    lagna = by_name.get("Lagna")
+    if lagna and lagna.minutes_before is not None and lagna.minutes_after is not None:
+        notes.append(
+            "Your rising sign stays the same if the true birth time is up to "
+            f"{lagna.minutes_before:.0f} minutes earlier or "
+            f"{lagna.minutes_after:.0f} minutes later."
+        )
+    d9 = by_name.get("D9 lagna")
+    if d9 and d9.minutes_before is not None and d9.minutes_after is not None:
+        notes.append(
+            "The finer divisional readings change within "
+            f"{min(d9.minutes_before, d9.minutes_after):.0f} minutes, so treat those with care "
+            "unless the time is from a birth record."
+        )
+    return " ".join(notes)
 
 
 def resolve_place(request: dict[str, Any]) -> tuple[PlaceInput, dict[str, Any]]:
@@ -190,8 +212,11 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     )
     narrative = write_report(build_bundle(chart, today=today, gender=gender), TemplateNarrator())
     sensitivity = compute_sensitivity(chart)
+    life = life_reading(chart, today, gender=gender)
     interpretation = chart.time.interpretation
     return {
+        "life": life.model_dump(mode="json"),
+        "time_note": time_note(sensitivity.factors),
         "input": {
             k: request.get(k)
             for k in (
