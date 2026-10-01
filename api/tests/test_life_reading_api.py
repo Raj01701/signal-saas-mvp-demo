@@ -1,4 +1,4 @@
-"""The life reading route: past, present and future in plain words."""
+"""The life reading route: who you are, the past, the present and the years ahead."""
 
 from __future__ import annotations
 
@@ -15,10 +15,19 @@ BIRTH = {
 
 def test_life_reading_route() -> None:
     client = TestClient(create_app(ApiSettings(rate_limit="1000/minute")))
-    body = {"birth": BIRTH, "today": "2026-09-30", "gender": "male", "years_ahead": 3}
+    body = {
+        "birth": BIRTH,
+        "today": "2026-09-30",
+        "gender": "male",
+        "name": "arjun",
+        "years_ahead": 3,
+    }
     reading = client.post("/v1/charts/life-reading", json=body).json()
     assert [y["year"] for y in reading["future"]] == [2026, 2027, 2028]
-    assert reading["past"][-1]["current"] and reading["present"]["headline"]
-    assert reading["summary"][0].startswith("By nature: ")
+    assert reading["past"][-1]["current"] and reading["present"]["paragraphs"]
+    assert reading["summary"][0].startswith("Arjun, you are ")
+    assert reading["age"] == 36 and reading["glance"][0]["label"] == "Rising sign (Lagna)"
     too_far = {**body, "years_ahead": 11}
     assert client.post("/v1/charts/life-reading", json=too_far).status_code == 422
+    before_birth = {**body, "today": "1989-01-01"}
+    assert client.post("/v1/charts/life-reading", json=before_birth).status_code == 422

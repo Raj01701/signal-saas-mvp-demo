@@ -48,6 +48,8 @@ class PredictionsRequest(ChartRequest):
 
 class LifeReadingRequest(ChartRequest):
     gender: Literal["male", "female"] | None = None
+    #: The person's first name, to address them in the summary.
+    name: str | None = Field(default=None, max_length=60)
     #: The day the reading is written for (default: today).
     today: date | None = None
     #: Years told one by one after today.

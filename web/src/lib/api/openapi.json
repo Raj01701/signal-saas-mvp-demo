@@ -1598,6 +1598,30 @@
         "title": "Export",
         "type": "object"
       },
+      "GlanceItemOut": {
+        "description": "One fact of the chart at a glance, such as the rising sign.",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "GlanceItemOut",
+        "type": "object"
+      },
       "GrahaOut": {
         "properties": {
           "baladi_avastha": {
@@ -2094,21 +2118,85 @@
         "title": "KujaOut",
         "type": "object"
       },
-      "LifeReadingOut": {
-        "description": "Past, present and future in plain words, built from the engine's own results.",
+      "LifeMomentOut": {
+        "description": "A stretch of time when one area of life is especially active.",
         "properties": {
-          "cautions": {
+          "ages": {
+            "title": "Ages",
+            "type": "string"
+          },
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/Domain"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "good",
+              "mixed",
+              "hard"
+            ],
+            "title": "Tone",
+            "type": "string"
+          },
+          "when": {
+            "title": "When",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "area",
+          "start",
+          "end",
+          "ages",
+          "when",
+          "text",
+          "tone",
+          "basis"
+        ],
+        "title": "LifeMomentOut",
+        "type": "object"
+      },
+      "LifeReadingOut": {
+        "description": "A life reading as an astrologer would tell it: who you are, your life so far,\nwhere you stand now and the years ahead, built from the engine's own results.",
+        "properties": {
+          "age": {
+            "title": "Age",
+            "type": "integer"
+          },
+          "areas": {
             "items": {
-              "$ref": "#/components/schemas/StoryLineOut"
+              "$ref": "#/components/schemas/ReadingSectionOut"
             },
-            "title": "Cautions",
+            "title": "Areas",
             "type": "array"
           },
-          "chapters_ahead": {
+          "checks": {
             "items": {
-              "$ref": "#/components/schemas/StoryChapterOut"
+              "$ref": "#/components/schemas/LifeMomentOut"
             },
-            "title": "Chapters Ahead",
+            "title": "Checks",
             "type": "array"
           },
           "future": {
@@ -2118,12 +2206,40 @@
             "title": "Future",
             "type": "array"
           },
-          "nature": {
+          "glance": {
             "items": {
-              "$ref": "#/components/schemas/StoryLineOut"
+              "$ref": "#/components/schemas/GlanceItemOut"
             },
-            "title": "Nature",
+            "title": "Glance",
             "type": "array"
+          },
+          "good_to_know": {
+            "items": {
+              "$ref": "#/components/schemas/ReadingSectionOut"
+            },
+            "title": "Good To Know",
+            "type": "array"
+          },
+          "later": {
+            "items": {
+              "$ref": "#/components/schemas/StoryChapterOut"
+            },
+            "title": "Later",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "nature": {
+            "$ref": "#/components/schemas/ReadingSectionOut"
           },
           "notes": {
             "items": {
@@ -2140,14 +2256,7 @@
             "type": "array"
           },
           "present": {
-            "$ref": "#/components/schemas/StoryPresentOut"
-          },
-          "strengths": {
-            "items": {
-              "$ref": "#/components/schemas/StoryLineOut"
-            },
-            "title": "Strengths",
-            "type": "array"
+            "$ref": "#/components/schemas/ReadingSectionOut"
           },
           "summary": {
             "items": {
@@ -2164,14 +2273,17 @@
         },
         "required": [
           "today",
+          "age",
           "summary",
+          "glance",
           "nature",
-          "strengths",
-          "cautions",
           "past",
+          "checks",
           "present",
           "future",
-          "chapters_ahead",
+          "later",
+          "areas",
+          "good_to_know",
           "notes"
         ],
         "title": "LifeReadingOut",
@@ -2196,6 +2308,18 @@
               }
             ],
             "title": "Gender"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "preset": {
             "anyOf": [
@@ -3869,6 +3993,57 @@
         "title": "PushSubscriptionIn",
         "type": "object"
       },
+      "ReadingSectionOut": {
+        "description": "A titled part of a life reading, in everyday language.",
+        "properties": {
+          "basis": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Basis",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "paragraphs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paragraphs",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "good",
+                  "mixed",
+                  "hard"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tone"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "paragraphs"
+        ],
+        "title": "ReadingSectionOut",
+        "type": "object"
+      },
       "ReadingsOut": {
         "description": "Natal readings: the classical result of each placement present in a chart.",
         "properties": {
@@ -4888,6 +5063,14 @@
             "title": "Ages",
             "type": "string"
           },
+          "basis": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Basis",
+            "type": "array"
+          },
           "current": {
             "default": false,
             "title": "Current",
@@ -4898,19 +5081,22 @@
             "title": "End",
             "type": "string"
           },
-          "headline": {
-            "title": "Headline",
-            "type": "string"
-          },
-          "lines": {
-            "items": {
-              "$ref": "#/components/schemas/StoryLineOut"
-            },
-            "title": "Lines",
-            "type": "array"
-          },
           "lord": {
             "$ref": "#/components/schemas/Body"
+          },
+          "moments": {
+            "items": {
+              "$ref": "#/components/schemas/LifeMomentOut"
+            },
+            "title": "Moments",
+            "type": "array"
+          },
+          "paragraphs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paragraphs",
+            "type": "array"
           },
           "start": {
             "format": "date",
@@ -4937,67 +5123,11 @@
           "end",
           "ages",
           "title",
-          "headline",
+          "paragraphs",
           "tone",
-          "lines"
+          "moments"
         ],
         "title": "StoryChapterOut",
-        "type": "object"
-      },
-      "StoryLineOut": {
-        "description": "One statement of a life reading, in everyday language.",
-        "properties": {
-          "basis": {
-            "default": "",
-            "title": "Basis",
-            "type": "string"
-          },
-          "text": {
-            "title": "Text",
-            "type": "string"
-          },
-          "tone": {
-            "anyOf": [
-              {
-                "enum": [
-                  "good",
-                  "mixed",
-                  "hard"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tone"
-          }
-        },
-        "required": [
-          "text"
-        ],
-        "title": "StoryLineOut",
-        "type": "object"
-      },
-      "StoryPresentOut": {
-        "properties": {
-          "headline": {
-            "title": "Headline",
-            "type": "string"
-          },
-          "lines": {
-            "items": {
-              "$ref": "#/components/schemas/StoryLineOut"
-            },
-            "title": "Lines",
-            "type": "array"
-          }
-        },
-        "required": [
-          "headline",
-          "lines"
-        ],
-        "title": "StoryPresentOut",
         "type": "object"
       },
       "Strength": {
@@ -5739,16 +5869,36 @@
       },
       "YearOutlookOut": {
         "properties": {
-          "headline": {
-            "title": "Headline",
+          "ages": {
+            "title": "Ages",
             "type": "string"
           },
-          "lines": {
+          "moments": {
             "items": {
-              "$ref": "#/components/schemas/StoryLineOut"
+              "$ref": "#/components/schemas/LifeMomentOut"
             },
-            "title": "Lines",
+            "title": "Moments",
             "type": "array"
+          },
+          "paragraphs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paragraphs",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "good",
+              "mixed",
+              "hard"
+            ],
+            "title": "Tone",
+            "type": "string"
           },
           "year": {
             "title": "Year",
@@ -5757,8 +5907,11 @@
         },
         "required": [
           "year",
-          "headline",
-          "lines"
+          "ages",
+          "title",
+          "paragraphs",
+          "tone",
+          "moments"
         ],
         "title": "YearOutlookOut",
         "type": "object"
@@ -6200,7 +6353,7 @@
     },
     "/v1/charts/life-reading": {
       "post": {
-        "description": "Past, present and the years ahead in everyday language, from the engine's results.",
+        "description": "Who you are, your life so far, where you stand now and the years ahead, in everyday\nlanguage and for the person's age, from the engine's own results.",
         "operationId": "life_v1_charts_life_reading_post",
         "requestBody": {
           "content": {

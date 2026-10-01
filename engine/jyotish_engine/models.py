@@ -882,14 +882,42 @@ class RectificationOut(BaseModel):
 Tone = Literal["good", "mixed", "hard"]
 
 
-class StoryLineOut(BaseModel):
-    """One statement of a life reading, in everyday language."""
+class GlanceItemOut(BaseModel):
+    """One fact of the chart at a glance, such as the rising sign."""
 
-    text: str
-    #: The line's tenor when it has one: "good", "mixed" or "hard".
+    label: str
+    value: str
+    note: str = ""
+
+
+class ReadingSectionOut(BaseModel):
+    """A titled part of a life reading, in everyday language."""
+
+    key: str
+    title: str
+    paragraphs: list[str]
+    #: The section's tenor when it has one: "good", "mixed" or "hard".
     tone: Tone | None = None
     #: The technical basis in brief, for astrologers.
-    basis: str = ""
+    basis: list[str] = []
+
+
+class LifeMomentOut(BaseModel):
+    """A stretch of time when one area of life is especially active."""
+
+    domain: Domain
+    #: The area in plain words, such as "career".
+    area: str
+    start: date
+    #: The first day after the stretch.
+    end: date
+    #: Ages in brackets, such as "(ages 23–26)".
+    ages: str
+    #: When, as the reader would say it ("mid-2011 to mid-2014", "March to June 2027").
+    when: str
+    text: str
+    tone: Tone
+    basis: str
 
 
 class StoryChapterOut(BaseModel):
@@ -898,37 +926,47 @@ class StoryChapterOut(BaseModel):
     lord: Body
     start: date
     end: date
-    #: Ages covered, such as "23 to 41".
+    #: Ages covered, such as "23 to 30".
     ages: str
     title: str
-    headline: str
+    paragraphs: list[str]
     tone: Tone
-    #: The areas of life that were (or will be) most active, with their years.
-    lines: list[StoryLineOut]
+    moments: list[LifeMomentOut]
     current: bool = False
+    basis: list[str] = []
 
 
 class YearOutlookOut(BaseModel):
     year: int
-    headline: str
-    lines: list[StoryLineOut]
-
-
-class StoryPresentOut(BaseModel):
-    headline: str
-    lines: list[StoryLineOut]
+    #: Ages during the year, such as "38–39".
+    ages: str
+    title: str
+    paragraphs: list[str]
+    tone: Tone
+    moments: list[LifeMomentOut]
 
 
 class LifeReadingOut(BaseModel):
-    """Past, present and future in plain words, built from the engine's own results."""
+    """A life reading as an astrologer would tell it: who you are, your life so far,
+    where you stand now and the years ahead, built from the engine's own results."""
 
     today: date
+    name: str | None = None
+    age: int
+    #: A few sentences to read first.
     summary: list[str]
-    nature: list[StoryLineOut]
-    strengths: list[StoryLineOut]
-    cautions: list[StoryLineOut]
+    glance: list[GlanceItemOut]
+    nature: ReadingSectionOut
+    #: Past chapters, the current one last (marked ``current``).
     past: list[StoryChapterOut]
-    present: StoryPresentOut
+    #: The strongest past stretches by area, to check against real events.
+    checks: list[LifeMomentOut]
+    present: ReadingSectionOut
     future: list[YearOutlookOut]
-    chapters_ahead: list[StoryChapterOut]
+    #: The chapters after the current one, in brief.
+    later: list[StoryChapterOut]
+    #: Career, money, marriage and the other areas that suit the person's age.
+    areas: list[ReadingSectionOut]
+    #: Manglik, Sade Sati, Kala Sarpa, favourable things and remedies.
+    good_to_know: list[ReadingSectionOut]
     notes: list[str]

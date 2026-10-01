@@ -134,9 +134,14 @@ def predictions(request: Request, body: PredictionsRequest) -> PredictionsOut:
 
 @router.post("/charts/life-reading")
 def life(request: Request, body: LifeReadingRequest) -> LifeReadingOut:
-    """Past, present and the years ahead in everyday language, from the engine's results."""
+    """Who you are, your life so far, where you stand now and the years ahead, in everyday
+    language and for the person's age, from the engine's own results."""
     return life_reading(
-        _chart(request, body), body.today, gender=body.gender, years_ahead=body.years_ahead
+        _chart(request, body),
+        body.today,
+        gender=body.gender,
+        name=body.name,
+        years_ahead=body.years_ahead,
     )
 
 

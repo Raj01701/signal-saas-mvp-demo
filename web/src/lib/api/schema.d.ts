@@ -156,7 +156,8 @@ export interface paths {
         put?: never;
         /**
          * Life
-         * @description Past, present and the years ahead in everyday language, from the engine's results.
+         * @description Who you are, your life so far, where you stand now and the years ahead, in everyday
+         *     language and for the person's age, from the engine's own results.
          */
         post: operations["life_v1_charts_life_reading_post"];
         delete?: never;
@@ -1137,6 +1138,21 @@ export interface components {
             /** People */
             people: components["schemas"]["PersonOut"][];
         };
+        /**
+         * GlanceItemOut
+         * @description One fact of the chart at a glance, such as the rising sign.
+         */
+        GlanceItemOut: {
+            /** Label */
+            label: string;
+            /**
+             * Note
+             * @default
+             */
+            note?: string;
+            /** Value */
+            value: string;
+        };
         /** GrahaOut */
         GrahaOut: {
             baladi_avastha: components["schemas"]["BaladiAvastha"];
@@ -1307,25 +1323,65 @@ export interface components {
             present: string[];
         };
         /**
+         * LifeMomentOut
+         * @description A stretch of time when one area of life is especially active.
+         */
+        LifeMomentOut: {
+            /** Ages */
+            ages: string;
+            /** Area */
+            area: string;
+            /** Basis */
+            basis: string;
+            domain: components["schemas"]["Domain"];
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Text */
+            text: string;
+            /**
+             * Tone
+             * @enum {string}
+             */
+            tone: "good" | "mixed" | "hard";
+            /** When */
+            when: string;
+        };
+        /**
          * LifeReadingOut
-         * @description Past, present and future in plain words, built from the engine's own results.
+         * @description A life reading as an astrologer would tell it: who you are, your life so far,
+         *     where you stand now and the years ahead, built from the engine's own results.
          */
         LifeReadingOut: {
-            /** Cautions */
-            cautions: components["schemas"]["StoryLineOut"][];
-            /** Chapters Ahead */
-            chapters_ahead: components["schemas"]["StoryChapterOut"][];
+            /** Age */
+            age: number;
+            /** Areas */
+            areas: components["schemas"]["ReadingSectionOut"][];
+            /** Checks */
+            checks: components["schemas"]["LifeMomentOut"][];
             /** Future */
             future: components["schemas"]["YearOutlookOut"][];
-            /** Nature */
-            nature: components["schemas"]["StoryLineOut"][];
+            /** Glance */
+            glance: components["schemas"]["GlanceItemOut"][];
+            /** Good To Know */
+            good_to_know: components["schemas"]["ReadingSectionOut"][];
+            /** Later */
+            later: components["schemas"]["StoryChapterOut"][];
+            /** Name */
+            name?: string | null;
+            nature: components["schemas"]["ReadingSectionOut"];
             /** Notes */
             notes: string[];
             /** Past */
             past: components["schemas"]["StoryChapterOut"][];
-            present: components["schemas"]["StoryPresentOut"];
-            /** Strengths */
-            strengths: components["schemas"]["StoryLineOut"][];
+            present: components["schemas"]["ReadingSectionOut"];
             /** Summary */
             summary: string[];
             /**
@@ -1339,6 +1395,8 @@ export interface components {
             birth: components["schemas"]["BirthInput"];
             /** Gender */
             gender?: ("male" | "female") | null;
+            /** Name */
+            name?: string | null;
             preset?: components["schemas"]["Preset"] | null;
             settings?: components["schemas"]["Settings"] | null;
             /** Today */
@@ -1959,6 +2017,25 @@ export interface components {
             keys: components["schemas"]["PushKeys"];
         };
         /**
+         * ReadingSectionOut
+         * @description A titled part of a life reading, in everyday language.
+         */
+        ReadingSectionOut: {
+            /**
+             * Basis
+             * @default []
+             */
+            basis?: string[];
+            /** Key */
+            key: string;
+            /** Paragraphs */
+            paragraphs: string[];
+            /** Title */
+            title: string;
+            /** Tone */
+            tone?: ("good" | "mixed" | "hard") | null;
+        };
+        /**
          * ReadingsOut
          * @description Natal readings: the classical result of each placement present in a chart.
          */
@@ -2345,6 +2422,11 @@ export interface components {
             /** Ages */
             ages: string;
             /**
+             * Basis
+             * @default []
+             */
+            basis?: string[];
+            /**
              * Current
              * @default false
              */
@@ -2354,11 +2436,11 @@ export interface components {
              * Format: date
              */
             end: string;
-            /** Headline */
-            headline: string;
-            /** Lines */
-            lines: components["schemas"]["StoryLineOut"][];
             lord: components["schemas"]["Body"];
+            /** Moments */
+            moments: components["schemas"]["LifeMomentOut"][];
+            /** Paragraphs */
+            paragraphs: string[];
             /**
              * Start
              * Format: date
@@ -2371,28 +2453,6 @@ export interface components {
              * @enum {string}
              */
             tone: "good" | "mixed" | "hard";
-        };
-        /**
-         * StoryLineOut
-         * @description One statement of a life reading, in everyday language.
-         */
-        StoryLineOut: {
-            /**
-             * Basis
-             * @default
-             */
-            basis?: string;
-            /** Text */
-            text: string;
-            /** Tone */
-            tone?: ("good" | "mixed" | "hard") | null;
-        };
-        /** StoryPresentOut */
-        StoryPresentOut: {
-            /** Headline */
-            headline: string;
-            /** Lines */
-            lines: components["schemas"]["StoryLineOut"][];
         };
         /**
          * Strength
@@ -2662,10 +2722,19 @@ export interface components {
         };
         /** YearOutlookOut */
         YearOutlookOut: {
-            /** Headline */
-            headline: string;
-            /** Lines */
-            lines: components["schemas"]["StoryLineOut"][];
+            /** Ages */
+            ages: string;
+            /** Moments */
+            moments: components["schemas"]["LifeMomentOut"][];
+            /** Paragraphs */
+            paragraphs: string[];
+            /** Title */
+            title: string;
+            /**
+             * Tone
+             * @enum {string}
+             */
+            tone: "good" | "mixed" | "hard";
             /** Year */
             year: number;
         };

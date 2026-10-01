@@ -212,7 +212,8 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     )
     narrative = write_report(build_bundle(chart, today=today, gender=gender), TemplateNarrator())
     sensitivity = compute_sensitivity(chart)
-    life = life_reading(chart, today, gender=gender)
+    name = str(request.get("name") or "").strip() or None
+    life = life_reading(chart, today, gender=gender, name=name)
     interpretation = chart.time.interpretation
     return {
         "life": life.model_dump(mode="json"),
