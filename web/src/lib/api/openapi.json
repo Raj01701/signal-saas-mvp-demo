@@ -3452,6 +3452,11 @@
             "title": "Admin1 Code",
             "type": "string"
           },
+          "admin1_name": {
+            "default": "",
+            "title": "Admin1 Name",
+            "type": "string"
+          },
           "country_code": {
             "title": "Country Code",
             "type": "string"
@@ -3943,6 +3948,7 @@
       "Preset": {
         "enum": [
           "classic_parashari",
+          "indian_software",
           "drik_compatible",
           "kp",
           "pvr_jhora_style"

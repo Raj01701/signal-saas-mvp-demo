@@ -78,7 +78,7 @@ export function PlaceField({
                     setQuery("");
                   }}
                 >
-                  {r.name}, {r.admin1_code}, {r.country_code}
+                  {[r.name, r.admin1_name || r.admin1_code, r.country_code].filter(Boolean).join(", ")}
                   <span className="ml-2 text-xs text-zinc-500">
                     {r.latitude.toFixed(3)}, {r.longitude.toFixed(3)}
                   </span>

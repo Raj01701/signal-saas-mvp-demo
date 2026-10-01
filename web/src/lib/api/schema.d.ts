@@ -1809,6 +1809,11 @@ export interface components {
         Place: {
             /** Admin1 Code */
             admin1_code: string;
+            /**
+             * Admin1 Name
+             * @default
+             */
+            admin1_name?: string;
             /** Country Code */
             country_code: string;
             /** Geonames Id */
@@ -1995,7 +2000,7 @@ export interface components {
          * Preset
          * @enum {string}
          */
-        Preset: "classic_parashari" | "drik_compatible" | "kp" | "pvr_jhora_style";
+        Preset: "classic_parashari" | "indian_software" | "drik_compatible" | "kp" | "pvr_jhora_style";
         /**
          * Provenance
          * @enum {string}

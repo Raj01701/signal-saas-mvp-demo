@@ -45,6 +45,9 @@ DASHA_YEAR_DAYS: dict[DashaYear, float] = {
 
 class Preset(StrEnum):
     CLASSIC_PARASHARI = "classic_parashari"
+    #: Lahiri with the mean nodes, the common sunrise and the 365.25-day dasha year:
+    #: the defaults of most Indian astrology software.
+    INDIAN_SOFTWARE = "indian_software"
     DRIK_COMPATIBLE = "drik_compatible"
     KP = "kp"
     PVR_JHORA_STYLE = "pvr_jhora_style"
@@ -99,6 +102,11 @@ class Settings(BaseModel):
 
 PRESETS: dict[Preset, Settings] = {
     Preset.CLASSIC_PARASHARI: Settings(),
+    Preset.INDIAN_SOFTWARE: Settings(
+        node_type=NodeType.MEAN,
+        sunrise=SunriseDefinition.UPPER_LIMB_REFRACTION,
+        dasha_year=DashaYear.JULIAN,
+    ),
     Preset.DRIK_COMPATIBLE: Settings(sunrise=SunriseDefinition.UPPER_LIMB_REFRACTION),
     Preset.KP: Settings(
         ayanamsa=Ayanamsa.KRISHNAMURTI,

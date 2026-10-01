@@ -684,6 +684,52 @@ def _match_section() -> list[str]:
     ]
 
 
+def _conventions_section() -> list[str]:
+    """How the presets differ, how birthplaces are found, and the spot checks of real charts
+    (fixed text: the charts themselves stay out of the repository)."""
+    return [
+        "## Conventions, birthplaces and real charts",
+        "",
+        "Programs that agree on the astronomy can still disagree by convention, so each "
+        "convention is a setting. The `indian_software` preset, which the Kundli Check page "
+        "uses, takes the defaults most Indian astrology software uses; `classic_parashari` is "
+        "the API's default.",
+        "",
+        "| Convention | `indian_software` | `classic_parashari` | What the difference does |",
+        "|---|---|---|---|",
+        "| Rahu and Ketu | mean node | true node | the true node runs up to about 1.5° either "
+        "side of the mean one, enough to change Rahu's nakshatra or sign |",
+        "| Vimshottari year | 365.25 days | 365.2564 days | about 9 hours over 60 years; "
+        "PyJHora's default, the true sidereal year, moves dates by hours |",
+        "| Sunrise | upper limb, with refraction | centre of the disc, no refraction | about "
+        "3 to 4 minutes in India, which moves panchanga day boundaries |",
+        "| Ayanamsa and houses | Lahiri, whole signs | the same | none |",
+        "",
+        "Birthplaces come from GeoNames (places of 500 people or more, read offline). A state "
+        "or country typed after a comma chooses among towns of the same name (Sirsa in Haryana "
+        "or in Uttar Pradesh); without one, Indian places come first and the largest wins, and "
+        "the result says when that was a guess. Coordinates pasted from a map are used as "
+        "given. A town centre can lie a kilometre or so from a map service's pin; one "
+        "kilometre east or west moves the chart by about 2.5 seconds of clock time at Indian "
+        "latitudes, while a rising sign lasts about two hours, so only the wrong town matters.",
+        "",
+        "Two real birth charts (kept out of the repository) were compared with Swiss Ephemeris "
+        "2.10.03 and PyJHora 4.8.7, using `oracle/reference_chart.py` in the oracle "
+        "environment and `scripts/compare_with_reference.py`:",
+        "",
+        "| Quantity | Largest difference |",
+        "|---|---|",
+        "| Sun to Saturn | 0.03″ |",
+        "| Moon | 0.29″ |",
+        "| Rahu, true and mean node | 0.04″ |",
+        "| Ascendant | 10.8″: the engine turns civil time into Earth-rotation time (UT1) and "
+        "the references take UTC as UT1; 10.8″ is less than a second of birth time |",
+        "| Nakshatra, pada and the birth panchanga (vara, tithi, yoga, karana) | identical |",
+        "| Vimshottari dates | hours, from the dasha-year convention above |",
+        "",
+    ]
+
+
 def main() -> None:
     data: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
     cases: list[dict[str, Any]] = data["cases"]
@@ -816,6 +862,7 @@ def main() -> None:
     lines += _panchanga_section()
     lines += _calendar_section()
     lines += _match_section()
+    lines += _conventions_section()
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}")
 

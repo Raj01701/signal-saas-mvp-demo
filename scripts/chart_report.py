@@ -21,16 +21,23 @@ from zoneinfo import ZoneInfo
 from jyotish_api.narrative.evidence import build_bundle
 from jyotish_api.narrative.narrators import TemplateNarrator
 from jyotish_api.narrative.service import write_report
+from jyotish_engine.astro.bodies import Body
+from jyotish_engine.astro.time import datetime_to_jd, jd_to_datetime
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.core.varga import varga_sign
 from jyotish_engine.models import BirthInput, BirthTimeSource, ChartResult, PlaceInput
 from jyotish_engine.panchanga.day import compute_panchanga
-from jyotish_engine.place.geocode import search_places
+from jyotish_engine.place.geocode import dms as place_dms
+from jyotish_engine.place.geocode import parse_coordinates, seconds_per_km
+from jyotish_engine.place.geocode import resolve_place as find_place
 from jyotish_engine.predict import life_reading
 from jyotish_engine.predict.timeline import compute_predictions
+from jyotish_engine.rectify.events import EventKind
+from jyotish_engine.rectify.search import LifeEvent, rectify
 from jyotish_engine.rules.yogas import compute_yogas
 from jyotish_engine.sensitivity import compute_sensitivity
-from jyotish_engine.settings import Settings
+from jyotish_engine.settings import Preset, preset
+from jyotish_engine.transit.timeline import sign_timeline
 
 ABBREVIATIONS = {
     "sun": "Su",
@@ -57,6 +64,16 @@ SIGN_NAMES = (
     "Kumbha",
     "Meena",
 )
+
+
+#: How each dasha-year convention reads in the settings line.
+YEAR_WORDS = {
+    "julian": "365.25-day",
+    "sidereal": "sidereal (365.256-day)",
+    "true_sidereal": "true solar",
+    "tropical": "tropical (365.242-day)",
+    "savana": "360-day",
+}
 
 
 def dms(degrees: float) -> str:
@@ -91,40 +108,174 @@ def time_note(factors: list[Any]) -> str:
     return " ".join(notes)
 
 
+def _place_out(name: str, lat: float, lon: float, **extra: Any) -> dict[str, Any]:
+    return {
+        "name": name,
+        "latitude": lat,
+        "longitude": lon,
+        "dms": place_dms(lat, lon),
+        "map_url": f"https://www.google.com/maps/search/?api=1&query={lat:.5f},{lon:.5f}",
+        "alternatives": [],
+        "ambiguous": False,
+        **extra,
+    }
+
+
 def resolve_place(request: dict[str, Any]) -> tuple[PlaceInput, dict[str, Any]]:
-    """Coordinates as given, or the best gazetteer match for the place name."""
+    """Coordinates as given (typed or pasted from a map), or the gazetteer's match for the
+    place name, using the state or country written after a comma."""
     name = str(request.get("place") or "").strip()
     if request.get("latitude") not in (None, "") and request.get("longitude") not in (None, ""):
         lat, lon = float(request["latitude"]), float(request["longitude"])
-        return PlaceInput(name=name or f"{lat:.4f}, {lon:.4f}", latitude=lat, longitude=lon), {
-            "name": name or "Coordinates",
-            "latitude": lat,
-            "longitude": lon,
-            "matched": "coordinates as entered",
-            "alternatives": [],
-        }
-    matches = search_places(name, limit=5) if name else []
-    if not matches and "," in name:
-        matches = search_places(name.split(",")[0].strip(), limit=5)
-    if not matches:
-        raise ValueError(
-            f'no place called "{name}" was found; enter latitude and longitude instead'
+        label = name or f"{lat:.4f}, {lon:.4f}"
+        return PlaceInput(name=label, latitude=lat, longitude=lon), _place_out(
+            label, lat, lon, matched="coordinates as entered", source="coordinates as entered"
         )
-    wanted = name.split(",")[0].strip().lower()
-    best = next((p for p in matches if p.name.lower() == wanted), matches[0])
-    alternatives = [
-        f"{p.name} ({p.country_code}, {p.latitude:.3f}, {p.longitude:.3f})"
-        for p in matches
-        if p is not best
+    pasted = parse_coordinates(name)
+    if pasted is not None:
+        lat, lon = pasted
+        label = f"{lat:.5f}, {lon:.5f}"
+        return PlaceInput(name=label, latitude=lat, longitude=lon), _place_out(
+            label, lat, lon, matched="coordinates as entered", source="coordinates as entered"
+        )
+    if not name:
+        raise ValueError("enter a place name or its coordinates")
+    found = find_place(name)
+    alternatives = [f"{p.label} ({p.latitude:.4f}, {p.longitude:.4f})" for p in found.alternatives]
+    place = PlaceInput(name=found.label, latitude=found.latitude, longitude=found.longitude)
+    return place, _place_out(
+        found.label,
+        found.latitude,
+        found.longitude,
+        matched=found.how,
+        alternatives=alternatives,
+        ambiguous=found.ambiguous,
+        source="GeoNames town centre",
+    )
+
+
+def transits_ahead(chart: ChartResult, today: date, years: int = 10) -> list[dict[str, Any]]:
+    """Where Saturn, Jupiter and Rahu travel over the coming years, counted from the
+    natal Moon and the rising sign, for questions about future years."""
+    start = datetime_to_jd(datetime(today.year, today.month, today.day, tzinfo=UTC))
+    end = min(start + years * 365.25, chart.ephemeris.jd_end - 2.0)
+    moon = next(int(g.sign) for g in chart.grahas if g.body is Body.MOON)
+    lagna = int(chart.ascendant.sign)
+    out = []
+    for body in (Body.SATURN, Body.JUPITER, Body.RAHU):
+        for stay in sign_timeline(body, start, end, chart.settings):
+            out.append(
+                {
+                    "body": body.value.title(),
+                    "sign": SIGN_NAMES[stay.sign],
+                    "from": jd_to_datetime(stay.start_jd_ut).strftime("%Y-%m-%d"),
+                    "until": jd_to_datetime(stay.end_jd_ut).strftime("%Y-%m-%d"),
+                    "house_from_moon": (stay.sign - moon) % 12 + 1,
+                    "house_from_lagna": (stay.sign - lagna) % 12 + 1,
+                }
+            )
+    return out
+
+
+def rectify_report(request: dict[str, Any]) -> dict[str, Any]:
+    """Candidate birth times that fit the person's dated life events best."""
+    place, place_out = resolve_place(request)
+    clock = str(request["time"]).strip()
+    local = datetime.fromisoformat(
+        f"{request['date']}T{clock if clock.count(':') == 2 else clock + ':00'}"
+    )
+    birth = BirthInput(local_datetime=local, place=place)
+    gender = request.get("gender") if request.get("gender") in ("male", "female") else None
+    chart = compute_chart(birth, preset(Preset.INDIAN_SOFTWARE))
+    events = [
+        LifeEvent(EventKind(str(e["kind"])), date.fromisoformat(str(e["date"])))
+        for e in request.get("events") or []
+        if str(e.get("kind")) in {k.value for k in EventKind}
     ]
-    place = PlaceInput(name=best.name, latitude=best.latitude, longitude=best.longitude)
-    return place, {
-        "name": f"{best.name}, {best.country_code}",
-        "latitude": best.latitude,
-        "longitude": best.longitude,
-        "matched": f'best match for "{name}" (population {best.population:,})',
-        "alternatives": alternatives,
+    window = float(request.get("uncertainty_minutes") or 60)
+    result = rectify(
+        chart,
+        events,
+        uncertainty_minutes=min(max(window, 5.0), 180.0),
+        step_seconds=30.0,
+        gender=gender,
+    )
+    candidates = []
+    for c in result.candidates:
+        candidates.append(
+            {
+                "time": c.local_time.strftime("%H:%M:%S"),
+                "clock": c.local_time.strftime("%-I:%M %p"),
+                "offset_minutes": round(c.offset_minutes, 1),
+                "share": round(c.share, 3),
+                "lagna": f"{SIGN_NAMES[int(c.lagna)]} {dms(c.lagna_degrees)}",
+                "navamsa_lagna": SIGN_NAMES[int(c.navamsa_lagna)],
+                "moon": f"{c.moon_nakshatra} pada {c.moon_pada}",
+                "events": [
+                    {
+                        "kind": ev.kind,
+                        "date": ev.date.isoformat(),
+                        "score": round(ev.score, 2),
+                        "dasha": " / ".join(b.value.title() for b in ev.dasha[:3]),
+                    }
+                    for ev in c.events
+                ],
+            }
+        )
+    best = candidates[0] if candidates else None
+    recorded = local.strftime("%-I:%M %p")
+    if best is None:
+        summary = "No candidate time could be scored; add more events."
+    elif abs(best["offset_minutes"]) < 1:
+        summary = (
+            f"Your recorded time ({recorded}) fits your life events best; there is no reason "
+            "from these events to change it."
+        )
+    else:
+        direction = "earlier" if best["offset_minutes"] < 0 else "later"
+        summary = (
+            f"Your life events fit best with a birth at {best['clock']}, "
+            f"{int(abs(best['offset_minutes']) + 0.5)} minutes {direction} than recorded "
+            f"({recorded}), "
+            f"with {best['share'] * 100:.0f}% of the weight among the candidates. Treat it as a "
+            "suggestion: more events, especially exact dates, make it firmer."
+        )
+    return {
+        "recorded": local.strftime("%H:%M:%S"),
+        "window_minutes": result.uncertainty_minutes,
+        "summary": summary,
+        "candidates": candidates,
+        "differences": result.differences,
+        "notes": result.notes,
+        "events_used": len(events),
+        "place": place_out["name"],
     }
+
+
+def place_note(place_out: dict[str, Any], factors: list[Any]) -> str:
+    """How much the birthplace's precision matters for this chart, in plain words."""
+    per_km = seconds_per_km(float(place_out["latitude"]))
+    lagna = next((f for f in factors if f.name == "Lagna"), None)
+    margin = (
+        min(lagna.minutes_before, lagna.minutes_after)
+        if lagna and lagna.minutes_before is not None and lagna.minutes_after is not None
+        else None
+    )
+    text = (
+        f"Each kilometre east or west of these coordinates moves the chart by about "
+        f"{per_km:.1f} seconds of clock time, so 10 km is about {10 * per_km:.0f} seconds."
+    )
+    if margin is not None:
+        text += (
+            f" Your rising sign holds for {margin:.0f} minutes either way, so a town-centre "
+            "position is precise enough unless the birthplace is a different town."
+        )
+    if place_out.get("source") == "GeoNames town centre":
+        text += (
+            " The coordinates are the town centre from GeoNames; map services may show a "
+            "point a kilometre or so away, which makes no practical difference."
+        )
+    return text
 
 
 def birth_panchanga(chart: ChartResult, zone: ZoneInfo) -> dict[str, str]:
@@ -171,7 +322,7 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
         uncertainty_minutes=float(uncertainty) if uncertainty not in (None, "") else None,
     )
     gender = request.get("gender") if request.get("gender") in ("male", "female") else None
-    chart = compute_chart(birth, Settings())
+    chart = compute_chart(birth, preset(Preset.INDIAN_SOFTWARE))
     zone = ZoneInfo(chart.time.zone) if chart.time.zone else ZoneInfo("UTC")
 
     def local_date(value: datetime) -> str:
@@ -218,6 +369,7 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     return {
         "life": life.model_dump(mode="json"),
         "time_note": time_note(sensitivity.factors),
+        "transits_ahead": transits_ahead(chart, today),
         "input": {
             k: request.get(k)
             for k in (
@@ -232,9 +384,14 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
                 "uncertainty_minutes",
             )
         },
-        "place": {**place_out, "zone": chart.time.zone},
+        "place": {
+            **place_out,
+            "zone": chart.time.zone,
+            "note": place_note(place_out, sensitivity.factors),
+        },
         "time": {
             "local": local.strftime("%Y-%m-%d %H:%M:%S"),
+            "clock": local.strftime("%-I:%M %p on %A, %-d %B %Y"),
             "utc": interpretation.utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
             "standard": interpretation.label,
             "utc_offset_hours": round(interpretation.utc_offset_seconds / 3600, 4),
@@ -246,9 +403,10 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
             ],
         },
         "settings": (
-            f"{chart.ayanamsa.label} ayanamsa {dms(chart.ayanamsa.true)}, true nodes, "
-            "whole-sign houses, Vimshottari with the "
-            f"{chart.dashas.year.value.replace('_', ' ')} year"
+            f"{chart.ayanamsa.label} ayanamsa {dms(chart.ayanamsa.true)}, "
+            f"{chart.settings.node_type.value} nodes, whole-sign houses, Vimshottari with the "
+            f"{YEAR_WORDS.get(chart.dashas.year.value, chart.dashas.year.value)} year "
+            "(as in most Indian software)"
         ),
         "engine": {"version": chart.engine_version, "ephemeris": chart.ephemeris.name},
         "lagna": {
@@ -297,6 +455,17 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
                 }
                 for p in table.periods
                 if len(p.lords) == 2 and current_md is not None and p.lords[0] == current_md
+            ],
+            "all_antardashas": [
+                {
+                    "lords": " / ".join(str(b.value).title() for b in p.lords),
+                    "start": local_date(p.start),
+                    "end": local_date(p.end),
+                }
+                for p in table.periods
+                if len(p.lords) == 2
+                and p.end.date() > chart.birth.local_datetime.date()
+                and p.start.date() < date(chart.birth.local_datetime.year + 95, 1, 1)
             ],
             "running": [
                 {
@@ -355,13 +524,14 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) > 1:
-        with open(argv[1], encoding="utf-8") as handle:
+    paths = [a for a in argv[1:] if not a.startswith("--")]
+    if paths:
+        with open(paths[0], encoding="utf-8") as handle:
             request = json.load(handle)
     else:
         request = json.load(sys.stdin)
     try:
-        out = report(request)
+        out = rectify_report(request) if "--rectify" in argv else report(request)
     except ValueError as error:  # the input's fault: say what to fix
         out = {"error": str(error), "input": request}
     json.dump(out, sys.stdout, ensure_ascii=False)

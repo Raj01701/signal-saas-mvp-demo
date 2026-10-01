@@ -15,6 +15,7 @@ export interface BirthValue {
 
 export const PRESETS: { value: Preset; label: string }[] = [
   { value: "classic_parashari", label: "Classic Parashari (Lahiri, true nodes)" },
+  { value: "indian_software", label: "Indian software (Lahiri, mean Rahu, 365.25-day year)" },
   { value: "drik_compatible", label: "Drik Panchang compatible" },
   { value: "kp", label: "KP (Krishnamurti, Placidus)" },
   { value: "pvr_jhora_style", label: "PVR / JHora style (True Pushya)" },
