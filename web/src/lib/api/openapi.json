@@ -2227,6 +2227,16 @@
             "title": "Later",
             "type": "array"
           },
+          "marriage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReadingSectionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "name": {
             "anyOf": [
               {
@@ -2257,6 +2267,14 @@
           },
           "present": {
             "$ref": "#/components/schemas/ReadingSectionOut"
+          },
+          "remedies": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RemedyOut"
+            },
+            "title": "Remedies",
+            "type": "array"
           },
           "summary": {
             "items": {
@@ -4376,6 +4394,46 @@
           "events"
         ],
         "title": "RectifyRequest",
+        "type": "object"
+      },
+      "RemedyOut": {
+        "description": "A traditional remedy chosen for the chart: why, and what to do.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "planets": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Body"
+            },
+            "title": "Planets",
+            "type": "array"
+          },
+          "practices": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Practices",
+            "type": "array"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "reason",
+          "practices"
+        ],
+        "title": "RemedyOut",
         "type": "object"
       },
       "ReminderIn": {

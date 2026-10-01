@@ -633,6 +633,15 @@ MOMENTS: dict[Domain, tuple[Moment, ...]] = {
             "restlessness and a search for meaning",
         ),
     ),
+    Domain.HEALTH: (
+        Moment(
+            0,
+            None,
+            "good energy and well-being",
+            "a time to keep a steady routine for your health",
+            "a time to slow down and look after your health: rest, routine and timely check-ups",
+        ),
+    ),
     Domain.TRAVEL: (
         Moment(
             0,
@@ -662,9 +671,15 @@ AREA_NAMES: dict[Domain, str] = {
     Domain.PARENTS: "parents and family",
     Domain.SPIRITUALITY: "inner life",
     Domain.TRAVEL: "travel and moves",
+    Domain.HEALTH: "health",
 }
 #: A year's title from its leading life area and tenor.
 YEAR_TITLES: dict[Domain, dict[Tone, str]] = {
+    Domain.HEALTH: {
+        "good": "a year of good energy",
+        "mixed": "a year to keep a steady routine",
+        "hard": "a year to look after your health",
+    },
     Domain.CAREER: {
         "good": "progress at work",
         "mixed": "changes at work",

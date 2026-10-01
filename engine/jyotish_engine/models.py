@@ -902,6 +902,17 @@ class ReadingSectionOut(BaseModel):
     basis: list[str] = []
 
 
+class RemedyOut(BaseModel):
+    """A traditional remedy chosen for the chart: why, and what to do."""
+
+    key: str
+    title: str
+    reason: str
+    practices: list[str]
+    #: The planets the remedy strengthens.
+    planets: list[Body] = []
+
+
 class LifeMomentOut(BaseModel):
     """A stretch of time when one area of life is especially active."""
 
@@ -967,6 +978,10 @@ class LifeReadingOut(BaseModel):
     later: list[StoryChapterOut]
     #: Career, money, marriage and the other areas that suit the person's age.
     areas: list[ReadingSectionOut]
-    #: Manglik, Sade Sati, Kala Sarpa, favourable things and remedies.
+    #: Marriage and the spouse, for readers 18 and over.
+    marriage: ReadingSectionOut | None = None
+    #: Manglik, Sade Sati, Kala Sarpa and favourable things.
     good_to_know: list[ReadingSectionOut]
+    #: Traditional remedies chosen for the chart, last.
+    remedies: list[RemedyOut] = []
     notes: list[str]

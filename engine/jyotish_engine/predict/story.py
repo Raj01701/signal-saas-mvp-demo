@@ -47,7 +47,7 @@ from jyotish_engine.models import (
     YearOutlookOut,
     YogasOut,
 )
-from jyotish_engine.predict import words
+from jyotish_engine.predict import topics, words
 from jyotish_engine.predict.promise import functional_tone
 from jyotish_engine.predict.timeline import compute_predictions
 from jyotish_engine.predict.voice import (
@@ -124,7 +124,7 @@ NOTES = [
     "The past is the best test. If the dates under 'Your life so far' match your life, the "
     "rest of the reading is more likely to fit you; if several are off by a year or more, "
     "the birth time may need checking.",
-    "Health is not read here; for any health question, please see a doctor.",
+    "Health is read only as traditional tendencies; for any health concern, please see a doctor.",
     "Readings that depend on the rising sign change if the birth time is off by more than a "
     "few minutes.",
 ]
@@ -300,7 +300,7 @@ def _strongest(
     return sorted(chosen, key=lambda e: e.start)
 
 
-class _Reader:
+class Reader:
     """Everything one reading needs, gathered once."""
 
     def __init__(
@@ -359,6 +359,20 @@ class _Reader:
         self.sade_sati = self._sade_sati()
 
     # -- chart facts in words --------------------------------------------------------
+
+    def promise(self, domain: Domain) -> float:
+        return next(t.promise.score for t in self.life.domains if t.domain is domain)
+
+    def level(self, domain: Domain) -> words.Level:
+        return _level(self.promise(domain))
+
+    @staticmethod
+    def level_tone(level: words.Level) -> Tone:
+        return {"strong": "good", "good": "good", "average": "mixed", "effort": "hard"}[level]  # type: ignore[return-value]
+
+    @staticmethod
+    def day(jd: float) -> date:
+        return _day(jd)
 
     def marriage_age(self, day: date) -> float:
         """Age on ``day`` as marriage is read (two years on for women)."""
@@ -549,7 +563,11 @@ class _Reader:
             paragraphs.append(" ".join([opening, feel, link, self.verdict(lord, tense)]))
         if kind != "later":
             upto = min(end, self.today)
-            inside = [e for e in self.episodes if start <= e.start < upto and e.end <= self.today]
+            inside = [
+                e
+                for e in self.episodes
+                if start <= e.start < upto and e.end <= self.today and e.domain is not Domain.HEALTH
+            ]
             picked = _strongest([e for e in inside if self.told(e)], CHAPTER_MOMENTS)
             moments = self.moments(picked, "past")
             if moments:
@@ -630,12 +648,10 @@ class _Reader:
         coming = self.coming_months()
         if coming:
             paragraphs.append(" ".join(coming))
-        helps = f"What helps now: {_lower_first(words.REMEDIES[lord])}"
-        if sub is not lord and self.standing(sub) != "good":
-            helps += (
-                f" During the {_planet(sub)} sub-period, also {_lower_first(words.REMEDIES[sub])}"
-            )
-        paragraphs.append(helps)
+        paragraphs.append(
+            f"What helps now: {_lower_first(words.REMEDIES[lord])} The remedies at the end "
+            "list practices chosen for your chart."
+        )
         return ReadingSectionOut(
             key="present",
             title="Where you stand now",
@@ -845,17 +861,7 @@ class _Reader:
         lagna = Sign(facts.lagna_sign)
         moon = Sign(self.moon_sign)
         star = self.chart_moon_nakshatra()
-        paragraphs = [
-            words.RISING[lagna][1],
-            f"{words.MOON_SIGN[moon][1]} {words.NAKSHATRA_NATURE[star]}",
-        ]
-        ruler = facts.lord(1)
-        house = facts.house(ruler)
-        paragraphs.append(
-            f"{_planet(ruler)}, the planet that rules your rising sign, sits in the part of your "
-            f"chart that stands for {area_words(house, self.age)}: "
-            f"{words.CHART_RULER_IN_HOUSE[house]}."
-        )
+        _, paragraphs = topics.portrait(self)
         gifts = []
         yogas = {y.id for y in self.yogas.present}
         for body in SEVEN:
@@ -873,13 +879,14 @@ class _Reader:
         gifts += self.yoga_words()[: max(0, 4 - len(gifts[:2]))]
         if gifts:
             paragraphs.append(" ".join(gifts[:4]))
+        ruler = facts.lord(1)
         return ReadingSectionOut(
             key="nature",
             title="Who you are",
             paragraphs=paragraphs,
             basis=[
                 f"Lagna {lagna.name.title()}; Moon {moon.name.title()} in nakshatra {star + 1}",
-                f"Lagna lord {_planet(ruler)} in house {house}",
+                f"Lagna lord {_planet(ruler)} in house {facts.house(ruler)}",
             ],
         )
 
@@ -903,72 +910,39 @@ class _Reader:
         return out
 
     def areas_section(self) -> list[ReadingSectionOut]:
-        out = []
-        for domain, title in words.AREA_TITLES.items():
-            low, high = AREA_AGES[domain]
-            if self.age < low or (high is not None and self.age >= high):
-                continue
-            timeline = next(t for t in self.life.domains if t.domain is domain)
-            level = _level(timeline.promise.score)
-            young = words.AREA_PROMISE_YOUNG.get(domain) if self.age < 18 else None
-            paragraphs = [(young or words.AREA_PROMISE[domain])[level]]
-            extra = self.area_detail(domain)
-            if extra:
-                paragraphs[0] += " " + extra
-            timing = self.area_timing(domain)
-            if timing:
-                paragraphs.append(timing)
-            out.append(
-                ReadingSectionOut(
-                    key=domain.value,
-                    title=title,
-                    paragraphs=paragraphs,
-                    tone={"strong": "good", "good": "good", "average": "mixed", "effort": "hard"}[
-                        _level(timeline.promise.score)
-                    ],
-                    basis=[f"{domain.value} promise {timeline.promise.score:.2f}"],
-                )
-            )
-        if self.age < 14:
-            fields = self.career_fields()
-            out.append(
-                ReadingSectionOut(
-                    key="talents",
-                    title="Talents and future work",
-                    paragraphs=[
-                        f"When it is time to choose a direction, fields that suit this chart "
-                        f"include {fields}. Encourage the interests that come naturally; the "
-                        "chart only shows tendencies."
-                    ],
-                )
-            )
-        return out
+        """Career, money, home, children, studies, foreign travel, health and inner life, as
+        suit the age. Marriage has its own section."""
+        out = [topics.career(self)]
+        for domain in (Domain.WEALTH, Domain.PROPERTY, Domain.CHILDREN, Domain.EDUCATION):
+            card = self.area_card(domain)
+            if card is not None:
+                out.append(card)
+        out += [topics.foreign(self), topics.health(self)]
+        card = self.area_card(Domain.SPIRITUALITY)
+        return out + ([card] if card is not None else [])
 
-    def career_fields(self) -> str:
-        facts = self.facts
-        planets = [facts.lord(10), *facts.occupants(10)]
-        strong = [b for b in SEVEN if facts.exalted(b) or facts.own_sign(b)]
-        ordered = list(dict.fromkeys([*planets, *strong]))[:2]
-        return ", and also ".join(words.CAREER_FIELDS[b] for b in ordered)
-
-    def area_detail(self, domain: Domain) -> str:
-        facts = self.facts
-        if domain is Domain.CAREER:
-            return f"Fields that tend to suit you: {self.career_fields()}."
-        if domain is Domain.MARRIAGE:
-            sign = Sign(facts.sign_of_house(7))
-            text = f"The chart describes a partner who is {words.PARTNER[sign]}."
-            status = self.manglik()[0]
-            if status == "Yes":
-                text += (
-                    " Mars is placed so that you are Manglik, which is checked when matching "
-                    "charts for marriage (see 'Good to know')."
-                )
-            return text
+    def area_card(self, domain: Domain) -> ReadingSectionOut | None:
+        low, high = AREA_AGES[domain]
+        if self.age < low or (high is not None and self.age >= high):
+            return None
+        level = self.level(domain)
+        young = words.AREA_PROMISE_YOUNG.get(domain) if self.age < 18 else None
+        paragraphs = [(young or words.AREA_PROMISE[domain])[level]]
         if domain is Domain.WEALTH:
-            house = facts.house(facts.lord(11))
-            return f"Your gains tend to come through {area_words(house, max(self.age, 25))}."
-        return ""
+            house = self.facts.house(self.facts.lord(11))
+            paragraphs[0] += (
+                f" Your gains tend to come through {area_words(house, max(self.age, 25))}."
+            )
+        timing = self.area_timing(domain)
+        if timing:
+            paragraphs.append(timing)
+        return ReadingSectionOut(
+            key=domain.value,
+            title=words.AREA_TITLES[domain],
+            paragraphs=paragraphs,
+            tone=self.level_tone(level),
+            basis=[f"{domain.value} promise {self.promise(domain):.2f}"],
+        )
 
     def area_timing(self, domain: Domain) -> str:
         parts = []
@@ -1053,18 +1027,6 @@ class _Reader:
                 ],
             )
         )
-        lord = self.dashas.at(self.today, 1).lords[0]
-        out.append(
-            ReadingSectionOut(
-                key="remedies",
-                title=f"Simple remedies for the {_planet(lord)} period",
-                paragraphs=[
-                    words.REMEDIES[lord],
-                    "These are traditional practices that many people find steadying. They "
-                    "cost nothing, and they work best alongside practical steps.",
-                ],
-            )
-        )
         return out
 
     def sade_sati_section(self) -> ReadingSectionOut:
@@ -1145,11 +1107,7 @@ class _Reader:
         md = self.dashas.at(self.today, 1)
         ad = self.dashas.at(self.today, 2)
         lord, sub = md.lords[0], ad.lords[-1]
-        who = self.name or "You"
-        lines = [
-            f"{who}{',' if self.name else ''} {'you are' if self.name else 'are'} "
-            f"{words.RISING[nature_lagna][0]}, with {words.MOON_SIGN[moon][0]}."
-        ]
+        lines, _ = topics.portrait(self)
         now = (
             f"Right now you are in the {_planet(lord)} period "
             f"({max(md.start.date(), self.birth).year}–{md.end.year}), {words.PERIOD_GIST[lord]}"
@@ -1350,7 +1308,7 @@ def life_reading(
 ) -> LifeReadingOut:
     """Who you are, your life so far, where you stand now and the years ahead."""
     today = today or datetime.now(UTC).date()
-    reader = _Reader(chart, today, gender, name, years_ahead)
+    reader = Reader(chart, today, gender, name, years_ahead)
     mahadashas = reader.dashas.levels[1]
     past = [
         reader.chapter(p, "past")
@@ -1374,6 +1332,8 @@ def life_reading(
         future=reader.future(),
         later=later,
         areas=reader.areas_section(),
+        marriage=topics.marriage(reader),
         good_to_know=reader.good_to_know(),
+        remedies=topics.remedies(reader),
         notes=NOTES,
     )

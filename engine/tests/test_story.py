@@ -35,6 +35,8 @@ JARGON = re.compile(
     r"mahadasha|antardasha|\b\d+(?:st|nd|rd|th) (?:house|lord|from)\b",
     re.IGNORECASE,
 )
+#: Names of deities in the remedies, which use "Lord" as a title.
+DEITIES = re.compile(r"\bLord (?:Vishnu|Shiva|Ganesha)\b")
 SENSITIVE = re.compile(
     r"\bdeath\b|\bdie[sd]?\b|\bdying\b|illness|disease|surgery|accident|divorce|widow|"
     r"mrityu|maraka|longevity|\bhospital\b|\bfatal",
@@ -66,13 +68,21 @@ def child() -> LifeReadingOut:
 
 
 def _texts(r: LifeReadingOut) -> list[str]:
-    sections = [r.nature, r.present, *r.areas, *r.good_to_know]
+    sections = [
+        r.nature,
+        r.present,
+        *r.areas,
+        *r.good_to_know,
+        *([r.marriage] if r.marriage else []),
+    ]
     texts = list(r.summary) + [f"{g.label} {g.value} {g.note}" for g in r.glance]
     texts += [s.title for s in sections] + [p for s in sections for p in s.paragraphs]
     for chapter in r.past + r.later:
         texts += [chapter.title, *chapter.paragraphs, *(m.text for m in chapter.moments)]
     for year in r.future:
         texts += [year.title, *year.paragraphs]
+    for remedy in r.remedies:
+        texts += [remedy.title, remedy.reason, *remedy.practices]
     return texts + [m.text for m in r.checks] + r.notes
 
 
@@ -80,7 +90,7 @@ def test_the_reading_is_plain_and_leaves_out_sensitive_matters(
     reading: LifeReadingOut, child: LifeReadingOut
 ) -> None:
     for text in _texts(reading) + _texts(child):
-        assert not JARGON.search(text), text
+        assert not JARGON.search(DEITIES.sub("", text)), text
         assert not SENSITIVE.search(text), text
         assert "  " not in text and " ." not in text and "::" not in text, text
 
@@ -114,7 +124,9 @@ def test_moments_suit_the_age_they_fall_in(reading: LifeReadingOut) -> None:
             assert age >= 25
         if moment.domain in (Domain.CAREER, Domain.WEALTH):
             assert age >= 18
-        assert moment.domain is not Domain.HEALTH
+    for chapter in reading.past:
+        assert all(m.domain is not Domain.HEALTH for m in chapter.moments)
+    assert all(m.domain is not Domain.HEALTH for m in reading.checks)
     for chapter in reading.past:
         last_age = age_at(birth, chapter.end) - 1
         if last_age < 21:
@@ -133,7 +145,10 @@ def test_a_child_reads_nothing_grown_up(child: LifeReadingOut) -> None:
         assert not GROWN_UP.search(text), text
     assert all(s.key != "manglik" for s in child.good_to_know)
     assert all(g.label != "Manglik" for g in child.glance)
-    assert {s.key for s in child.areas} <= {"education", "travel", "talents"}
+    assert {s.key for s in child.areas} <= {"education", "foreign", "health", "talents"}
+    assert child.marriage is None
+    assert all(r.key != "mangal-dosha" for r in child.remedies)
+    assert "on the child's behalf" in child.remedies[0].reason
     assert not child.checks
     assert "child's chart" in " ".join(child.summary)
 
@@ -152,12 +167,13 @@ def test_present_and_future(reading: LifeReadingOut) -> None:
     assert "sub-period" in reading.present.paragraphs[1]
     assert reading.present.paragraphs[-1].startswith("What helps now: ")
     assert [y.year for y in reading.future] == [2026, 2027, 2028, 2029, 2030]
-    assert {s.key for s in reading.good_to_know} >= {"manglik", "sade_sati", "lucky", "remedies"}
+    assert {s.key for s in reading.good_to_know} >= {"manglik", "sade_sati", "lucky"}
 
 
 def test_areas_follow_the_age(reading: LifeReadingOut) -> None:
     keys = [s.key for s in reading.areas]
-    assert keys[:4] == ["career", "wealth", "marriage", "children"]
+    assert keys[:4] == ["career", "wealth", "property", "children"]
+    assert {"foreign", "health"} <= set(keys) and "marriage" not in keys
     assert "education" not in keys  # read until 30
 
 
@@ -183,13 +199,74 @@ def test_the_words_cover_every_case() -> None:
     for house in range(1, 13):
         assert set(words.HOUSE_AREAS[house]) == {"young", "adult", "senior"}
         assert words.CHART_RULER_IN_HOUSE[house]
-    for domain, bands in words.MOMENTS.items():
-        assert domain is not Domain.HEALTH
+    for bands in words.MOMENTS.values():
         for before, after in pairwise(bands):
             assert before.until_age == after.from_age
         for band in bands:
             assert band.good and all(t is None or t.strip() for t in (band.mixed, band.hard))
     assert set(words.YEAR_TITLES) == set(words.MOMENTS)
+
+
+def test_the_brief_is_about_this_person(reading: LifeReadingOut, child: LifeReadingOut) -> None:
+    for r in (reading, child):
+        first = r.summary[0]
+        assert first.count(". ") >= 1, first  # the sign portrait, then what sets this chart apart
+    assert reading.summary[0] != child.summary[0]
+    assert (
+        reading.nature.paragraphs[2].startswith(tuple(p.value.title() for p in GRAHAS))
+        and "You shine most" in reading.nature.paragraphs[2]
+    )
+
+
+def test_career_fields_come_from_the_chart(chart: ChartResult, reading: LifeReadingOut) -> None:
+    from jyotish_engine.predict import lore
+
+    career = reading.areas[0]
+    fields = next(p for p in career.paragraphs if p.startswith("Fields that suit you best: "))
+    named = [f for f in lore.FIELDS if f in fields]
+    assert 3 <= len(named) <= 5
+    assert "Your house of career falls in" in " ".join(career.paragraphs)
+    other = life_reading(_chart(datetime(1988, 1, 25, 15, 15)), TODAY, gender="female")
+    other_fields = next(p for p in other.areas[0].paragraphs if p.startswith("Fields that suit"))
+    assert other_fields != fields
+
+
+def test_foreign_travel_and_settlement(reading: LifeReadingOut) -> None:
+    card = next(a for a in reading.areas if a.key == "foreign")
+    assert card.title == "Foreign travel and settlement"
+    assert card.paragraphs[0].startswith("Foreign travel ")
+    assert any(w in card.paragraphs[1] for w in ("Settling abroad", "close to your roots"))
+
+
+def test_health_is_read_as_tendencies(reading: LifeReadingOut, child: LifeReadingOut) -> None:
+    from jyotish_engine.predict import lore
+
+    for r in (reading, child):
+        card = next(a for a in r.areas if a.key == "health")
+        assert card.paragraphs[-1] == lore.HEALTH_NOTE
+        assert "By tradition" in " ".join(card.paragraphs)
+
+
+def test_marriage_and_spouse(reading: LifeReadingOut) -> None:
+    section = reading.marriage
+    assert section is not None and section.title == "Marriage and spouse"
+    text = " ".join(section.paragraphs)
+    assert "The chart describes a partner who is" in text
+    assert "You are likely to meet your partner" in text
+    assert ("love marriage" in text) != ("arranged" in text)
+
+
+def test_remedies_close_the_reading(reading: LifeReadingOut) -> None:
+    keys = [r.key for r in reading.remedies]
+    assert keys[0] == "period" and keys[-2:] == ["gemstones", "daily"]
+    assert len(keys) == len(set(keys)) >= 3
+    sade_sati = next(s for s in reading.good_to_know if s.key == "sade_sati")
+    if sade_sati.title == "Sade Sati: running now":
+        assert "sade-sati" in keys
+    for remedy in reading.remedies:
+        assert remedy.reason and remedy.practices
+    period = reading.remedies[0]
+    assert period.planets and all(" 108 times" in p for p in period.practices[:1])
 
 
 def test_the_reader_is_addressed_by_first_name() -> None:

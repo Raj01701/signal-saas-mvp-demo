@@ -1374,6 +1374,7 @@ export interface components {
             good_to_know: components["schemas"]["ReadingSectionOut"][];
             /** Later */
             later: components["schemas"]["StoryChapterOut"][];
+            marriage?: components["schemas"]["ReadingSectionOut"] | null;
             /** Name */
             name?: string | null;
             nature: components["schemas"]["ReadingSectionOut"];
@@ -1382,6 +1383,11 @@ export interface components {
             /** Past */
             past: components["schemas"]["StoryChapterOut"][];
             present: components["schemas"]["ReadingSectionOut"];
+            /**
+             * Remedies
+             * @default []
+             */
+            remedies?: components["schemas"]["RemedyOut"][];
             /** Summary */
             summary: string[];
             /**
@@ -2158,6 +2164,25 @@ export interface components {
              * @default 60
              */
             uncertainty_minutes?: number;
+        };
+        /**
+         * RemedyOut
+         * @description A traditional remedy chosen for the chart: why, and what to do.
+         */
+        RemedyOut: {
+            /** Key */
+            key: string;
+            /**
+             * Planets
+             * @default []
+             */
+            planets?: components["schemas"]["Body"][];
+            /** Practices */
+            practices: string[];
+            /** Reason */
+            reason: string;
+            /** Title */
+            title: string;
         };
         /** ReminderIn */
         ReminderIn: {
