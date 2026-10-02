@@ -1,0 +1,257 @@
+# Doshas (afflictions) in common use. Kuja dosha is a long-standing marriage-matching
+# tradition; the node conjunctions below are modern and are labelled as such.
+defaults:
+  category: dosha
+  school: parashari
+  provenance: modern
+
+rules:
+  - id: dosha.kuja_lagna
+    name: Kuja Dosha (from the lagna)
+    aliases: [Mangal Dosha, Manglik]
+    provenance: traditional
+    description: >-
+      Mars occupies the 1st, 2nd, 4th, 7th, 8th or 12th house from the lagna. It is
+      cancelled by the commonly accepted exceptions listed in the notes.
+    when: house(mars) in [1, 2, 4, 7, 8, 12]
+    cancel_when: >-
+      own_sign(mars) or exalted(mars) or sign(mars) in [leo, aquarius]
+      or (house(mars) == 2 and sign(mars) in [gemini, virgo])
+      or (house(mars) == 7 and sign(mars) == cancer)
+      or (house(mars) == 8 and sign(mars) in [sagittarius, pisces])
+      or (house(mars) == 12 and sign(mars) in [taurus, libra])
+      or influences(jupiter, mars)
+    participants: "[mars]"
+    notes: >-
+      Houses and exceptions vary by region; the 2nd house is counted as in South
+      Indian practice. Encoded exceptions: Mars in its own or exaltation sign, in Leo
+      or Aquarius, in the 2nd in Gemini or Virgo, in the 7th in Cancer, in the 8th in
+      Sagittarius or Pisces, in the 12th in Taurus or Libra, or joined or aspected by
+      Jupiter. Matching the two partners' charts belongs to the matchmaking module.
+    effects:
+      domains: [marriage]
+      polarity: negative
+      strength: moderate
+      summary: >-
+        Friction, delays or strain in marriage; in matching it is traditionally offset
+        by a similar placement in the partner's chart.
+    sources:
+      - {text: popular_practice, locator: Kuja (Mangal) dosha in marriage matching, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: libra, jupiter: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, mars: gemini, rest: leo}
+      cancelled:
+        - {lagna: cancer, mars: capricorn, rest: gemini}
+        - {lagna: aries, mars: libra, jupiter: aries, rest: gemini}
+
+  - id: dosha.kuja_moon
+    name: Kuja Dosha (from the Moon)
+    provenance: traditional
+    description: >-
+      Mars occupies the 1st, 2nd, 4th, 7th, 8th or 12th house from the Moon, with the
+      same exceptions as from the lagna.
+    when: house(mars, moon) in [1, 2, 4, 7, 8, 12]
+    cancel_when: >-
+      own_sign(mars) or exalted(mars) or sign(mars) in [leo, aquarius]
+      or (house(mars, moon) == 2 and sign(mars) in [gemini, virgo])
+      or (house(mars, moon) == 7 and sign(mars) == cancer)
+      or (house(mars, moon) == 8 and sign(mars) in [sagittarius, pisces])
+      or (house(mars, moon) == 12 and sign(mars) in [taurus, libra])
+      or influences(jupiter, mars)
+    participants: "[mars, moon]"
+    effects:
+      domains: [marriage]
+      polarity: negative
+      strength: minor
+      summary: >-
+        Friction or strain in marriage, judged from the Moon; usually weighed with the
+        dosha from the lagna and from Venus.
+    sources:
+      - {text: popular_practice, locator: Kuja (Mangal) dosha in marriage matching, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: aries, mars: libra, jupiter: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, moon: aries, mars: gemini, rest: leo}
+      cancelled:
+        - {lagna: aries, moon: cancer, mars: capricorn, rest: gemini}
+
+  - id: dosha.kuja_venus
+    name: Kuja Dosha (from Venus)
+    provenance: traditional
+    description: >-
+      Mars occupies the 1st, 2nd, 4th, 7th, 8th or 12th house from Venus, with the same
+      exceptions as from the lagna.
+    when: house(mars, venus) in [1, 2, 4, 7, 8, 12]
+    cancel_when: >-
+      own_sign(mars) or exalted(mars) or sign(mars) in [leo, aquarius]
+      or (house(mars, venus) == 2 and sign(mars) in [gemini, virgo])
+      or (house(mars, venus) == 7 and sign(mars) == cancer)
+      or (house(mars, venus) == 8 and sign(mars) in [sagittarius, pisces])
+      or (house(mars, venus) == 12 and sign(mars) in [taurus, libra])
+      or influences(jupiter, mars)
+    participants: "[mars, venus]"
+    effects:
+      domains: [marriage]
+      polarity: negative
+      strength: minor
+      summary: >-
+        Friction or strain in marriage, judged from Venus; usually weighed with the
+        dosha from the lagna and from the Moon.
+    sources:
+      - {text: popular_practice, locator: Kuja (Mangal) dosha in marriage matching, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: aries, mars: libra, jupiter: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, venus: aries, mars: gemini, rest: leo}
+      cancelled:
+        - {lagna: aries, venus: cancer, mars: capricorn, rest: gemini}
+
+  - id: dosha.surya_grahana
+    name: Surya Grahana Dosha
+    description: The Sun occupies the same sign as Rahu or Ketu.
+    when: conjunct(sun, rahu) or conjunct(sun, ketu)
+    participants: "[sun, rahu, ketu]"
+    effects:
+      domains: [parents, self]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: strain with the father or authority figures and uneven
+        vitality.
+    sources:
+      - {text: popular_practice, locator: Grahana dosha, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, rahu: leo, rest: gemini}
+        - {lagna: aries, sun: aquarius, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, sun: virgo, rahu: leo, rest: gemini}
+
+  - id: dosha.chandra_grahana
+    name: Chandra Grahana Dosha
+    description: The Moon occupies the same sign as Rahu or Ketu.
+    when: conjunct(moon, rahu) or conjunct(moon, ketu)
+    participants: "[moon, rahu, ketu]"
+    effects:
+      domains: [character, parents]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: anxiety, emotional turbulence and strain with the mother.
+    sources:
+      - {text: popular_practice, locator: Grahana dosha, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: leo, rahu: leo, rest: gemini}
+        - {lagna: aries, moon: aquarius, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, moon: virgo, rahu: leo, rest: gemini}
+
+  - id: dosha.guru_chandala
+    name: Guru-Chandala Yoga
+    description: Jupiter occupies the same sign as Rahu or Ketu.
+    when: conjunct(jupiter, rahu) or conjunct(jupiter, ketu)
+    participants: "[jupiter, rahu, ketu]"
+    effects:
+      domains: [character, education]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: unorthodox or clouded judgement and friction with teachers
+        or tradition.
+    sources:
+      - {text: popular_practice, locator: Guru-Chandala yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: leo, rahu: leo, rest: gemini}
+        - {lagna: aries, jupiter: aquarius, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: virgo, rahu: leo, rest: gemini}
+
+  - id: dosha.shrapit
+    name: Shrapit Dosha
+    description: Saturn occupies the same sign as Rahu.
+    when: conjunct(saturn, rahu)
+    participants: "[saturn, rahu]"
+    effects:
+      domains: [fortune]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: delays and a sense of heavy obligations.
+    sources:
+      - {text: popular_practice, locator: Shrapit dosha, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, saturn: leo, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, saturn: aquarius, rahu: leo, rest: gemini}
+
+  - id: dosha.angaraka
+    name: Angaraka Yoga
+    description: Mars occupies the same sign as Rahu.
+    when: conjunct(mars, rahu)
+    participants: "[mars, rahu]"
+    effects:
+      domains: [character, conflict]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: anger, impulsiveness and proneness to accidents.
+    sources:
+      - {text: popular_practice, locator: Angaraka yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: leo, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, mars: aquarius, rahu: leo, rest: gemini}
+
+  - id: dosha.vish
+    name: Vish Yoga
+    aliases: [Punarphoo Yoga]
+    description: The Moon occupies the same sign as Saturn.
+    when: conjunct(moon, saturn)
+    participants: "[moon, saturn]"
+    effects:
+      domains: [character]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: melancholy, pessimism and emotional heaviness.
+    sources:
+      - {text: popular_practice, locator: Vish (Visha) yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: leo, saturn: leo, rest: gemini}
+      negative:
+        - {lagna: aries, moon: leo, saturn: virgo, rest: gemini}
+
+  - id: dosha.pitru
+    name: Pitru Dosha
+    description: >-
+      Rahu or Ketu occupies the 9th house, or the 9th lord occupies the same sign as
+      Rahu or Ketu.
+    when: >-
+      house(rahu) == 9 or house(ketu) == 9 or conjunct(lord(9), rahu)
+      or conjunct(lord(9), ketu)
+    participants: "[lord(9), rahu, ketu]"
+    notes: Definitions vary widely in modern practice; this is one common reading.
+    effects:
+      domains: [parents, fortune]
+      polarity: negative
+      strength: minor
+      summary: >-
+        In modern practice: obstacles attributed to ancestral karma and strain in the
+        father's line, addressed with rites for ancestors.
+    sources:
+      - {text: popular_practice, locator: Pitru dosha, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, rahu: sagittarius, rest: gemini}
+        - {lagna: aries, jupiter: leo, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, rahu: leo, rest: gemini}

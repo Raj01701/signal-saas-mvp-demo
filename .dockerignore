@@ -1,0 +1,12 @@
+**/.venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+web/.next
+web/test-results
+oracle
+data
+*.db
+.git

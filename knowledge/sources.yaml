@@ -1,0 +1,109 @@
+# Bibliography for knowledge-base citations. Rules reference entries by `id`, and
+# classical texts by `edition` too, because chapter numbering differs by edition.
+# Edition notes describe the book; a citation stays `verified: false` until someone
+# checks the chapter and verse against that edition.
+texts:
+  - id: bphs
+    title: Brihat Parashara Hora Shastra
+    attributed_to: Parashara
+    notes: Foundation of the Parashari system.
+    editions:
+      - id: santhanam
+        description: R. Santhanam (translator), Ranjan Publications, New Delhi, two volumes
+      - id: sharma
+        description: Girish Chand Sharma (translator), Sagar Publications, New Delhi, two volumes
+  - id: laghu_parashari
+    title: Laghu Parashari (Jataka Chandrika)
+    notes: Functional benefics/malefics and dasha results.
+    editions:
+      - id: raman
+        description: B.V. Raman (translator and commentator), Hindu Astrological Series
+  - id: brihat_jataka
+    title: Brihat Jataka
+    author: Varahamihira
+    editions:
+      - id: sastri
+        description: V. Subrahmanya Sastri (translator), with Bhattotpala's commentary
+  - id: saravali
+    title: Saravali
+    author: Kalyana Varma
+    editions:
+      - id: santhanam
+        description: R. Santhanam (translator), Ranjan Publications, New Delhi, two volumes
+  - id: phaladeepika
+    title: Phaladeepika
+    author: Mantreswara
+    editions:
+      - id: sastri
+        description: V. Subrahmanya Sastri (translator)
+      - id: kapoor
+        description: G.S. Kapoor (translator), Ranjan Publications, New Delhi
+  - id: jataka_parijata
+    title: Jataka Parijata
+    author: Vaidyanatha Dikshita
+    editions:
+      - id: sastri
+        description: V. Subrahmanya Sastri (translator), three volumes
+  - id: sarvartha_chintamani
+    title: Sarvartha Chintamani
+    author: Venkatesha
+    editions: []
+  - id: uttara_kalamrita
+    title: Uttara Kalamrita
+    author: Kalidasa
+    editions:
+      - id: ps_sastri
+        description: P.S. Sastri (translator), Ranjan Publications, New Delhi
+  - id: jaimini_sutras
+    title: Jaimini Upadesha Sutras
+    author: Jaimini
+    editions: []
+  - id: tajika_neelakanthi
+    title: Tajika Neelakanthi
+    author: Neelakantha
+    editions: []
+  - id: prashna_marga
+    title: Prashna Marga
+    editions: []
+  - id: muhurta_chintamani
+    title: Muhurta Chintamani
+    author: Rama Daivagya
+    editions: []
+  - id: surya_siddhanta
+    title: Surya Siddhanta
+    editions: []
+modern_references:
+  - id: pvr_integrated
+    title: "Vedic Astrology: An Integrated Approach"
+    author: P.V.R. Narasimha Rao
+  - id: raman_how_to_judge
+    title: How to Judge a Horoscope (Vols 1-2)
+    author: B.V. Raman
+  - id: raman_muhurtha
+    title: Muhurtha (Electional Astrology)
+    author: B.V. Raman
+    notes: Its marriage chapter gives the ten kutas of South Indian matching, their exceptions and Kuja dosha.
+  - id: raman_300
+    title: Three Hundred Important Combinations
+    author: B.V. Raman
+  - id: raman_balas
+    title: Graha and Bhava Balas
+    author: B.V. Raman
+  - id: knrao_chara
+    title: Predicting through Jaimini's Chara Dasha
+    author: K.N. Rao
+  - id: kp_readers
+    title: KP Readers 1-6
+    author: K.S. Krishnamurti
+  - id: maitreya
+    title: Maitreya astrology software, Asta Koota documentation
+    notes: >-
+      Tables documented on the program's companion site Saravali
+      (saravali.github.io, CC BY-SA 4.0). Only numeric tables are used, with
+      citation; no text is copied.
+  - id: popular_practice
+    title: Contemporary Indian practice
+    notes: >-
+      For rules that are widely used today but have no classical source (for
+      example Kala Sarpa Yoga and the named Kala Sarpa types). Cite it with a
+      `locator` describing the practice.

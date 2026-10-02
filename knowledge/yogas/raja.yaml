@@ -1,0 +1,35 @@
+# Raja yogas that are not pairwise lord associations (those are in raja_lords.yaml).
+defaults:
+  category: raja
+  school: parashari
+  provenance: classical
+
+rules:
+  - id: raja.yogakaraka
+    name: Yogakaraka Raja Yoga
+    description: >-
+      A single planet rules both a kendra (4th, 7th or 10th) and a trikona (5th or
+      9th), and it occupies a kendra or trikona without being debilitated or combust.
+    when: >-
+      any(p in seven: p in [lord(4), lord(7), lord(10)] and p in [lord(5), lord(9)]
+      and (in_kendra(p) or in_trikona(p)) and not debilitated(p) and not combust(p))
+    participants: "select(p in seven: p in [lord(4), lord(7), lord(10)] and p in [lord(5), lord(9)])"
+    notes: >-
+      Only Taurus and Libra (Saturn), Cancer and Leo (Mars), and Capricorn and
+      Aquarius (Venus) lagnas have such a planet.
+    effects:
+      domains: [status, career]
+      polarity: positive
+      strength: major
+      summary: >-
+        The planet that rules both a kendra and a trikona is well placed; its periods
+        bring a rise in status and success.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 34, verified: false}
+      - {text: laghu_parashari, edition: raman, locator: Yogakaraka planets, verified: false}
+    tests:
+      positive:
+        - {lagna: taurus, saturn: aquarius, rest: gemini}
+      negative:
+        - {lagna: taurus, saturn: aries, rest: gemini}
+        - {lagna: aries, rest: leo}

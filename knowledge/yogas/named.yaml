@@ -1,0 +1,937 @@
+# Named yogas from BPHS (chapter on miscellaneous yogas), Phaladeepika and B.V. Raman's
+# Three Hundred Important Combinations. Where only Raman is cited the provenance is
+# "traditional": the combination is part of the received tradition, but its classical
+# source has not yet been identified here.
+defaults:
+  category: named
+  school: parashari
+  provenance: traditional
+
+rules:
+  - id: named.lakshmi
+    name: Lakshmi Yoga
+    provenance: classical
+    description: >-
+      The lagna lord is strong, and the 9th lord occupies its own or exaltation sign
+      in a kendra or trikona.
+    when: >-
+      strong(lord(1)) and (own_sign(lord(9)) or exalted(lord(9)))
+      and (in_kendra(lord(9)) or in_trikona(lord(9)))
+    participants: "[lord(1), lord(9)]"
+    effects:
+      domains: [wealth, fortune, status]
+      polarity: positive
+      strength: major
+      summary: >-
+        Wealth, noble conduct and high standing; blessed with prosperity and a
+        flourishing family.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Lakshmi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: aries, jupiter: cancer, rest: gemini}
+      negative:
+        - {lagna: aries, mars: aries, jupiter: capricorn, rest: gemini}
+        - {lagna: aries, mars: cancer, jupiter: cancer, rest: gemini}
+
+  - id: named.saraswati
+    name: Saraswati Yoga
+    provenance: classical
+    description: >-
+      Mercury, Jupiter and Venus each occupy a kendra, a trikona or the 2nd house, and
+      Jupiter is in its own, a friendly or its exaltation sign.
+    when: >-
+      all(p in [mercury, jupiter, venus]: house(p) in [1, 2, 4, 5, 7, 9, 10])
+      and (friendly_sign(jupiter) or exalted(jupiter))
+    participants: "[mercury, jupiter, venus]"
+    effects:
+      domains: [education, intellect, fame]
+      polarity: positive
+      strength: major
+      summary: >-
+        Learning, eloquence and skill in literature, arts and sciences; wealth and
+        fame through knowledge.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: raman_300, locator: Saraswathi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: sagittarius, venus: leo, mercury: leo, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: sagittarius, venus: virgo, mercury: leo, rest: gemini}
+
+  - id: named.parvata
+    name: Parvata Yoga
+    provenance: classical
+    description: >-
+      Benefics occupy the kendras, and no malefic (nodes included) occupies a kendra
+      or the 6th or 8th house.
+    when: any_in_houses(benefics, kendras) and not any_in_houses(malefics, [1, 4, 7, 10, 6, 8])
+    participants: placed_in(benefics, kendras)
+    effects:
+      domains: [wealth, fame, character]
+      polarity: positive
+      strength: major
+      summary: Prosperity, generosity, eloquence and fame; a leader in his circle.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Parvata Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: cancer, venus: libra, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: cancer, venus: libra, saturn: virgo, rest: gemini}
+
+  - id: named.kahala
+    name: Kahala Yoga
+    provenance: classical
+    description: >-
+      The lords of the 4th and 9th houses are in kendras from each other, and the lagna
+      lord is strong.
+    when: lord(4) != lord(9) and house(lord(4), lord(9)) in kendras and strong(lord(1))
+    participants: "[lord(4), lord(9), lord(1)]"
+    notes: Some versions pair the 4th lord with Jupiter instead of the 9th lord.
+    effects:
+      domains: [character, status]
+      polarity: positive
+      strength: moderate
+      summary: Boldness, a determined will and command over a group or small domain.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Kahala Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, jupiter: libra, mars: aries, rest: gemini}
+      negative:
+        - {lagna: aries, moon: leo, jupiter: libra, mars: aries, rest: gemini}
+
+  - id: named.sankha
+    name: Sankha Yoga
+    provenance: classical
+    description: >-
+      The lords of the 5th and 6th houses are in kendras from each other and the lagna
+      lord is strong; or the lagna and 10th lords are together in a movable sign and
+      the 9th lord is strong.
+    when: >-
+      (lord(5) != lord(6) and house(lord(5), lord(6)) in kendras and strong(lord(1)))
+      or (conjunct(lord(1), lord(10)) and movable(lord(1)) and strong(lord(9)))
+    effects:
+      domains: [wealth, character, fortune]
+      polarity: positive
+      strength: major
+      summary: Prosperity, a humane and pious nature, a good family and a long life.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Sankha Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, mercury: scorpio, mars: aries, rest: gemini}
+        - {lagna: aries, mars: cancer, saturn: cancer, jupiter: sagittarius, rest: gemini}
+      negative:
+        - {lagna: aries, sun: leo, mercury: virgo, mars: aries, rest: gemini}
+
+  - id: named.bheri
+    name: Bheri Yoga
+    provenance: classical
+    description: >-
+      The 9th lord is strong, and either the 1st, 2nd, 7th and 12th houses are all
+      occupied, or Venus, Jupiter and the lagna lord are in kendras from one another.
+    when: >-
+      strong(lord(9)) and (all(h in [1, 2, 7, 12]: count(only(occupants(h), seven)) > 0)
+      or (house(venus, jupiter) in kendras and house(lord(1), jupiter) in kendras
+      and house(lord(1), venus) in kendras))
+    effects:
+      domains: [wealth, health, status]
+      polarity: positive
+      strength: major
+      summary: Wealth, a long and healthy life, a good family and a dignified bearing.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Bheri Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: sagittarius, venus: pisces, mars: sagittarius, rest: gemini}
+        - {lagna: aries, sun: aries, moon: taurus, mars: libra, mercury: pisces, jupiter: sagittarius, rest: taurus}
+      negative:
+        - {lagna: aries, jupiter: sagittarius, venus: aquarius, mars: sagittarius, rest: gemini}
+
+  - id: named.khadga
+    name: Khadga Yoga
+    provenance: classical
+    description: >-
+      The 2nd lord is in the 9th house and the 9th lord in the 2nd, and the lagna lord
+      is in a kendra or trikona.
+    when: >-
+      house(lord(2)) == 9 and house(lord(9)) == 2
+      and (in_kendra(lord(1)) or in_trikona(lord(1)))
+    participants: "[lord(2), lord(9), lord(1)]"
+    effects:
+      domains: [wealth, fortune]
+      polarity: positive
+      strength: moderate
+      summary: Wealth, good fortune, learning and a comfortable, well-connected life.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Khadga Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: sagittarius, jupiter: taurus, mars: cancer, rest: gemini}
+      negative:
+        - {lagna: aries, venus: sagittarius, jupiter: taurus, mars: gemini, rest: gemini}
+
+  - id: named.kalanidhi
+    name: Kalanidhi Yoga
+    provenance: classical
+    description: >-
+      Jupiter occupies the 2nd or 5th house and is joined or aspected by both Mercury
+      and Venus.
+    when: house(jupiter) in [2, 5] and influences(mercury, jupiter) and influences(venus, jupiter)
+    participants: "[jupiter, mercury, venus]"
+    notes: Raman adds that the house should be a sign of Mercury or Venus; not encoded.
+    effects:
+      domains: [wealth, education, status]
+      polarity: positive
+      strength: moderate
+      summary: Learning, virtue, wealth and honour from those in authority.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Kalanidhi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: taurus, mercury: taurus, venus: taurus, rest: leo}
+      negative:
+        - {lagna: aries, jupiter: taurus, mercury: taurus, venus: gemini, rest: leo}
+        - {lagna: aries, jupiter: gemini, mercury: gemini, venus: gemini, rest: leo}
+
+  - id: named.lagnadhi
+    name: Lagnadhi Yoga
+    description: >-
+      The natural benefics (Jupiter, Venus, and Mercury when benefic) all occupy the
+      6th, 7th and 8th houses from the lagna, no malefic occupies those houses, and no
+      malefic aspects the benefics there.
+    when: >-
+      all_in_houses(without(benefics, [moon]), [6, 7, 8])
+      and not any_in_houses(malefics, [6, 7, 8])
+      and all(p in without(benefics, [moon]): not any(m in malefics: aspects(m, p)))
+    participants: placed_in(benefics, [6, 7, 8])
+    effects:
+      domains: [status, character]
+      polarity: positive
+      strength: major
+      summary: >-
+        A cultured, trustworthy leader; wealth and happiness through learning and good
+        conduct.
+    sources:
+      - {text: raman_300, locator: Lagnadhi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: libra, venus: libra, mercury: virgo, rahu: gemini, rest: taurus}
+      negative:
+        - {lagna: aries, jupiter: libra, venus: libra, mercury: virgo, saturn: libra, rahu: gemini, rest: taurus}
+
+  - id: named.chatussagara
+    name: Chatussagara Yoga
+    description: All four kendras are occupied by planets (Sun to Saturn).
+    when: "all(h in kendras: count(only(occupants(h), seven)) > 0)"
+    participants: placed_in(seven, kendras)
+    effects:
+      domains: [fame, wealth]
+      polarity: positive
+      strength: moderate
+      summary: A reputation that spreads far, comfortable means and a good family.
+    sources:
+      - {text: raman_300, locator: Chatussagara Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: cancer, mars: libra, rest: capricorn}
+      negative:
+        - {lagna: aries, sun: aries, moon: cancer, rest: capricorn}
+
+  - id: named.rajalakshana
+    name: Rajalakshana Yoga
+    description: Jupiter, Venus, Mercury and the Moon all occupy kendras.
+    when: all_in_houses([jupiter, venus, mercury, moon], kendras)
+    participants: "[jupiter, venus, mercury, moon]"
+    effects:
+      domains: [character, status]
+      polarity: positive
+      strength: moderate
+      summary: Handsome, gracious and well-mannered, with the qualities of a leader.
+    sources:
+      - {text: raman_300, locator: Rajalakshana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: cancer, venus: libra, mercury: capricorn, moon: aries, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: cancer, venus: libra, mercury: capricorn, moon: taurus, rest: gemini}
+
+  - id: named.maha_bhagya
+    name: Maha Bhagya Yoga
+    description: >-
+      A man born by day with the lagna, Sun and Moon in odd signs, or a woman born by
+      night with all three in even signs.
+    when: >-
+      (male() and day_birth() and odd_sign(lagna) and odd_sign(sun) and odd_sign(moon))
+      or (female() and not day_birth() and not odd_sign(lagna) and not odd_sign(sun)
+      and not odd_sign(moon))
+    participants: "[sun, moon]"
+    effects:
+      domains: [fortune, status, fame]
+      polarity: positive
+      strength: major
+      summary: Exceptional good fortune, generosity, fame and a long, respected life.
+    sources:
+      - {text: raman_300, locator: Mahabhagya Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, moon: gemini, rest: taurus, day_birth: true, gender: male}
+        - {lagna: taurus, sun: cancer, moon: virgo, rest: gemini, day_birth: false, gender: female}
+      negative:
+        - {lagna: aries, sun: leo, moon: gemini, rest: taurus, day_birth: false, gender: male}
+
+  - id: named.chamara
+    name: Chamara Yoga
+    provenance: classical
+    description: >-
+      The lagna lord is exalted in a kendra and aspected by Jupiter, or two benefics
+      are together in the 1st, 7th, 9th or 10th house.
+    when: >-
+      (exalted(lord(1)) and in_kendra(lord(1)) and aspects(jupiter, lord(1)))
+      or any(h in [1, 7, 9, 10]: count(only(occupants(h), benefics)) >= 2)
+    effects:
+      domains: [status, education, fame]
+      polarity: positive
+      strength: moderate
+      summary: Favour from those in power, learning, eloquence and a long, honoured life.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Chamara Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: capricorn, jupiter: taurus, rest: gemini}
+        - {lagna: aries, jupiter: libra, venus: libra, rest: gemini}
+      negative:
+        - {lagna: aries, mars: capricorn, jupiter: gemini, rest: gemini}
+
+  - id: named.gauri
+    name: Gauri Yoga
+    description: >-
+      The lord of the navamsa sign occupied by the 10th lord is exalted in the 10th
+      house and joined by the lagna lord.
+    when: >-
+      house(lord_of(navamsa(lord(10)))) == 10 and exalted(lord_of(navamsa(lord(10))))
+      and conjunct(lord(1), lord_of(navamsa(lord(10))))
+    participants: "[lord(10), lord_of(navamsa(lord(10))), lord(1)]"
+    effects:
+      domains: [fame, character, status]
+      polarity: positive
+      strength: moderate
+      summary: A respected, well-born and virtuous person, praised by the learned.
+    sources:
+      - {text: raman_300, locator: Gauri Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: gemini, jupiter: aries 5, venus: pisces, mercury: pisces, rest: leo}
+      negative:
+        - {lagna: gemini, jupiter: aries 5, venus: pisces, mercury: aries, rest: leo}
+
+  - id: named.bharathi
+    name: Bharathi Yoga
+    description: >-
+      The lord of the navamsa sign occupied by the 2nd, 5th or 11th lord is exalted and
+      joined by the 9th lord.
+    when: >-
+      any(h in [2, 5, 11]: exalted(lord_of(navamsa(lord(h))))
+      and conjunct(lord_of(navamsa(lord(h))), lord(9)))
+    effects:
+      domains: [education, intellect, fame]
+      polarity: positive
+      strength: moderate
+      summary: Great learning, eloquence and religious merit; famed for wisdom.
+    sources:
+      - {text: raman_300, locator: Bharathi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aries 11, moon: taurus, jupiter: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, sun: aries 11, moon: taurus, jupiter: gemini, rest: gemini}
+
+  - id: named.chapa
+    name: Chapa Yoga
+    description: The 4th and 10th lords exchange signs, and the lagna lord is exalted.
+    when: exchange(lord(4), lord(10)) and exalted(lord(1))
+    participants: "[lord(4), lord(10), lord(1)]"
+    effects:
+      domains: [status, wealth]
+      polarity: positive
+      strength: moderate
+      summary: Trusted with wealth or office and respected by those in authority.
+    sources:
+      - {text: raman_300, locator: Chapa Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: capricorn, saturn: cancer, mars: capricorn, rest: gemini}
+      negative:
+        - {lagna: aries, moon: capricorn, saturn: cancer, mars: aries, rest: gemini}
+
+  - id: named.sreenatha
+    name: Sreenatha Yoga
+    description: >-
+      The 7th lord is exalted in the 10th house, and the 10th lord is joined by the
+      9th lord.
+    when: >-
+      exalted(lord(7)) and house(lord(7)) == 10 and lord(10) != lord(9)
+      and conjunct(lord(10), lord(9))
+    participants: "[lord(7), lord(9), lord(10)]"
+    notes: Only a Sagittarius lagna can form it, since the 7th lord must be exalted in the 10th.
+    effects:
+      domains: [wealth, status]
+      polarity: positive
+      strength: major
+      summary: Wealth, a gracious nature and a position of honour; devoted to learning.
+    sources:
+      - {text: raman_300, locator: Sreenatha Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: sagittarius, mercury: virgo, sun: virgo, rest: aries}
+      negative:
+        - {lagna: sagittarius, mercury: virgo, sun: leo, rest: aries}
+
+  - id: named.kusuma
+    name: Kusuma Yoga
+    provenance: classical
+    description: >-
+      The lagna is a fixed sign, Venus is in a kendra, the Moon is in a trikona joined
+      by a benefic, and Saturn is in the 10th house.
+    when: >-
+      fixed(lagna) and in_kendra(venus) and in_trikona(moon)
+      and any(p in without(benefics, [moon]): conjunct(p, moon)) and house(saturn) == 10
+    participants: "[venus, moon, saturn]"
+    effects:
+      domains: [status, wealth, fame]
+      polarity: positive
+      strength: major
+      summary: High status, generosity, enjoyment of comforts and fame.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Kusuma Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: taurus, venus: taurus, moon: virgo, jupiter: virgo, saturn: aquarius, rest: gemini}
+      negative:
+        - {lagna: aries, venus: aries, moon: leo, jupiter: leo, saturn: capricorn, rest: gemini}
+
+  - id: named.devendra
+    name: Devendra Yoga
+    description: >-
+      The lagna is a fixed sign, the lagna and 11th lords exchange signs, and the 2nd
+      and 10th lords exchange signs.
+    when: fixed(lagna) and exchange(lord(1), lord(11)) and exchange(lord(2), lord(10))
+    participants: "[lord(1), lord(11), lord(2), lord(10)]"
+    effects:
+      domains: [status, fame, wealth]
+      polarity: positive
+      strength: major
+      summary: Rise to high office, fame, and a life of comfort and influence.
+    sources:
+      - {text: raman_300, locator: Devendra Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: taurus, venus: pisces, jupiter: taurus, mercury: aquarius, saturn: gemini, rest: leo}
+      negative:
+        - {lagna: taurus, venus: pisces, jupiter: taurus, mercury: aquarius, saturn: leo, rest: leo}
+
+  - id: named.indra
+    name: Indra Yoga
+    description: The 5th and 11th lords exchange signs, and the Moon is in the 5th house.
+    when: exchange(lord(5), lord(11)) and house(moon) == 5
+    participants: "[lord(5), lord(11), moon]"
+    effects:
+      domains: [status, fame]
+      polarity: positive
+      strength: major
+      summary: Fame, courage and a rise to rank or power, especially in the prime of life.
+    sources:
+      - {text: raman_300, locator: Indra Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aquarius, saturn: leo, moon: leo, rest: gemini}
+      negative:
+        - {lagna: aries, sun: aquarius, saturn: leo, moon: virgo, rest: gemini}
+
+  - id: named.ravi
+    name: Ravi Yoga
+    description: >-
+      The Sun is in the 10th house, and the 10th lord is in the 3rd house with Saturn.
+    when: house(sun) == 10 and house(lord(10)) == 3 and conjunct(lord(10), saturn)
+    participants: "[sun, lord(10), saturn]"
+    effects:
+      domains: [career, status]
+      polarity: positive
+      strength: moderate
+      summary: Respected by authorities and learned in the sciences; a steady rise in career.
+    sources:
+      - {text: raman_300, locator: Ravi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: gemini, sun: pisces, jupiter: leo, saturn: leo, rest: aries}
+      negative:
+        - {lagna: gemini, sun: pisces, jupiter: leo, saturn: virgo, rest: aries}
+
+  - id: named.siva
+    name: Siva Yoga
+    description: >-
+      The 5th lord is in the 9th house, the 9th lord in the 10th, and the 10th lord in
+      the 5th.
+    when: house(lord(5)) == 9 and house(lord(9)) == 10 and house(lord(10)) == 5
+    participants: "[lord(5), lord(9), lord(10)]"
+    effects:
+      domains: [status, spirituality, wealth]
+      polarity: positive
+      strength: major
+      summary: Leadership, wisdom and virtue; success in enterprise and a righteous life.
+    sources:
+      - {text: raman_300, locator: Siva Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: sagittarius, jupiter: capricorn, saturn: leo, rest: gemini}
+      negative:
+        - {lagna: aries, sun: sagittarius, jupiter: capricorn, saturn: virgo, rest: gemini}
+
+  - id: named.vishnu
+    name: Vishnu Yoga
+    description: >-
+      The 9th and 10th lords occupy the 2nd house, together with the lord of the
+      navamsa sign occupied by the 9th lord.
+    when: >-
+      house(lord(9)) == 2 and house(lord(10)) == 2
+      and house(lord_of(navamsa(lord(9)))) == 2
+    participants: "[lord(9), lord(10), lord_of(navamsa(lord(9)))]"
+    effects:
+      domains: [wealth, fortune, status]
+      polarity: positive
+      strength: major
+      summary: Great wealth, good fortune and influence; learned and eloquent.
+    sources:
+      - {text: raman_300, locator: Vishnu Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: taurus 1, saturn: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: taurus 15, saturn: taurus, rest: gemini}
+
+  - id: named.brahma
+    name: Brahma Yoga
+    description: >-
+      Jupiter is in a kendra from the 9th lord, Venus in a kendra from the 11th lord,
+      and Mercury in a kendra from the lagna lord or the 10th lord.
+    when: >-
+      house(jupiter, lord(9)) in kendras and house(venus, lord(11)) in kendras
+      and (house(mercury, lord(1)) in kendras or house(mercury, lord(10)) in kendras)
+    participants: "[jupiter, venus, mercury]"
+    effects:
+      domains: [wealth, education, health]
+      polarity: positive
+      strength: major
+      summary: Wealth, learning, a long life and a charitable, respected nature.
+    sources:
+      - {text: raman_300, locator: Brahma Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, saturn: capricorn, venus: aries, mercury: aries, mars: aries, rest: gemini}
+      negative:
+        - {lagna: aries, saturn: capricorn, venus: taurus, mercury: aries, mars: aries, rest: gemini}
+
+  - id: named.trilochana
+    name: Trilochana Yoga
+    description: The Sun, the Moon and Mars occupy three signs in trine to one another.
+    when: >-
+      house(moon, sun) in [5, 9] and house(mars, sun) in [5, 9]
+      and house(mars, moon) in [5, 9]
+    participants: "[sun, moon, mars]"
+    effects:
+      domains: [wealth, intellect, health]
+      polarity: positive
+      strength: moderate
+      summary: Wealth, intelligence, a long life and success over rivals.
+    sources:
+      - {text: raman_300, locator: Trilochana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: aries, moon: leo, mars: sagittarius, rest: gemini}
+      negative:
+        - {lagna: aries, sun: aries, moon: leo, mars: leo, rest: gemini}
+
+  - id: named.kulavardhana
+    name: Kulavardhana Yoga
+    description: >-
+      Every planet (Sun to Saturn) is in the 5th house from the lagna, from the Moon
+      or from the Sun.
+    when: "all(p in seven: house(p) == 5 or house(p, moon) == 5 or house(p, sun) == 5)"
+    participants: seven
+    effects:
+      domains: [children, health]
+      polarity: positive
+      strength: moderate
+      summary: Continues and strengthens the family line; long life and healthy descendants.
+    sources:
+      - {text: raman_300, locator: Kulavardhana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: sagittarius, rest: leo}
+      negative:
+        - {lagna: aries, moon: sagittarius, saturn: virgo, rest: leo}
+
+  - id: named.garuda
+    name: Garuda Yoga
+    description: >-
+      The lord of the Moon's navamsa sign is exalted, and the birth is by day with a
+      waxing Moon.
+    when: exalted(lord_of(navamsa(moon))) and day_birth() and waxing_moon()
+    participants: "[moon, lord_of(navamsa(moon))]"
+    effects:
+      domains: [status, character]
+      polarity: positive
+      strength: moderate
+      summary: Respected, eloquent and firm; honoured by the learned and feared by rivals.
+    sources:
+      - {text: raman_300, locator: Garuda Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: aries 1, mars: capricorn, sun: pisces, rest: gemini, day_birth: true}
+      negative:
+        - {lagna: aries, moon: aries 1, mars: capricorn, sun: pisces, rest: gemini, day_birth: false}
+
+  - id: named.go
+    name: Go Yoga
+    description: >-
+      Jupiter is in its moolatrikona, joined by the 2nd lord, and the lagna lord is
+      exalted.
+    when: moolatrikona(jupiter) and conjunct(lord(2), jupiter) and exalted(lord(1))
+    participants: "[jupiter, lord(2), lord(1)]"
+    effects:
+      domains: [wealth, status]
+      polarity: positive
+      strength: moderate
+      summary: Wealth, a good family and rise to a respected position.
+    sources:
+      - {text: raman_300, locator: Go Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: sagittarius 5, venus: sagittarius, mars: capricorn, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: sagittarius 15, venus: sagittarius, mars: capricorn, rest: gemini}
+
+  - id: named.makuta
+    name: Makuta Yoga
+    description: >-
+      Jupiter is in the 9th house from the 9th lord, a benefic is in the 9th from
+      Jupiter, and Saturn is in the 10th house.
+    when: >-
+      house(jupiter, lord(9)) == 9
+      and any(p in without(benefics, [jupiter]): house(p, jupiter) == 9)
+      and house(saturn) == 10
+    participants: "[jupiter, saturn, lord(9)]"
+    effects:
+      domains: [status, career]
+      polarity: positive
+      strength: moderate
+      summary: >-
+        Authority and command; the old texts describe the head of a community or a
+        region.
+    sources:
+      - {text: raman_300, locator: Makuta Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: taurus, saturn: aquarius, jupiter: libra, venus: gemini, rest: leo}
+      negative:
+        - {lagna: taurus, saturn: aquarius, jupiter: libra, venus: cancer, rest: leo}
+
+  - id: named.amsavatara
+    name: Amsavatara Yoga
+    description: >-
+      The lagna is a movable sign, and Jupiter, Venus and an exalted Saturn occupy
+      kendras.
+    when: >-
+      movable(lagna) and in_kendra(jupiter) and in_kendra(venus)
+      and exalted(saturn) and in_kendra(saturn)
+    participants: "[jupiter, venus, saturn]"
+    effects:
+      domains: [fame, character, status]
+      polarity: positive
+      strength: major
+      summary: Fame, learning and virtue; self-mastery and respect from those in power.
+    sources:
+      - {text: raman_300, locator: Amsavatara Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, saturn: libra, jupiter: cancer, venus: capricorn, rest: gemini}
+      negative:
+        - {lagna: taurus, saturn: libra, jupiter: leo, venus: aquarius, rest: gemini}
+
+  - id: named.harihara_brahma
+    name: Harihara Brahma Yoga
+    provenance: classical
+    description: >-
+      Benefics occupy the 2nd, 8th and 12th houses from the 2nd lord; or Jupiter, the
+      Moon and Mercury are in the 4th, 9th and 8th from the 7th lord; or the Sun, Venus
+      and Mars are in the 4th, 10th and 11th from the lagna lord.
+    when: >-
+      all(h in [2, 8, 12]: any(p in benefics: house(p, lord(2)) == h))
+      or (house(jupiter, lord(7)) == 4 and house(moon, lord(7)) == 9
+      and house(mercury, lord(7)) == 8)
+      or (house(sun, lord(1)) == 4 and house(venus, lord(1)) == 10
+      and house(mars, lord(1)) == 11)
+    effects:
+      domains: [spirituality, wealth, character]
+      polarity: positive
+      strength: moderate
+      summary: Learned, truthful and devout; comfortable, respected and protective of others.
+    sources:
+      - {text: bphs, edition: santhanam, chapter: 36, verified: false}
+      - {text: raman_300, locator: Harihara Brahma Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: gemini, mercury: gemini, sun: virgo, venus: pisces, mars: aries, rest: leo}
+      negative:
+        - {lagna: gemini, mercury: gemini, sun: virgo, venus: pisces, mars: taurus, rest: leo}
+
+  - id: named.marud
+    name: Marud Yoga
+    description: >-
+      Jupiter is in the 5th or 9th from Venus, the Moon is in the 5th from Jupiter, and
+      the Sun is in a kendra from the Moon.
+    when: >-
+      house(jupiter, venus) in [5, 9] and house(moon, jupiter) == 5
+      and in_kendra(sun, moon)
+    participants: "[jupiter, venus, moon, sun]"
+    effects:
+      domains: [wealth, character]
+      polarity: positive
+      strength: moderate
+      summary: Eloquent, generous and wealthy; a leader in trade or the community.
+    sources:
+      - {text: raman_300, locator: Marud Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: aries, jupiter: leo, moon: sagittarius, sun: pisces, rest: taurus}
+      negative:
+        - {lagna: aries, venus: aries, jupiter: leo, moon: sagittarius, sun: aquarius, rest: taurus}
+
+  - id: named.budha
+    name: Budha Yoga
+    description: >-
+      Jupiter is in the lagna, the Moon in a kendra, Rahu in the 2nd from the Moon, and
+      the Sun and Mars in the 3rd from Rahu.
+    when: >-
+      house(jupiter) == 1 and in_kendra(moon) and house(rahu, moon) == 2
+      and house(sun, rahu) == 3 and house(mars, rahu) == 3
+    participants: "[jupiter, moon, rahu, sun, mars]"
+    effects:
+      domains: [education, intellect, status]
+      polarity: positive
+      strength: moderate
+      summary: Learning, eloquence and favour from those in power; wise and influential.
+    sources:
+      - {text: raman_300, locator: Budha Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: aries, moon: cancer, rahu: leo, sun: libra, mars: libra, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: aries, moon: cancer, rahu: leo, sun: libra, mars: scorpio, rest: gemini}
+
+  - id: named.bahudravyarjana
+    name: Bahudravyarjana Yoga
+    category: dhana
+    description: >-
+      The lagna lord is in the 2nd house, the 2nd lord in the 11th, and the 11th lord
+      in the lagna.
+    when: house(lord(1)) == 2 and house(lord(2)) == 11 and house(lord(11)) == 1
+    participants: "[lord(1), lord(2), lord(11)]"
+    effects:
+      domains: [wealth]
+      polarity: positive
+      strength: major
+      summary: Great wealth earned through one's own efforts.
+    sources:
+      - {text: raman_300, locator: Bahudravyarjana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: taurus, venus: aquarius, saturn: aries, rest: gemini}
+      negative:
+        - {lagna: aries, mars: taurus, venus: aquarius, saturn: pisces, rest: gemini}
+
+  - id: named.amala
+    name: Amala Yoga
+    provenance: classical
+    description: >-
+      The 10th house from the lagna or from the Moon is occupied, and only by natural
+      benefics.
+    when: >-
+      (not empty(10) and all(p in occupants(10): benefic(p)))
+      or (not empty(10, moon) and all(p in occupants(10, moon): benefic(p)))
+    participants: "select(p in benefics: house(p) == 10 or house(p, moon) == 10)"
+    effects:
+      domains: [fame, character, career]
+      polarity: positive
+      strength: moderate
+      summary: A spotless reputation, lasting fame and ethical conduct; prosperity through honest work.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: raman_300, locator: Amala Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: capricorn, rest: leo}
+      negative:
+        - {lagna: aries, jupiter: capricorn, saturn: capricorn, rest: leo}
+        - {lagna: aries, rest: leo}
+
+  - id: named.vasumati
+    name: Vasumati Yoga
+    description: >-
+      The natural benefics all occupy upachaya houses (3, 6, 10, 11) from the lagna, or
+      all (apart from the Moon) occupy upachayas from the Moon.
+    when: >-
+      all_in_houses(benefics, upachayas)
+      or all_in_houses(without(benefics, [moon]), upachayas, moon)
+    participants: benefics
+    effects:
+      domains: [wealth]
+      polarity: positive
+      strength: moderate
+      summary: Steady accumulation of wealth; rarely in want.
+    sources:
+      - {text: raman_300, locator: Vasumathi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: gemini, venus: aquarius, mercury: capricorn, moon: scorpio, rest: taurus}
+      negative:
+        - {lagna: aries, jupiter: gemini, venus: pisces, mercury: capricorn, moon: scorpio, rest: taurus}
+
+  - id: named.pravrajya
+    name: Pravrajya Yoga
+    provenance: classical
+    description: >-
+      Four or more of the seven planets occupy one sign, and at least one of them is
+      strong.
+    when: "any(p in seven: count(only(companions(p), seven)) >= 3 and strong(p))"
+    participants: "select(p in seven: count(only(companions(p), seven)) >= 3)"
+    notes: >-
+      Brihat Jataka names the kind of renunciation from the strongest planet of the
+      group; that refinement is not encoded.
+    effects:
+      domains: [spirituality]
+      polarity: mixed
+      strength: moderate
+      summary: >-
+        An inclination to renunciation, a religious order or a disciplined spiritual
+        life.
+    sources:
+      - {text: brihat_jataka, edition: sastri, chapter: 15, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, sun: leo, mars: leo, jupiter: leo, saturn: leo, rest: taurus}
+      negative:
+        - {lagna: aries, sun: leo, mars: leo, jupiter: leo, moon: aries, mercury: gemini, venus: cancer, saturn: libra, rest: leo}
+
+  # --- Kartari (hemming) ---------------------------------------------------------------
+  - id: named.shubha_kartari_lagna
+    name: Shubha Kartari Yoga (lagna)
+    provenance: classical
+    description: >-
+      Benefics occupy both the 2nd and 12th houses and no malefic occupies either, so
+      the lagna is hemmed in by benefics.
+    when: >-
+      any_in_houses(benefics, [2]) and any_in_houses(benefics, [12])
+      and not any_in_houses(malefics, [2, 12])
+    participants: placed_in(benefics, [2, 12])
+    effects:
+      domains: [self, health]
+      polarity: positive
+      strength: moderate
+      summary: >-
+        The self is protected on both sides: good health, confidence and support from
+        others.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: pvr_integrated, locator: Kartari yogas, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: taurus, jupiter: pisces, rahu: leo, rest: leo}
+      negative:
+        - {lagna: aries, venus: taurus, jupiter: pisces, saturn: pisces, rahu: leo, rest: leo}
+
+  - id: named.papa_kartari_lagna
+    name: Papa Kartari Yoga (lagna)
+    provenance: classical
+    description: >-
+      Malefics occupy both the 2nd and 12th houses and no benefic occupies either, so
+      the lagna is hemmed in by malefics.
+    when: >-
+      any_in_houses(malefics, [2]) and any_in_houses(malefics, [12])
+      and not any_in_houses(benefics, [2, 12])
+    participants: placed_in(malefics, [2, 12])
+    effects:
+      domains: [self, health]
+      polarity: negative
+      strength: moderate
+      summary: >-
+        The self is constrained on both sides: obstacles, health worries and pressure.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: pvr_integrated, locator: Kartari yogas, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: taurus, saturn: pisces, rahu: leo, rest: leo}
+      negative:
+        - {lagna: aries, mars: taurus, rahu: leo, rest: leo}
+
+  - id: named.shubha_kartari_moon
+    name: Shubha Kartari Yoga (Moon)
+    provenance: classical
+    description: >-
+      Benefics occupy both the 2nd and 12th houses from the Moon and no malefic occupies
+      either.
+    when: >-
+      any_in_houses(benefics, [2], moon) and any_in_houses(benefics, [12], moon)
+      and not any_in_houses(malefics, [2, 12], moon)
+    participants: placed_in(benefics, [2, 12], moon)
+    effects:
+      domains: [character, health]
+      polarity: positive
+      strength: moderate
+      summary: A supported, contented mind and emotional stability.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: pvr_integrated, locator: Kartari yogas, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, venus: leo, jupiter: gemini, rahu: libra, rest: libra}
+      negative:
+        - {lagna: aries, moon: cancer, venus: leo, rahu: libra, rest: libra}
+
+  - id: named.papa_kartari_moon
+    name: Papa Kartari Yoga (Moon)
+    provenance: classical
+    description: >-
+      Malefics occupy both the 2nd and 12th houses from the Moon and no benefic
+      occupies either.
+    when: >-
+      any_in_houses(malefics, [2], moon) and any_in_houses(malefics, [12], moon)
+      and not any_in_houses(benefics, [2, 12], moon)
+    participants: placed_in(malefics, [2, 12], moon)
+    effects:
+      domains: [character, health]
+      polarity: negative
+      strength: moderate
+      summary: >-
+        A mind under pressure: anxiety, emotional strain and little support.
+    sources:
+      - {text: phaladeepika, edition: sastri, chapter: 6, verified: false}
+      - {text: pvr_integrated, locator: Kartari yogas, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, mars: leo, saturn: gemini, rahu: libra, rest: libra}
+      negative:
+        - {lagna: aries, moon: cancer, mars: leo, rahu: libra, rest: libra}

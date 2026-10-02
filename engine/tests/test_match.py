@@ -1,0 +1,262 @@
+"""Marriage matching: tables, hand-worked kootas, doshas and their exceptions, the
+ten South Indian kutas, and matching two charts."""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+
+import pytest
+
+from jyotish_engine.astro.bodies import Body
+from jyotish_engine.chart import compute_chart
+from jyotish_engine.match import tables as t
+from jyotish_engine.match.ashtakoota import MoonPlacement, ashtakoota
+from jyotish_engine.match.compatibility import cross_checks, dasha_sandhi, papasamya
+from jyotish_engine.match.compute import compute_match, moon_margin, moon_of
+from jyotish_engine.match.dashakoota import dashakoota
+from jyotish_engine.match.tables import KootaProfile
+from jyotish_engine.models import BirthInput, ChartResult, PlaceInput
+from jyotish_engine.rules.catalogue import Sources, default_knowledge_dir
+
+P = MoonPlacement.from_pada
+ASHVINI, BHARANI, ARDRA, PUNARVASU, U_PHALGUNI, CHITRA = 0, 1, 5, 6, 11, 13
+MAGHA, ANURADHA, JYESHTHA, MULA = 9, 16, 17, 18
+
+
+def _points(
+    groom: MoonPlacement, bride: MoonPlacement, profile: KootaProfile = KootaProfile.POPULAR
+) -> dict[str, float]:
+    return {k.name: k.points for k in ashtakoota(groom, bride, profile).kootas}
+
+
+def test_tables_are_consistent() -> None:
+    for animal in range(14):
+        assert t.YONI_POINTS[animal][animal] == 4
+    for pair in t.YONI_ENEMIES:
+        a, b = sorted(pair)
+        assert t.YONI_POINTS[a][b] == t.YONI_POINTS[b][a] == 0
+    assert all(t.GANA_POINTS[g][g] == 6 for g in range(3))
+    for table in t.VASHYA_POINTS.values():
+        assert all(table[g][g] == 2.0 for g in range(5))
+    for groups in (t.NAKSHATRA_GANA, t.NAKSHATRA_NADI, t.NAKSHATRA_RAJJU):
+        assert len(groups) == 27
+    assert sorted(len([n for n in range(27) if t.NAKSHATRA_RAJJU[n] is r]) for r in t.Rajju) == [
+        3, 6, 6, 6, 6,
+    ]  # fmt: skip
+    assert len(t.VEDHA_PAIRS) == 13 and sum(len(p) for p in t.VEDHA_PAIRS) == 26
+    # Both halves of Dhanu and Makara.
+    assert (t.vashya(8, 14.9), t.vashya(8, 15.0)) == (t.Vashya.MANAVA, t.Vashya.CHATUSHPADA)
+    assert (t.vashya(9, 14.9), t.vashya(9, 15.0)) == (t.Vashya.CHATUSHPADA, t.Vashya.JALACHARA)
+
+
+def test_same_birth_star() -> None:
+    result = ashtakoota(P(ASHVINI, 1), P(ASHVINI, 1))
+    assert _points(P(ASHVINI, 1), P(ASHVINI, 1)) == {
+        "varna": 1, "vashya": 2, "tara": 3, "yoni": 4, "graha_maitri": 5, "gana": 6,
+        "bhakoot": 7, "nadi": 0,
+    }  # fmt: skip
+    assert result.total == 28
+    nadi = next(d for d in result.doshas if d.name == "nadi")
+    assert nadi.present and not nadi.cancelled  # same nakshatra, sign and pada
+
+
+def test_kootas_by_hand() -> None:
+    # Groom Punarvasu 1 (Gemini), bride Ashvini 1 (Aries): the groom's star is the
+    # 7th from the bride's (Vadha), hers the 22nd from his (remainder 4, good).
+    assert _points(P(PUNARVASU, 1), P(ASHVINI, 1))["tara"] == 1.5
+    # Varna differs by profile: a Gemini groom is Shudra (popular) or Vaishya
+    # (Maitreya); a Taurus bride is Vaishya or Shudra.
+    groom, bride = P(ARDRA, 1), P(3, 1)  # Ardra (Gemini), Rohini (Taurus)
+    assert _points(groom, bride)["varna"] == 0
+    assert _points(groom, bride, KootaProfile.MAITREYA)["varna"] == 1
+    # Moon (Cancer) and Mercury (Gemini): friend one way, enemy the other.
+    cancer, gemini = P(7, 2), P(ARDRA, 2)  # Pushya, Ardra
+    assert _points(cancer, gemini)["graha_maitri"] == 1.0
+    assert _points(cancer, gemini, KootaProfile.MAITREYA)["graha_maitri"] == 2.0
+    # Gana: bride's gana picks the row, groom's the column, as Saravali and Astroyogi
+    # print the table: a Deva bride with a Manushya groom 6, the reverse 5.
+    assert _points(P(BHARANI, 1), P(ASHVINI, 1))["gana"] == 6  # Manushya groom, Deva bride
+    assert _points(P(ASHVINI, 1), P(BHARANI, 1))["gana"] == 5  # Deva groom, Manushya bride
+    assert _points(P(ASHVINI, 1), P(MULA, 1))["gana"] == 1  # Deva groom, Rakshasa bride
+    assert _points(P(MULA, 1), P(ASHVINI, 1))["gana"] == 0  # Rakshasa groom, Deva bride
+    assert _points(P(BHARANI, 1), P(MULA, 1))["gana"] == 0  # Manushya and Rakshasa
+    assert _points(P(MULA, 1), P(BHARANI, 1))["gana"] == 0
+    # Yoni as published: a horse bride (Ashvini) with a deer groom (Anuradha) 3, the
+    # reverse 1.
+    assert _points(P(ANURADHA, 1), P(ASHVINI, 1))["yoni"] == 3
+    assert _points(P(ASHVINI, 1), P(ANURADHA, 1))["yoni"] == 1
+
+
+def test_doshas_and_exceptions() -> None:
+    def dosha(groom: MoonPlacement, bride: MoonPlacement, name: str) -> tuple[bool, bool]:
+        found = next(d for d in ashtakoota(groom, bride).doshas if d.name == name)
+        return found.present, found.cancelled
+
+    # Aries groom, Scorpio bride: 6/8, but Mars rules both signs.
+    assert _points(P(ASHVINI, 1), P(ANURADHA, 2))["bhakoot"] == 0
+    assert dosha(P(ASHVINI, 1), P(ANURADHA, 2), "bhakoot") == (True, True)
+    # Ardra and Punarvasu 1: both Adi nadi, same sign, different nakshatras.
+    assert dosha(P(ARDRA, 1), P(PUNARVASU, 1), "nadi") == (True, True)
+    # Deva groom, Rakshasa bride whose star is the 19th from his: relieved.
+    assert dosha(P(ASHVINI, 1), P(MULA, 1), "gana") == (True, True)
+    assert dosha(P(ASHVINI, 1), P(BHARANI, 1), "gana") == (False, False)
+
+
+def test_ten_kutas() -> None:
+    kutas = {p.name: p for p in dashakoota(P(ASHVINI, 1), P(JYESHTHA, 1))}
+    assert not kutas["vedha"].agrees  # Ashvini and Jyeshtha obstruct each other
+    assert len(kutas) == 10
+    cow_tiger = {p.name: p for p in dashakoota(P(U_PHALGUNI, 2), P(CHITRA, 1))}
+    assert not cow_tiger["yoni"].agrees and "hostile" in cow_tiger["yoni"].detail
+    # Rasi: the groom's sign 7th from the bride's agrees; 2nd from hers does not,
+    # unless the lords are the same or friends.
+    assert {p.name: p for p in dashakoota(P(14, 1), P(ASHVINI, 1))}["rasi"].agrees  # Libra, Aries
+    second = {p.name: p for p in dashakoota(P(3, 1), P(ASHVINI, 1))}["rasi"]  # Taurus, Aries
+    assert not second.agrees and second.relieved_by is None  # Venus and Mars are neutral
+    # Rajju relief needs Rasyadhipati, Rasi, Dina and Mahendra all to agree.
+    relieved = [
+        (g, b)
+        for g in range(108)
+        for b in range(108)
+        if {p.name: p for p in dashakoota(P(g // 4, g % 4 + 1), P(b // 4, b % 4 + 1))}[
+            "rajju"
+        ].relieved_by
+    ]
+    assert relieved
+    g, b = relieved[0]
+    kutas = {p.name: p for p in dashakoota(P(g // 4, g % 4 + 1), P(b // 4, b % 4 + 1))}
+    assert all(kutas[name].agrees for name in ("rasyadhipati", "rasi", "dina", "mahendra"))
+
+
+def test_citations_are_known_sources() -> None:
+    sources = Sources.load(default_knowledge_dir() / "sources.yaml")
+    for by_profile in t.SOURCES.values():
+        for citations in by_profile.values():
+            for citation in citations:
+                sources.check(citation, "match")
+    sources.check(t.RAMAN, "match")
+
+
+@pytest.mark.parametrize("profile", list(KootaProfile))
+def test_compute_match_of_two_charts(profile: KootaProfile) -> None:
+    delhi = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090)
+    groom = compute_chart(BirthInput(local_datetime=datetime(1990, 5, 17, 12, 0), place=delhi))
+    bride = compute_chart(BirthInput(local_datetime=datetime(1993, 11, 2, 6, 30), place=delhi))
+    result = compute_match(groom, bride, profile)
+    assert [k.name for k in result.ashtakoota] == [
+        "varna", "vashya", "tara", "yoni", "graha_maitri", "gana", "bhakoot", "nadi",
+    ]  # fmt: skip
+    assert result.ashtakoota_total == sum(k.points for k in result.ashtakoota) <= 36
+    assert all(k.sources for k in result.ashtakoota)
+    assert len(result.dashakoota) == 10
+    assert result.kuja_balanced == (result.groom_kuja.manglik == result.bride_kuja.manglik)
+    assert result.profile == profile.value
+
+
+def _delhi_chart(when: datetime) -> ChartResult:
+    delhi = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090)
+    return compute_chart(BirthInput(local_datetime=when, place=delhi))
+
+
+#: The people of docs/MATCHING.md for checking matchmaking apps, born in New Delhi with
+#: the Moon well inside its nakshatra.
+CHECK_PEOPLE = {
+    "P1": (datetime(1990, 1, 5, 18, 0), ASHVINI),
+    "P2": (datetime(1991, 1, 24, 12, 0), BHARANI),
+    "P3": (datetime(1990, 1, 22, 1, 0), ANURADHA),
+    "P4": (datetime(1991, 1, 14, 1, 0), MULA),
+    "P5": (datetime(1990, 1, 14, 6, 0), MAGHA),
+}
+#: Boy, girl, the eight koota points in order, and the total with Maitreya's tables.
+CHECK_PAIRS = (
+    ("P1", "P2", (1, 2, 3, 2, 5, 5, 7, 8), 33.0),
+    ("P2", "P1", (1, 2, 3, 2, 5, 6, 7, 8), 34.0),
+    ("P1", "P4", (1, 1, 3, 2, 5, 1, 0, 0), 13.0),
+    ("P4", "P1", (1, 1, 3, 2, 5, 0, 0, 0), 11.0),
+    ("P3", "P1", (1, 1, 1.5, 3, 5, 6, 0, 8), 24.5),
+    ("P5", "P1", (1, 1.5, 3, 2, 5, 0, 0, 8), 19.5),
+    ("P1", "P5", (1, 0, 3, 2, 5, 1, 0, 8), 20.0),
+)
+
+
+def test_app_check_pairs_of_the_matching_doc() -> None:
+    charts = {key: _delhi_chart(when) for key, (when, _) in CHECK_PEOPLE.items()}
+    for key, (_, nakshatra) in CHECK_PEOPLE.items():
+        assert moon_of(charts[key]).nakshatra == nakshatra, key
+        margin = moon_margin(charts[key])
+        assert min(margin.holds_before_hours, margin.holds_after_hours) > 8, key
+    for groom, bride, points, maitreya in CHECK_PAIRS:
+        match = compute_match(charts[groom], charts[bride])
+        assert tuple(k.points for k in match.ashtakoota) == points, (groom, bride)
+        assert match.ashtakoota_total == sum(points)
+        (variant,) = match.variants
+        assert variant.profile == "maitreya"
+        assert variant.total == maitreya, (groom, bride)
+        # The differences listed account for the whole gap between the totals.
+        gap = sum(d.variant_points - d.points for d in variant.differences)
+        assert gap == maitreya - match.ashtakoota_total
+
+
+def test_moon_margin_reads_the_moons_motion() -> None:
+    chart = _delhi_chart(datetime(1990, 1, 5, 18, 0))  # Ashwini, Mesha 5.3 degrees
+    moon = next(g for g in chart.grahas if g.body is Body.MOON)
+    margin = moon_margin(chart)
+    hours = 24.0 / abs(moon.speed)
+    # Ashwini begins with Mesha, at 0 degrees, and ends at 13 degrees 20 minutes.
+    assert margin.holds_before_hours == pytest.approx(moon.sidereal_longitude * hours, abs=0.01)
+    assert margin.holds_after_hours == pytest.approx(
+        (40 / 3 - moon.sidereal_longitude) * hours, abs=0.01
+    )
+
+
+def test_papasamya_counts_malefics_from_lagna_moon_and_venus() -> None:
+    chart = _delhi_chart(datetime(1990, 5, 17, 12, 0))
+    papa = papasamya(chart)
+    signs = {g.body: int(g.sign) for g in chart.grahas}
+    refs = {
+        "lagna": int(chart.ascendant.sign),
+        "Moon": signs[Body.MOON],
+        "Venus": signs[Body.VENUS],
+    }
+    expected = [
+        (body, name, (signs[body] - ref) % 12 + 1)
+        for name, ref in refs.items()
+        for body in (Body.SUN, Body.MARS, Body.SATURN, Body.RAHU, Body.KETU)
+        if (signs[body] - ref) % 12 + 1 in (1, 2, 4, 7, 8, 12)
+    ]
+    assert [(i.planet, i.reference, i.house) for i in papa.items] == expected
+    weight = {"lagna": 1.0, "Moon": 0.5, "Venus": 0.25}
+    assert all(i.points == weight[i.reference] for i in papa.items)
+    assert papa.points == sum(i.points for i in papa.items)
+
+
+def test_match_reports_papasamya_and_cross_checks() -> None:
+    groom = _delhi_chart(datetime(1990, 5, 17, 12, 0))
+    bride = _delhi_chart(datetime(1993, 11, 2, 6, 30))
+    result = compute_match(groom, bride)
+    assert result.papasamya_balanced == (result.bride_papa.points <= result.groom_papa.points)
+    checks = cross_checks(groom, bride)
+    assert [c.key for c in checks] == ["lagna_lords", "navamsa_lagnas", "groom_moon", "bride_moon"]
+    assert all(c.tone in ("good", "mixed", "hard") for c in checks)
+
+
+def test_dasha_sandhi_finds_changes_and_hostile_junctions() -> None:
+    groom = _delhi_chart(datetime(1990, 5, 17, 12, 0))
+    mahadashas = [p for p in groom.dashas.vimshottari.periods if len(p.lords) == 1]
+    change = next(p for p in mahadashas[1:] if p.start.year > 2000)
+    before = mahadashas[mahadashas.index(change) - 1]
+    today = change.start.date().replace(day=1) - timedelta(days=200)
+    sandhi = dasha_sandhi(groom, groom, today, years=2)
+    expected = f"{before.lords[0].value.title()} to {change.lords[0].value.title()}"
+    assert sandhi.groom_changes and sandhi.groom_changes[0].startswith(expected)
+    assert sandhi.within_a_year  # the same chart changes at the same time
+    pair = (before.lords[0], change.lords[0])
+    named = {(Body.RAHU, Body.JUPITER), (Body.MARS, Body.RAHU), (Body.VENUS, Body.SUN)}
+    assert bool(sandhi.hostile) == (pair in named)
+
+
+def test_vasya_porutham_wording_follows_the_result() -> None:
+    for groom in range(27):
+        for bride in range(0, 27, 4):
+            vasya = next(p for p in dashakoota(P(groom, 1), P(bride, 1)) if p.name == "vasya")
+            assert ("neither" in vasya.detail) != vasya.agrees

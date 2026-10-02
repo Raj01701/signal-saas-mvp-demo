@@ -1,0 +1,76 @@
+[project]
+name = "jyotish-platform"
+version = "0.1.0"
+description = "Workspace root for the Jyotish platform (engine + API). Not a distributable package."
+requires-python = ">=3.11"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["engine", "api"]
+
+[tool.uv.sources]
+jyotish-engine = { workspace = true }
+jyotish-api = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "jyotish-engine",
+    "jyotish-api",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "hypothesis>=6.120",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "astronomy-engine>=2.1.19",
+    "httpx2>=2.0",
+    "types-PyYAML>=6.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["oracle/.venv", "web"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "PL", "NPY"]
+ignore = [
+    "PLR0913",  # astronomy formulas legitimately take many parameters
+    "PLR0917",
+    "PLR2004",  # magic numbers are the norm in astronomical constants
+    "PLR0911",
+    "PLR0912",
+    "PLR0915",
+    "RUF001",   # allow unicode (degree, prime) symbols in strings
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["jyotish_engine", "jyotish_api"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["PLC0415", "N802", "N806"]
+"oracle/**" = ["PLC0415"]
+# Rule texts and templates: long prose strings are data.
+"scripts/period_rules.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+exclude = ["oracle/", "web/"]
+
+[[tool.mypy.overrides]]
+module = ["skyfield.*", "jplephem.*", "timezonefinder.*", "geonamescache.*", "astronomy.*", "skyfield_data.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["engine/tests", "api/tests"]
+addopts = "-q --strict-markers --import-mode=importlib"
+markers = [
+    "golden: comparisons against oracle-generated reference fixtures",
+    "slow: long-running accuracy sweeps",
+]

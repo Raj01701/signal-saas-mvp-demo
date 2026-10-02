@@ -1,0 +1,11 @@
+# Oracle harness only (AGPL-3.0). Never install these into the product environment.
+pyswisseph==2.10.3.2
+PyJHora==4.8.7
+# PyJHora runtime imports
+geocoder
+geopy
+pytz
+requests
+timezonefinder
+reverse_geocode
+python-dateutil

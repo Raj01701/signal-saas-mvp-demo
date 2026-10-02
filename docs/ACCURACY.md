@@ -1,0 +1,274 @@
+# Accuracy report
+
+*Generated 2026-10-02 by `scripts/accuracy_report.py`, engine 0.1.0, ephemeris DE421.* Reference: Swiss Ephemeris 2.10.03 (pyswisseph), files sepl_18/semo_18; 412 cases (1900–2050, latitudes −60° to +78°, seed 20260929).
+
+The engine and the reference are given identical TT/UT1 instants, so these numbers measure the astronomy itself. Delta T is compared separately.
+
+## Positions (tropical, apparent, true equinox of date)
+
+| Quantity | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| Sun | 412 | 0.0041" | 0.0009" | ≤ 1" |
+| Moon | 412 | 0.0098" | 0.0024" | ≤ 1" |
+| Mars | 412 | 0.0272" | 0.0009" | ≤ 1" |
+| Mercury | 412 | 0.0047" | 0.0010" | ≤ 1" |
+| Jupiter | 412 | 0.0025" | 0.0007" | ≤ 1" |
+| Venus | 412 | 0.0052" | 0.0010" | ≤ 1" |
+| Saturn | 412 | 0.0022" | 0.0005" | ≤ 1" |
+| Uranus | 412 | 0.2969" | 0.1205" | ≤ 1" |
+| Neptune | 412 | 0.1810" | 0.0303" | ≤ 1" |
+| Pluto | 412 | 0.2630" | 0.0683" | ≤ 1" |
+| Rahu (mean node) | 412 | 0.1084" | 0.0506" | ≤ 1" |
+| Rahu (true node) | 412 | 0.0361" | 0.0041" | ≤ 5" |
+
+## Ayanamsa (true, including nutation)
+
+| System | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| lahiri | 412 | 0.0023" | 0.0007" | ≤ 0.5" |
+| lahiri_icrc | 412 | 0.0023" | 0.0007" | ≤ 0.5" |
+| lahiri_1940 | 412 | 0.0027" | 0.0009" | ≤ 0.5" |
+| lahiri_vp285 | 412 | 0.0165" | 0.0073" | ≤ 0.5" |
+| raman | 412 | 0.0027" | 0.0009" | ≤ 0.5" |
+| krishnamurti | 412 | 0.0027" | 0.0009" | ≤ 0.5" |
+| krishnamurti_vp291 | 412 | 0.0163" | 0.0073" | ≤ 0.5" |
+| yukteshwar | 412 | 0.0027" | 0.0009" | ≤ 0.5" |
+| jn_bhasin | 412 | 0.0027" | 0.0009" | ≤ 0.5" |
+| fagan_bradley | 412 | 0.0023" | 0.0007" | ≤ 0.5" |
+| true_chitra | 412 | 0.0235" | 0.0099" | ≤ 0.5" |
+| true_revati | 412 | 0.2867" | 0.1216" | ≤ 0.5" |
+| true_pushya | 412 | 0.0309" | 0.0132" | ≤ 0.5" |
+
+## Angles and houses (tropical)
+
+| Quantity | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| Ascendant | 412 | 0.0062" | 0.0004" | ≤ 2" |
+| Midheaven | 412 | 0.0016" | 0.0004" | ≤ 2" |
+| Placidus cusps (worst of 12) | 410 | 0.0062" | 0.0005" | ≤ 2" |
+| Porphyry cusps (worst of 12) | 412 | 0.0062" | 0.0005" | ≤ 2" |
+| Equal cusps (worst of 12) | 412 | 0.0062" | 0.0004" | ≤ 2" |
+| Sripati cusps (worst of 12) | 412 | 0.0053" | 0.0004" | ≤ 2" |
+
+Placidus is undefined inside the polar circles; there the engine falls back to Porphyry and flags it, as the reference does.
+
+## Sunrise and sunset (|latitude| < 60°)
+
+| Event | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| Sunrise (hindu) | 193 | 0.1005 s | 0.0150 s | ≤ 2 s |
+| Sunset (hindu) | 193 | 0.1160 s | 0.0161 s | ≤ 2 s |
+| Sunrise (upper_limb_refraction) | 193 | 0.1186 s | 0.0023 s | ≤ 2 s |
+| Sunset (upper_limb_refraction) | 193 | 0.0787 s | 0.0016 s | ≤ 2 s |
+| Sunrise (disc_centre_refraction) | 193 | 0.0533 s | 0.0013 s | ≤ 2 s |
+| Sunset (disc_centre_refraction) | 193 | 0.0318 s | 0.0010 s | ≤ 2 s |
+
+Above about 60° the reference's own sunset times depend on where its search starts (one case at 62° N moved by 6 minutes); restarted near the event it agrees with the engine to 0.05 s.
+
+## Delta T (TT − UT1), dates up to 2023
+
+| Quantity | Cases | Max | Median | Note |
+|---|---|---|---|---|
+| Delta T | 339 | 0.6631 s | 0.0122 s | both follow IERS values |
+
+Future Delta T is a prediction in every tool; by 2050 models differ by seconds, which moves the Moon by about 0.5″ per second of difference.
+
+## Jyotish layer (M2) versus PyJHora 4.8.7
+
+* Divisional charts: 80 of 80 reference tables (23 divisions with their Parashara, parivritti, Somanatha, Jagannatha, Raman and siddhamsa variants) match exactly, sign by sign and part by part; the unequal Trimsamsa (D30) and divisional longitudes also match.
+* Chara karakas, compound (panchadha) relationships: exact on all 120 charts.
+* Bhava arudhas: exact on every chart where PyJHora's convention of counting the Lagna as a planet does not apply.
+* Bhava, Hora and Ghati lagnas within 0.12′; Indu lagna within 0.03′; Sree lagna within 1′ (it moves 27 times faster than the Moon).
+* Sun-based upagrahas exact; time-based upagrahas within 1′ for day births where both part-lord conventions agree.
+
+Reference deviations found and documented (the engine follows the classical texts):
+
+* PyJHora's PyPI package ships no planetary data files, so Swiss Ephemeris falls back to the Moshier model (Moon off by up to ~3″, nodes by up to ~50″); fixtures are generated with the real files.
+* It uses true (geometric) positions, about 20″ from the apparent positions most almanacs use; the engine offers both (`position_type`).
+* It adds the timezone twice when taking the Sun at sunrise for special lagnas, counts a clock second as one tharparai in Pranapada, measures night upagraha parts from sunrise, and places the lordless eighth part after Saturn.
+
+## Transit events (M3) versus Swiss Ephemeris
+
+Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent, true node), sidereal sign ingresses 1995–2025 (the Moon 1995–1996) and planetary stations, each bisected to about 10 ms.
+
+| Body | Ingresses (engine / reference) | Max | Median | Stations | Max | Median |
+|---|---|---|---|---|---|---|
+| Sun | 360 / 360 | 0.16 s | 0.02 s | — | — | — |
+| Moon | 321 / 321 | 0.05 s | 0.02 s | — | — | — |
+| Mars | 205 / 205 | 0.31 s | 0.02 s | 29 / 29 | 0.50 s | 0.18 s |
+| Mercury | 441 / 441 | 0.17 s | 0.02 s | 190 / 190 | 0.20 s | 0.06 s |
+| Jupiter | 42 / 42 | 0.54 s | 0.08 s | 55 / 55 | 0.77 s | 0.31 s |
+| Venus | 383 / 383 | 0.17 s | 0.02 s | 36 / 36 | 0.44 s | 0.15 s |
+| Saturn | 26 / 26 | 0.31 s | 0.09 s | 58 / 58 | 1.64 s | 0.55 s |
+| Rahu | 19 / 19 | 13.41 s | 1.25 s | — | — | — |
+
+Milestone target: ingress times within one minute. The true node's reversals are not reported as stations (Rahu and Ketu are treated as always retrograde).
+
+## Nakshatra dashas (M3) versus PyJHora 4.8.7
+
+40 charts; the engine is given PyJHora's Moon longitude and dasha year, so these numbers measure the dasha arithmetic itself.
+
+| System | Periods compared | Lords matching | Max start difference |
+|---|---|---|---|
+| Vimshottari | 3240 | 3240 | 0.004 s |
+| Ashtottari | 2560 | 2560 | 0.004 s |
+| Yogini | 7680 | 7680 | 0.004 s |
+| Shodashottari | 2560 | 2560 | 0.004 s |
+| Dwadashottari | 2560 | 2560 | 0.004 s |
+| Panchottari | 1960 | 1960 | 0.004 s |
+| Shatabdika | 1960 | 1960 | 0.004 s |
+| Chaturashiti Sama | 1960 | 1960 | 0.004 s |
+| Dwisaptati Sama | 5120 | 5120 | 0.004 s |
+| Shashtihayani | 5120 | 5120 | 0.004 s |
+| Shattrimsha Sama | 7680 | 7680 | 0.004 s |
+
+* Antardashas are divided the way PyJHora divides them: in proportion to the lords' years for Vimshottari and Ashtottari, equally for the rest. BPHS divides them proportionally in every system, which is the engine's default.
+* True sidereal year (Mesha sankranti to Mesha sankranti): the engine is within 0.24 s of an exact Swiss Ephemeris bisection on every chart. PyJHora's own value is off by up to 168 s, because it interpolates each sankranti from sunrise samples, and on 1 chart(s) by 0.9 days (a wrong sankranti day); its dasha dates move accordingly.
+* Applicability of the conditional dashas: 280 of 280 verdicts agree (7 systems; PyJHora has no rule for Shodashottari or Shattrimsha Sama).
+* Yogini dasha follows BPHS's formula, (birth nakshatra + 3) mod 8; a cyclic count from Ardra gives different lords for births in Ashwini to Mrigashira.
+
+## Jaimini sign dashas (M3) versus PyJHora 4.8.7
+
+60 charts, identical positions. Chara dasha (K.N. Rao): mahadasha signs, lengths and dates match exactly on 51 charts. Narayana dasha (both rounds, mahadashas and antardashas): exact on 49 charts.
+
+Every other chart differs only through one of these reference behaviours, which `test_sign_dasha_golden.py` detects chart by chart (the engine follows the rule as written):
+
+* Mercury in Virgo is not treated as exalted (BPHS: exalted), so Gemini and Virgo dashas are a year shorter;
+* the lagna is counted as a planet when choosing between co-lords;
+* in the stronger-sign test (rule 2), Jupiter or Mercury is counted twice when it also rules the sign, and a lord in its own sign is missed;
+* when the co-lord rules tie, the co-lord whose own sign has the longer dasha wins, rather than the one that gives the sign in question the longer dasha.
+
+PyJHora also gives every Chara mahadasha the same antardasha order, starting from the lagna; the engine uses K.N. Rao's order (from the sign after the dasha sign, ending with the dasha sign), so Chara antardashas are not compared.
+
+**Kalachakra dasha** (same charts, same Moon): the signs, balance at birth and proportional antardashas agree to the second wherever both follow the same reading. The engine continues after the birth pada with the next pada in the zodiac, where PyJHora switches to the paired nakshatra group (the same pada for padas 1-3 and some pada-4 births); it runs the first mahadasha's antardashas from the mahadasha's true start, where PyJHora squeezes them into the balance left at birth; and a sign that occurs twice in a pada starts its antardashas from its own place rather than its first occurrence.
+
+## Annual charts (M3)
+
+40 births, a random year of life each (up to 50 years on). The reference finds each moment independently by bisecting Swiss Ephemeris positions (Lahiri, apparent); times are compared in TT, because future Delta T is a prediction on which tools differ by about a second in the 2030s.
+
+| Moment | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| Varsha Pravesha (solar return) | 40 | 0.0537 s | 0.0110 s | ≤ 1 s |
+| Tithi Pravesha | 40 | 0.0116 s | 0.0050 s | ≤ 1 s |
+
+* Patyayini dasha (annual), given PyJHora's krisamsas and year: 40 of 40 tables identical, mahadashas and antardashas to the second.
+* Mudda dasha is Vimshottari compressed into the Tajika year, built on the same period tree as the natal dashas above; PyJHora scales its balance and periods differently (a 360-day balance within a sidereal-year cycle), so it is not compared.
+
+## Strength (M4)
+
+* Ashtakavarga: identical to P.V.R. Narasimha Rao's worked Chart 7, before and after both reductions (`test_ashtakavarga.py`).
+* Shadbala: every component of B.V. Raman's and V.P. Jain's worked examples within 1 virupa, apart from the book slips and method differences listed in `test_shadbala.py`.
+
+## Tajika sahams (M4)
+
+The 36 sahams of Rao's table on 300 random sets of positions, day and night: 10130 of 10800 values identical to PyJHora's. Every other value is reproduced exactly by one of three PyJHora departures from the table, which `test_sahams_golden.py` checks case by case: house cusps not reduced below 360 degrees before its between-signs test, Rahu or Ketu taken as the lord of Aquarius or Scorpio, and Labha reversed by night.
+
+## Yogas and doshas (M4)
+
+982 rules in the knowledge base (`knowledge/`), all `draft` until a qualified Jyotishi reviews them. They carry 1308 citations, 0 checked against their edition so far. Provenance: 812 classical, 138 traditional (documented by modern authors, classical source not yet identified), 32 modern.
+
+| Category | Rules |
+|---|---|
+| dasha | 155 |
+| lord_in_house | 144 |
+| transit | 140 |
+| planet_in_house | 108 |
+| planet_in_sign | 84 |
+| parivartana | 66 |
+| conjunction | 56 |
+| named | 40 |
+| nabhasa | 32 |
+| nakshatra | 27 |
+| bhava | 23 |
+| dosha | 23 |
+| dhana | 14 |
+| malika | 12 |
+| raja | 12 |
+| lagna | 12 |
+| chandra | 11 |
+| neecha_bhanga | 7 |
+| mahapurusha | 5 |
+| birth | 4 |
+| surya | 4 |
+| viparita | 3 |
+
+* Test charts: 2118 of 2118 behave as each rule specifies (present, absent, or present but cancelled).
+* Property tests on random charts check catalogue invariants (for example, exactly one of Sunapha, Anapha, Durudhura and Kemadruma holds) and compare the Mahapurusha, Parivartana, Gajakesari, Kala Sarpa and lunar yogas with separate plain-Python implementations (`test_rules_properties.py`).
+
+## Panchanga (M5) versus Swiss Ephemeris
+
+Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise). 560 civil dates from 1950 to 2040: 100 each at New Delhi, Mumbai, Chennai, Kolkata and Bengaluru, and 20 each at London, New York and Sydney. The reference finds every event independently: rise and set with its own routine, and each change of tithi, nakshatra, yoga and karana by bisection on its positions. Limb changes are compared in TT, because Delta T for future dates is a prediction that differs between tools by about a second.
+
+| Event | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| Sunrise (Hindu: disc centre, no refraction) | 560 | 0.0865 s | 0.0093 s | ≤ 60 s |
+| Sunset (Hindu) | 560 | 0.1097 s | 0.0078 s | ≤ 60 s |
+| Moonrise (upper limb, refraction, topocentric) | 560 | 0.0896 s | 0.0084 s | ≤ 60 s |
+| Moonset (upper limb, refraction, topocentric) | 560 | 0.0923 s | 0.0047 s | ≤ 60 s |
+| Tithi changes | 1125 | 0.0205 s | 0.0069 s | ≤ 60 s |
+| Nakshatra changes | 1116 | 0.0176 s | 0.0062 s | ≤ 60 s |
+| Yoga changes | 1158 | 0.0168 s | 0.0057 s | ≤ 60 s |
+| Karana changes | 1688 | 0.0205 s | 0.0069 s | ≤ 60 s |
+
+Every limb span the engine reports from sunrise to the next sunrise matches a change in the reference (0 unmatched). The milestone target is one minute against Drik Panchang with the same sunrise definition; Drik Panchang cannot be reached from this environment, so that comparison is left to the manual spot checks.
+
+## Lunisolar calendar (M5) versus Swiss Ephemeris and PyJHora
+
+Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise) and PyJHora (apparent positions). 704 dates from 1950 to 2040: 400 at random, 144 in and around every adhika month of the period, and 160 on and after sankrantis. Places keep UTC as civil time, because PyJHora reads a local Julian day as UT when it takes the month at sunrise.
+
+| Quantity | Cases | Max | Median | Target |
+|---|---|---|---|---|
+| New moons (month start and end, TT) | 1408 | 0.0138 s | 0.0033 s | ≤ 1 s |
+| Sankrantis (TT) | 704 | 0.0553 s | 0.0119 s | ≤ 1 s |
+
+* The month naming rule applied to Swiss Ephemeris' new moons and signs gives the engine's month, adhika, nija and kshaya flags in 704 of 704 cases, and the sunset rule applied to its sunsets gives the engine's Tamil day in 704 of 704.
+* PyJHora agrees on the amanta month, the lunar day and the adhika flag in 704 of 704 cases, and on the Kali, Shaka and Vikram years in 704.
+* Purnimanta months agree in 682 of 682 cases. In the other 22, the dark half of an adhika month, PyJHora moves the day into the next month; the engine keeps both halves in the adhika month (adhika Shravana 2023 ran from 18 July to 16 August in both reckonings).
+* PyJHora's nija flag differs in 88 cases: it compares a 1-based month from one of its functions with a 0-based one from another. The engine's flag follows the rule above.
+* Tamil dates agree in 684 of 704 cases. In every other case PyJHora's backward search is the cause, as `test_calendar_golden.py` checks case by case: it stops at the first sunset it meets with the Sun less than 1 degree into its sign, which is one day late when the sankranti falls shortly before a sunset, and misses the month's start when the Sun is more than 1 degree in by then. Its solar samvatsara function failed on the first date tried and is not compared; the Tamil festival dates in `test_calendar.py` check the year instead.
+* Kshaya months: the rule finds two between 1950 and 2040, in 1963 (Kartika with Margashirsha) and 1983 (Pausha with Magha), each between two adhika months.
+
+## Marriage matching (M5) versus PyJHora
+
+All 11664 pairs of nakshatra padas (groom and bride). Koota tables differ between published sources, so the engine keeps named profiles and cites each table (`match/tables.py`); PyJHora was run with the Vashya table of the default profile. `docs/MATCHING.md` sets out the sources of each table and how to check the scores against matchmaking apps.
+
+| Koota or kuta | Pairs identical | Remaining pairs |
+|---|---|---|
+| graha_maitri | 11664 | none |
+| gana | 11664 | none |
+| nadi | 11664 | none |
+| mahendra | 11664 | none |
+| rajju | 11664 | none |
+| bhakoot | 11583 | one PyJHora cell gives 7 to a Karka groom with a Kumbha bride (6/8) |
+| varna | 11664 | none, against the Maitreya profile (air signs Vaishya) that PyJHora follows |
+| tara | 11664 | none once inverted: PyJHora scores the inauspicious remainders 3, 5, 7 |
+| vashya | 9950 | PyJHora splits Dhanu and Makara by pada number instead of at 15 degrees |
+| yoni | 11536 | PyJHora's table is symmetric; two of Maitreya's cells are not |
+| vedha | 11072 | PyJHora flags any nakshatra numbers summing to 19, 28 or 37 |
+| vasya | 10530 | PyJHora tests only the groom's sign against the bride's |
+
+`test_match_golden.py` checks every remaining pair against its stated cause.
+
+## Conventions, birthplaces and real charts
+
+Programs that agree on the astronomy can still disagree by convention, so each convention is a setting. The `indian_software` preset, which the Kundli Check page uses, takes the defaults most Indian astrology software uses; `classic_parashari` is the API's default.
+
+| Convention | `indian_software` | `classic_parashari` | What the difference does |
+|---|---|---|---|
+| Rahu and Ketu | mean node | true node | the true node runs up to about 1.5° either side of the mean one, enough to change Rahu's nakshatra or sign |
+| Vimshottari year | 365.25 days | 365.2564 days | about 9 hours over 60 years; PyJHora's default, the true sidereal year, moves dates by hours |
+| Sunrise | upper limb, with refraction | centre of the disc, no refraction | about 3 to 4 minutes in India, which moves panchanga day boundaries |
+| Ayanamsa and houses | Lahiri, whole signs | the same | none |
+
+Birthplaces come from GeoNames (places of 500 people or more, read offline). A state or country typed after a comma chooses among towns of the same name (Sirsa in Haryana or in Uttar Pradesh); without one, Indian places come first and the largest wins, and the result says when that was a guess. Coordinates pasted from a map are used as given. A town centre can lie a kilometre or so from a map service's pin; one kilometre east or west moves the chart by about 2.5 seconds of clock time at Indian latitudes, while a rising sign lasts about two hours, so only the wrong town matters.
+
+Two real birth charts (kept out of the repository) were compared with Swiss Ephemeris 2.10.03 and PyJHora 4.8.7, using `oracle/reference_chart.py` in the oracle environment and `scripts/compare_with_reference.py`:
+
+| Quantity | Largest difference |
+|---|---|
+| Sun to Saturn | 0.03″ |
+| Moon | 0.29″ |
+| Rahu, true and mean node | 0.04″ |
+| Ascendant | 10.8″: the engine turns civil time into Earth-rotation time (UT1) and the references take UTC as UT1; 10.8″ is less than a second of birth time |
+| Nakshatra, pada and the birth panchanga (vara, tithi, yoga, karana) | identical |
+| Vimshottari dates | hours, from the dasha-year convention above |

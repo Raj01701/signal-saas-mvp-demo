@@ -1,0 +1,7 @@
+ignoredBuiltDependencies:
+  - unrs-resolver
+# Next.js' optional image optimiser pulls in libvips (LGPL-3.0). Charts are SVG and
+# images are served unoptimised, so the dependency is removed to keep the product
+# permissively licensed (see scripts/check_licenses.py).
+overrides:
+  sharp: "-"

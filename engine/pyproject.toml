@@ -1,0 +1,23 @@
+[project]
+name = "jyotish-engine"
+version = "0.1.0"
+description = "Deterministic Vedic astrology (Jyotish) calculation engine built on NASA JPL ephemerides."
+requires-python = ">=3.11"
+readme = "README.md"
+dependencies = [
+    "skyfield>=1.53",
+    "skyfield-data>=7.0.0",
+    "numpy>=1.26",
+    "pydantic>=2.9",
+    "timezonefinder>=6.5",
+    "tzdata>=2024.2",
+    "geonamescache>=2.0",
+    "PyYAML>=6.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["jyotish_engine"]

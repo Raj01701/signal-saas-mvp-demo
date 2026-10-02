@@ -1,0 +1,360 @@
+# House (bhava) yogas from B.V. Raman's Three Hundred Important Combinations.
+# Raman compiles these from older works; until the classical source of each is
+# identified the provenance is "traditional". Raman's combinations about disease,
+# death and similar topics are deliberately left out for now.
+defaults:
+  category: bhava
+  school: parashari
+  provenance: traditional
+
+rules:
+  - id: bhava.sareera_soukhya
+    name: Sareera Soukhya Yoga
+    description: The lagna lord, Jupiter or Venus occupies a kendra.
+    when: in_kendra(lord(1)) or in_kendra(jupiter) or in_kendra(venus)
+    participants: "select(p in [lord(1), jupiter, venus]: in_kendra(p))"
+    effects:
+      domains: [health]
+      polarity: positive
+      strength: minor
+      summary: Good health, vitality and bodily comfort.
+    sources:
+      - {text: raman_300, locator: Sareera Soukhya Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: cancer, rest: taurus}
+      negative:
+        - {lagna: aries, rest: taurus}
+
+  - id: bhava.dehapushti
+    name: Dehapushti Yoga
+    description: The lagna lord is in a movable sign and aspected by a benefic.
+    when: "movable(lord(1)) and any(p in benefics: aspects(p, lord(1)))"
+    participants: "[lord(1)]"
+    effects:
+      domains: [health]
+      polarity: positive
+      strength: minor
+      summary: A well-built, well-nourished body.
+    sources:
+      - {text: raman_300, locator: Dehapushti Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: cancer, jupiter: capricorn, rest: taurus}
+      negative:
+        - {lagna: aries, mars: cancer, jupiter: aquarius, rest: taurus}
+
+  - id: bhava.sada_sanchara
+    name: Sada Sanchara Yoga
+    description: >-
+      The lagna lord, or the lord of the sign it occupies, is in a movable sign.
+    when: movable(lord(1)) or movable(dispositor(lord(1)))
+    participants: "[lord(1), dispositor(lord(1))]"
+    effects:
+      domains: [travel]
+      polarity: mixed
+      strength: minor
+      summary: A life of frequent travel and movement.
+    sources:
+      - {text: raman_300, locator: Sada Sanchara Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: cancer, rest: taurus}
+      negative:
+        - {lagna: aries, mars: taurus, rest: gemini}
+
+  - id: bhava.balya_dhana
+    name: Balya Dhana Yoga
+    category: dhana
+    description: >-
+      The 2nd and 10th lords are together in a kendra and aspected by the lord of the
+      navamsa sign occupied by the lagna lord.
+    when: >-
+      lord(2) != lord(10) and conjunct(lord(2), lord(10)) and in_kendra(lord(2))
+      and aspects(lord_of(navamsa(lord(1))), lord(2))
+    participants: "[lord(2), lord(10), lord_of(navamsa(lord(1)))]"
+    effects:
+      domains: [wealth]
+      polarity: positive
+      strength: moderate
+      summary: Wealth from an early age.
+    sources:
+      - {text: raman_300, locator: Balya Dhana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: cancer, saturn: cancer, mars: aries 1, rest: gemini}
+      negative:
+        - {lagna: aries, venus: cancer, saturn: cancer, mars: aries 11, rest: gemini}
+
+  - id: bhava.matrumooladdhana
+    name: Matrumooladdhana Yoga
+    category: dhana
+    description: The 4th lord joins or aspects the 2nd lord.
+    when: lord(2) != lord(4) and influences(lord(4), lord(2))
+    participants: "[lord(2), lord(4)]"
+    effects:
+      domains: [wealth, parents]
+      polarity: positive
+      strength: minor
+      summary: Wealth through the mother or maternal relatives.
+    sources:
+      - {text: raman_300, locator: Matrumooladdhana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: leo, moon: leo, rest: gemini}
+      negative:
+        - {lagna: aries, venus: leo, moon: virgo, rest: gemini}
+
+  - id: bhava.kalatramooladdhana
+    name: Kalatramooladdhana Yoga
+    category: dhana
+    description: >-
+      A strong 2nd lord is joined or aspected by both the 7th lord and Venus, and the
+      lagna lord is strong.
+    when: >-
+      strong(lord(2)) and influences(lord(7), lord(2)) and influences(venus, lord(2))
+      and strong(lord(1))
+    participants: "[lord(2), lord(7), venus, lord(1)]"
+    effects:
+      domains: [wealth, marriage]
+      polarity: positive
+      strength: moderate
+      summary: Wealth through the spouse or through marriage.
+    sources:
+      - {text: raman_300, locator: Kalatramooladdhana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: gemini, moon: cancer, jupiter: cancer, venus: cancer, mercury: gemini, rest: libra}
+      negative:
+        - {lagna: gemini, moon: cancer, jupiter: cancer, venus: leo, mercury: gemini, rest: libra}
+
+  - id: bhava.satkalatra
+    name: Satkalatra Yoga
+    description: The 7th lord or Venus is joined or aspected by Jupiter or Mercury.
+    when: "any(p in [jupiter, mercury]: influences(p, lord(7)) or influences(p, venus))"
+    participants: "[lord(7), venus]"
+    effects:
+      domains: [marriage]
+      polarity: positive
+      strength: moderate
+      summary: A good, virtuous spouse and a harmonious marriage.
+    sources:
+      - {text: raman_300, locator: Satkalatra Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, venus: libra, jupiter: libra, rest: taurus}
+      negative:
+        - {lagna: aries, venus: libra, rest: taurus}
+
+  - id: bhava.bhagya
+    name: Bhagya Yoga
+    description: >-
+      A strong natural benefic in the 1st, 3rd or 5th house aspects the 9th house.
+    when: "any(p in benefics: house(p) in [1, 3, 5] and strong(p) and aspects_house(p, 9))"
+    participants: "select(p in benefics: house(p) in [1, 3, 5] and strong(p) and aspects_house(p, 9))"
+    effects:
+      domains: [fortune]
+      polarity: positive
+      strength: moderate
+      summary: Good fortune and the blessings of elders and teachers.
+    sources:
+      - {text: raman_300, locator: Bhagya Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: aries, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: taurus, rest: gemini}
+
+  - id: bhava.dhatrutwa
+    name: Dhatrutwa Yoga
+    description: >-
+      The 9th lord is exalted and aspected by a benefic, and a benefic occupies the 9th
+      house.
+    when: >-
+      exalted(lord(9)) and any(p in benefics: aspects(p, lord(9)))
+      and any(p in benefics: house(p) == 9)
+    participants: "[lord(9)]"
+    effects:
+      domains: [character, spirituality]
+      polarity: positive
+      strength: moderate
+      summary: Charitable and generous; gives freely to good causes.
+    sources:
+      - {text: raman_300, locator: Dhatrutwa Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: cancer, venus: capricorn, mercury: sagittarius, rahu: leo, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: cancer, venus: capricorn, mercury: scorpio, rahu: leo, rest: gemini}
+
+  - id: bhava.vahana
+    name: Vahana Yoga
+    category: bhava
+    description: >-
+      The lagna lord is in the 4th, 9th or 11th house; or the 4th lord is exalted and
+      the lord of its exaltation sign is in a kendra or trikona.
+    when: >-
+      house(lord(1)) in [4, 9, 11]
+      or (exalted(lord(4)) and (in_kendra(exaltation_lord(lord(4)))
+      or in_trikona(exaltation_lord(lord(4)))))
+    effects:
+      domains: [property]
+      polarity: positive
+      strength: minor
+      summary: Vehicles and comfortable conveyance.
+    sources:
+      - {text: raman_300, locator: Vahana Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mars: cancer, rest: gemini}
+        - {lagna: aries, moon: taurus, venus: libra, rest: gemini}
+      negative:
+        - {lagna: aries, mars: gemini, rest: gemini}
+
+  - id: bhava.utthama_griha
+    name: Utthama Griha Yoga
+    description: >-
+      The 4th lord is in a kendra or trikona, joined by a benefic and aspected by a
+      benefic.
+    when: >-
+      (in_kendra(lord(4)) or in_trikona(lord(4)))
+      and any(p in without(benefics, [lord(4)]): conjunct(p, lord(4)))
+      and any(p in without(benefics, [lord(4)]): aspects(p, lord(4)))
+    participants: "[lord(4)]"
+    effects:
+      domains: [property]
+      polarity: positive
+      strength: moderate
+      summary: A fine, well-built house.
+    sources:
+      - {text: raman_300, locator: Utthama Griha Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: cancer, jupiter: cancer, venus: capricorn, rest: gemini}
+      negative:
+        - {lagna: aries, moon: cancer, jupiter: cancer, venus: aquarius, rest: gemini}
+
+  - id: bhava.vichitra_saudha_prakara
+    name: Vichitra Saudha Prakara Yoga
+    description: The 4th and 10th lords are in one sign together with Saturn and Mars.
+    when: >-
+      lord(4) != lord(10)
+      and all(p in [lord(10), saturn, mars]: sign(p) == sign(lord(4)))
+    participants: "[lord(4), lord(10), saturn, mars]"
+    effects:
+      domains: [property]
+      polarity: positive
+      strength: minor
+      summary: Beautiful, well-fortified buildings.
+    sources:
+      - {text: raman_300, locator: Vichitra Saudha Prakara Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: leo, saturn: leo, mars: leo, rest: gemini}
+        - {lagna: capricorn, venus: leo, saturn: leo, mars: leo, rest: gemini}
+      negative:
+        - {lagna: aries, moon: leo, saturn: leo, mars: virgo, rest: gemini}
+
+  - id: bhava.bandhu_pujya
+    name: Bandhu Pujya Yoga
+    description: Jupiter occupies or aspects the 4th house, or joins or aspects its lord.
+    when: house(jupiter) == 4 or aspects_house(jupiter, 4) or influences(jupiter, lord(4))
+    participants: "[jupiter, lord(4)]"
+    effects:
+      domains: [character]
+      polarity: positive
+      strength: minor
+      summary: Respected by relatives and kinsmen.
+    sources:
+      - {text: raman_300, locator: Bandhu Pujya Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: capricorn, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: taurus, rest: gemini}
+
+  - id: bhava.buddhimaturya
+    name: Buddhimaturya Yoga
+    description: >-
+      The 5th lord is a natural benefic, and it is aspected by another benefic or
+      occupies a benefic's sign.
+    when: >-
+      benefic(lord(5)) and (any(p in without(benefics, [lord(5)]): aspects(p, lord(5)))
+      or benefic(dispositor(lord(5))))
+    participants: "[lord(5)]"
+    effects:
+      domains: [intellect, education]
+      polarity: positive
+      strength: moderate
+      summary: A sharp, mature intelligence and sound judgement.
+    sources:
+      - {text: raman_300, locator: Buddhimaturya Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: taurus, mercury: pisces, rest: cancer}
+      negative:
+        - {lagna: taurus, mercury: aries, rest: cancer}
+
+  - id: bhava.nishturabhashi
+    name: Nishturabhashi Yoga
+    description: The Moon is joined by Saturn and not aspected by Jupiter.
+    when: conjunct(moon, saturn) and not aspects(jupiter, moon)
+    participants: "[moon, saturn]"
+    effects:
+      domains: [character]
+      polarity: negative
+      strength: minor
+      summary: Harsh or blunt speech.
+    sources:
+      - {text: raman_300, locator: Nishturabhashi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, moon: leo, saturn: leo, jupiter: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, moon: leo, saturn: leo, jupiter: aquarius, rest: gemini}
+
+  - id: bhava.bhratruvriddhi
+    name: Bhratruvriddhi Yoga
+    description: >-
+      The 3rd lord is strong, and another natural benefic occupies or aspects the 3rd
+      house or joins or aspects the 3rd lord.
+    when: >-
+      strong(lord(3)) and any(p in without(benefics, [lord(3)]): house(p) == 3
+      or aspects_house(p, 3) or influences(p, lord(3)))
+    participants: "[lord(3)]"
+    effects:
+      domains: [siblings]
+      polarity: positive
+      strength: minor
+      summary: Support from, and prosperity of, brothers and sisters.
+    sources:
+      - {text: raman_300, locator: Bhratruvriddhi Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, mercury: gemini, jupiter: gemini, rest: capricorn}
+      negative:
+        - {lagna: aries, mercury: gemini, rest: capricorn}
+
+  - id: bhava.ayatna_griha_prapta
+    name: Ayatna Griha Prapta Yoga
+    description: >-
+      The lagna and 7th lords occupy the 1st or 4th house with a benefic aspecting
+      either; or the 9th lord is in a kendra and the 4th lord is exalted, in
+      moolatrikona or in its own sign.
+    when: >-
+      (lord(1) != lord(7) and all(p in [lord(1), lord(7)]: house(p) in [1, 4])
+      and any(p in benefics: aspects(p, lord(1)) or aspects(p, lord(7))))
+      or (in_kendra(lord(9)) and (exalted(lord(4)) or moolatrikona(lord(4))
+      or own_sign(lord(4))))
+    effects:
+      domains: [property]
+      polarity: positive
+      strength: minor
+      summary: Acquires a house with little effort.
+    sources:
+      - {text: raman_300, locator: Ayatna Griha Prapta Yoga, verified: false}
+    tests:
+      positive:
+        - {lagna: aries, jupiter: cancer, moon: taurus, rest: gemini}
+      negative:
+        - {lagna: aries, jupiter: leo, moon: taurus, rest: gemini}

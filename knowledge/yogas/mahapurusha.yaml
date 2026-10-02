@@ -1,0 +1,104 @@
+# Pancha Mahapurusha yogas: a star planet dignified in a kendra from the lagna.
+defaults:
+  category: mahapurusha
+  school: parashari
+  provenance: classical
+
+families:
+  - template:
+      id: mahapurusha.{yoga}
+      name: "{yoga|title} Yoga"
+      description: >-
+        {planet|title} occupies its own or exaltation sign in a kendra (1st, 4th,
+        7th or 10th house) from the lagna.
+      when: in_kendra({planet}) and (own_sign({planet}) or exalted({planet}))
+      participants: "[{planet}]"
+      notes: >-
+        Some later authors weaken these yogas when the planet is combust or joined
+        by the Sun or the Moon; that refinement is not encoded.
+      sources:
+        - {text: bphs, edition: santhanam, chapter: 75, verified: false}
+        - {text: phaladeepika, edition: sastri, chapter: 6, verses: "1", verified: false}
+        - {text: raman_300, locator: "{yoga|title} Yoga", verified: false}
+    instances:
+      - params: {yoga: ruchaka, planet: mars}
+        overrides:
+          effects:
+            domains: [character, career, status]
+            polarity: positive
+            strength: major
+            summary: >-
+              Courage, physical vigour and a commanding, enterprising nature; success
+              through leadership, the armed forces, police, sport or engineering.
+        tests:
+          positive:
+            - {lagna: aries, mars: capricorn, rest: gemini}
+            - {lagna: cancer, mars: aries, rest: gemini}
+            - {lagna: leo, mars: scorpio, rest: gemini}
+          negative:
+            - {lagna: taurus, mars: capricorn, rest: gemini}
+            - {lagna: aries, mars: cancer, rest: gemini}
+      - params: {yoga: bhadra, planet: mercury}
+        overrides:
+          effects:
+            domains: [intellect, education, career]
+            polarity: positive
+            strength: major
+            summary: >-
+              A sharp, articulate and learned mind; skill in speech, writing, trade
+              and scholarship, and a long, comfortable life.
+        tests:
+          positive:
+            - {lagna: gemini, mercury: gemini, rest: leo}
+            - {lagna: sagittarius, mercury: virgo, rest: leo}
+          negative:
+            - {lagna: taurus, mercury: virgo, rest: leo}
+            - {lagna: aries, mercury: cancer, rest: leo}
+      - params: {yoga: hamsa, planet: jupiter}
+        overrides:
+          effects:
+            domains: [character, spirituality, status]
+            polarity: positive
+            strength: major
+            summary: >-
+              Righteousness, wisdom and a respected, contented life; honoured by the
+              learned and inclined to religion and good counsel.
+        tests:
+          positive:
+            - {lagna: aries, jupiter: cancer, rest: leo}
+            - {lagna: virgo, jupiter: pisces, rest: leo}
+          negative:
+            - {lagna: taurus, jupiter: cancer, rest: leo}
+            - {lagna: aries, jupiter: capricorn, rest: leo}
+      - params: {yoga: malavya, planet: venus}
+        overrides:
+          effects:
+            domains: [marriage, wealth, character]
+            polarity: positive
+            strength: major
+            summary: >-
+              Comfort, beauty and refinement; a happy family life, vehicles and
+              luxuries, and a taste for the arts.
+        tests:
+          positive:
+            - {lagna: virgo, venus: pisces, rest: leo}
+            - {lagna: capricorn, venus: libra, rest: leo}
+          negative:
+            - {lagna: aries, venus: pisces, rest: leo}
+            - {lagna: gemini, venus: virgo, rest: leo}
+      - params: {yoga: sasa, planet: saturn}
+        overrides:
+          effects:
+            domains: [career, status, character]
+            polarity: positive
+            strength: major
+            summary: >-
+              Authority over people and resources, persistence and organising ability;
+              rise through service, administration or industry.
+        tests:
+          positive:
+            - {lagna: aries, saturn: capricorn, rest: leo}
+            - {lagna: cancer, saturn: libra, rest: leo}
+          negative:
+            - {lagna: taurus, saturn: libra, rest: leo}
+            - {lagna: libra, saturn: aries, rest: leo}

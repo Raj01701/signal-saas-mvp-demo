@@ -1,0 +1,28 @@
+{
+  // One-click cloud copy of the app for trying it (GitHub Codespaces). The web app on
+  // port 3000 forwards /api to the API inside the container, so only one port is opened.
+  "name": "Jyotish platform",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+  "hostRequirements": { "cpus": 2, "memory": "8gb" },
+  "containerEnv": {
+    "NEXT_PUBLIC_API_URL": "/api",
+    "API_PROXY_TARGET": "http://127.0.0.1:8000",
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postAttachCommand": {
+    "api": "uv run uvicorn jyotish_api.main:app --host 127.0.0.1 --port 8000",
+    "web": "pnpm -C web start --port 3000"
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Jyotish app", "onAutoForward": "openBrowser" },
+    "8000": { "label": "API (internal)", "onAutoForward": "ignore" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": [".devcontainer/README.md"] }
+  }
+}
