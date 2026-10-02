@@ -30,7 +30,7 @@
 | 7 | Uvicorn's own access log records client addresses, which the service does not need to keep. | Low (privacy) | **Fixed.** It is off in the image; the API's JSON line has no address. |
 | 8 | `/metrics` was public. | Low | **Fixed.** Set `JYOTISH_API_METRICS_TOKEN` to require a bearer token (compared in constant time). |
 | 9 | Three engine invariants were `assert` statements, which Python removes under `-O`. | Low | **Fixed.** They are explicit `ValueError`s (varga starting sign, time-zone offset, day or night fraction in Shadbala). |
-| 10 | The narrative transport would call any URL scheme. | Low | **Fixed.** HTTPS only. |
+| 10 | The narrative transport would call any URL scheme. | Low | **Fixed.** HTTPS only; the official Anthropic SDK now makes the call, to its fixed HTTPS endpoint. |
 
 **Accepted rule findings**, none of which is a vulnerability:
 - `assert` in tests and scripts (S101).
@@ -71,7 +71,7 @@
 
 **Secrets**
 - All secrets come from the environment and never enter logs or responses.
-- The Anthropic call uses HTTPS with the standard library.
+- The Anthropic call goes through the official Anthropic SDK over HTTPS. Chat lookups only read the engine: the model chooses among seven read-only tools with strict input schemas, and every argument is checked (dates, ranges of at most 30 years, years within the person's life).
 
 **Personal data**
 - Without an account, birth details stay in the browser.

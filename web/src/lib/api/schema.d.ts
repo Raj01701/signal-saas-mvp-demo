@@ -95,7 +95,9 @@ export interface paths {
         put?: never;
         /**
          * Chat
-         * @description Answer a question about the chart from the evidence only, citing it.
+         * @description Answer any question about the chart in the person's own words: Claude looks up
+         *     what it needs in the engine and cites it; without Claude, the engine's facts on what
+         *     the question names are listed instead.
          */
         post: operations["chat_v1_charts_chat_post"];
         delete?: never;
@@ -870,8 +872,16 @@ export interface components {
             birth: components["schemas"]["BirthInput"];
             /** Gender */
             gender?: ("male" | "female") | null;
+            /**
+             * Language
+             * @default auto
+             * @enum {string}
+             */
+            language?: "auto" | "en" | "hi";
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
+            /** Name */
+            name?: string | null;
             preset?: components["schemas"]["Preset"] | null;
             settings?: components["schemas"]["Settings"] | null;
             /** Today */
@@ -1113,7 +1123,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "yoga" | "reading" | "promise" | "window" | "dasha" | "transit";
+            kind: "yoga" | "reading" | "promise" | "window" | "dasha" | "transit" | "lookup";
             /** Period */
             period?: string | null;
             /** Polarity */

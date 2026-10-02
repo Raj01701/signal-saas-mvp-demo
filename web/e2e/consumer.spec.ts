@@ -27,12 +27,22 @@ test("onboarding, dashboard and Hindi", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Add these to your calendar (.ics)" })).toHaveAttribute("download", "jyotish-reminders.ics");
   // Push is on in the test API, so the notification choice appears with its privacy note.
   await expect(page.getByText("Only the reminder texts and dates go to our server, never your birth details.")).toBeVisible();
+  // Any question in one's own words: a suggested one, then a typed one in Hindi.
+  await page.getByRole("button", { name: /^How will \d{4} be for me\?$/ }).click();
+  const conversation = page.getByRole("log", { name: "Conversation about your chart" });
+  await expect(conversation.getByText(/^\d{4}: you turn \d+ on your birthday\./)).toBeVisible();
+  await expect(conversation.getByText(/^Offline answer:/)).toBeVisible();
+  await page.getByLabel("Your question").fill("मेरा सातवाँ भाव क्या बताता है?");
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  await expect(conversation.getByText(/^House 7 \(marriage and partnerships\)/)).toBeVisible();
   await expectAccessible(page);
 
   await page.getByRole("button", { name: "Switch the interface to Hindi" }).click();
   await expect(page.getByRole("heading", { name: "नमस्ते, Asha" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "आज" })).toBeVisible();
   await expect(page.getByText(/राहु काल/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "अपनी कुंडली के बारे में कुछ भी पूछें" })).toBeVisible();
+  await expect(page.getByRole("log", { name: "आपकी कुंडली पर बातचीत" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
   await expectAccessible(page);
 

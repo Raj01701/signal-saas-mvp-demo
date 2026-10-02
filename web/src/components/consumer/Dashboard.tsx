@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ChatPanel } from "@/components/ChatPanel";
 import { Status } from "@/components/common";
 import { api, type Schemas } from "@/lib/api/client";
 import { clock } from "@/lib/format";
@@ -88,6 +89,8 @@ export function Dashboard({ profile, onEdit, onForget }: { profile: Profile; onE
         <Status loading={predictions.loading} error={predictions.error} />
         {predictions.data && <YearLines predictions={predictions.data} today={today} lang={lang} />}
       </section>
+
+      <ChatPanel request={{ birth }} name={profile.name} suggestions={t.chat.suggestions(Number(today.slice(0, 4)) + 1)} />
 
       {panchanga.data && period.data && predictions.data && (
         <Reminders panchanga={panchanga.data} predictions={predictions.data} today={today} lang={lang} />

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
+import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import Field
 
@@ -19,6 +20,7 @@ from jyotish_api.narrative.narrators import (
 )
 from jyotish_api.narrative.report import NarrativeOut
 from jyotish_api.narrative.service import (
+    ChatLanguage,
     ChatMessage,
     ChatOut,
     NarrativeRejectedError,
@@ -28,6 +30,7 @@ from jyotish_api.narrative.service import (
 )
 from jyotish_api.ratelimit import narrative_quota
 from jyotish_api.schemas import ChartRequest
+from jyotish_engine.ask import ChartLookup
 from jyotish_engine.models import ChartResult
 
 router = APIRouter(prefix="/v1", tags=["narrative"])
@@ -46,7 +49,12 @@ class ReportRequest(NarrativeRequest):
 
 
 class ChatRequest(NarrativeRequest):
+    #: The conversation so far, oldest first, ending with the person's question.
     messages: list[ChatMessage] = Field(min_length=1, max_length=20)
+    #: The reply's language: "auto" answers in the language of each question.
+    language: ChatLanguage = "auto"
+    #: The person's first name, for a more personal answer.
+    name: str | None = Field(default=None, max_length=60)
 
 
 def narrator_for(settings: ApiSettings) -> Narrator:
@@ -76,18 +84,33 @@ def report(request: Request, body: ReportRequest) -> NarrativeOut:
         return write_report(bundle, narrator_for(request.app.state.settings), body.language)
     except (NarrativeRefusedError, NarrativeRejectedError) as error:
         raise HTTPException(502, str(error)) from error
+    except anthropic.APIError as error:
+        raise HTTPException(502, "the language model could not be reached") from error
 
 
 @router.post("/charts/chat", dependencies=[Depends(narrative_quota)])
 def chat(request: Request, body: ChatRequest) -> ChatOut:
-    """Answer a question about the chart from the evidence only, citing it."""
+    """Answer any question about the chart in the person's own words: Claude looks up
+    what it needs in the engine and cites it; without Claude, the engine's facts on what
+    the question names are listed instead."""
     if body.messages[-1].role != "user":
         raise HTTPException(422, "the last message must be the user's question")
     chart, bundle = _inputs(request, body)
+    lookup = ChartLookup(chart, today=bundle.today, gender=body.gender)
     narrator = narrator_for(request.app.state.settings)
     if not isinstance(narrator, ClaudeNarrator):
-        return answer_offline(bundle, body.messages[-1].content)
+        return answer_offline(bundle, body.messages[-1].content, lookup)
     try:
-        return chat_with_claude(narrator, chart, bundle, body.messages)
+        return chat_with_claude(
+            narrator,
+            chart,
+            bundle,
+            body.messages,
+            lookup=lookup,
+            name=body.name,
+            language=body.language,
+        )
     except (NarrativeRefusedError, NarrativeRejectedError) as error:
         raise HTTPException(502, str(error)) from error
+    except anthropic.APIError as error:
+        raise HTTPException(502, "the language model could not be reached") from error

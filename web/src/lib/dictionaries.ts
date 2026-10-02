@@ -140,6 +140,34 @@ export const en = {
     kuja: "Kuja dosha",
     sources: "Sources",
   },
+  chat: {
+    heading: "Ask anything about your chart",
+    intro:
+      "Ask in your own words, in English or Hindi: about a year or a date, a planet or a house, your work, marriage, money, home, studies or travel.",
+    log: "Conversation about your chart",
+    label: "Your question",
+    placeholder: "For example: How will next year be for my career?",
+    send: "Ask",
+    stop: "Stop",
+    clear: "Clear conversation",
+    thinking: "Reading your chart…",
+    you: "You asked",
+    astrologer: "Answer",
+    tryThese: "Try a question",
+    basedOn: (n: number) => (n === 1 ? "Based on 1 finding from your chart" : `Based on ${n} findings from your chart`),
+    offline:
+      "Offline answer: the chart's own facts for your question, in English. Answers written in your words need the Claude connection, which this server does not have.",
+    error: "The answer could not be fetched. Please try again.",
+    busy: "One question at a time: wait for this answer, or press Stop.",
+    suggestions: (year: number) => [
+      `How will ${year} be for me?`,
+      "When is a good time to change my job?",
+      "What does my 7th house show?",
+      "Is Saturn strong in my chart?",
+    ],
+    note: "Answers describe traditional tendencies, not certainties, and are not medical, legal or financial advice.",
+    stored: "The conversation is kept only on this device.",
+  },
 };
 
 export type Dictionary = typeof en;
@@ -286,5 +314,33 @@ export const hi: Dictionary = {
     no: "नहीं",
     kuja: "कुज (मंगल) दोष",
     sources: "स्रोत",
+  },
+  chat: {
+    heading: "अपनी कुंडली के बारे में कुछ भी पूछें",
+    intro:
+      "अपने शब्दों में, हिंदी या अंग्रेज़ी में पूछें: किसी वर्ष या तारीख़, किसी ग्रह या भाव, अपने काम, विवाह, धन, घर, पढ़ाई या यात्रा के बारे में।",
+    log: "आपकी कुंडली पर बातचीत",
+    label: "आपका प्रश्न",
+    placeholder: "उदाहरण: अगला साल मेरे करियर के लिए कैसा रहेगा?",
+    send: "पूछें",
+    stop: "रोकें",
+    clear: "बातचीत मिटाएँ",
+    thinking: "आपकी कुंडली पढ़ी जा रही है…",
+    you: "आपने पूछा",
+    astrologer: "उत्तर",
+    tryThese: "कोई प्रश्न आज़माएँ",
+    basedOn: (n: number) => `आपकी कुंडली की ${n} बातों पर आधारित`,
+    offline:
+      "ऑफ़लाइन उत्तर: आपके प्रश्न पर कुंडली के अपने तथ्य, अंग्रेज़ी में। आपके शब्दों में लिखे उत्तरों के लिए Claude कनेक्शन चाहिए, जो इस सर्वर पर नहीं है।",
+    error: "उत्तर नहीं मिल सका। कृपया फिर से कोशिश करें।",
+    busy: "एक समय में एक प्रश्न: इस उत्तर की प्रतीक्षा करें, या रोकें दबाएँ।",
+    suggestions: (year: number) => [
+      `${year} मेरे लिए कैसा रहेगा?`,
+      "नौकरी बदलने का अच्छा समय कब है?",
+      "मेरा 7वां भाव क्या बताता है?",
+      "क्या मेरी कुंडली में शनि बलवान है?",
+    ],
+    note: "उत्तर पारंपरिक प्रवृत्तियाँ बताते हैं, निश्चितताएँ नहीं, और ये चिकित्सा, कानूनी या वित्तीय सलाह नहीं हैं।",
+    stored: "बातचीत केवल इसी डिवाइस पर रखी जाती है।",
   },
 };

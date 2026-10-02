@@ -65,7 +65,7 @@ Settings come from `JYOTISH_API_*` environment variables (`api/jyotish_api/confi
 | `JYOTISH_API_FORWARDED_HOPS` | See [section 4](#4-client-addresses-behind-proxies) |
 | `JYOTISH_API_RATE_LIMIT` | `120/minute` per client and route (the default) |
 | `JYOTISH_API_NARRATIVE_RATE_LIMIT` | `60/hour` per client (the default); lower it when Claude is on |
-| `JYOTISH_API_ANTHROPIC_API_KEY` (secret) | Optional; with `JYOTISH_API_NARRATIVE_PROVIDER=auto`, reports and chat use Claude |
+| `JYOTISH_API_ANTHROPIC_API_KEY` (secret) | Optional; with `JYOTISH_API_NARRATIVE_PROVIDER=auto`, reports and chat use Claude (`JYOTISH_API_NARRATIVE_MODEL`, default `claude-opus-5-5`). Without it, chat still answers custom questions from the engine's facts, in English |
 | `JYOTISH_API_METRICS_TOKEN` (secret) | Required to read `/metrics` |
 | `JYOTISH_API_MAX_BODY_BYTES` | `1000000` (the default) |
 | `JYOTISH_API_VAPID_PRIVATE_KEY` (secret), `JYOTISH_API_VAPID_SUBJECT` | Optional; turn on push reminders (see [section 6](#6-push-reminders)) |

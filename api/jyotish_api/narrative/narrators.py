@@ -1,25 +1,34 @@
 """Narrators turn an evidence bundle into a report: offline templates, or Claude.
 
 ``TemplateNarrator`` needs no network and costs nothing; it is the default. The
-``ClaudeNarrator`` is used only when an Anthropic API key is configured. It sends the
-bundle with a cached system prompt and forces the report format through a tool
-call, so the reply is always the ``Report`` schema. Both go through the same checks.
+``ClaudeNarrator`` is used only when an Anthropic API key is configured. It calls the
+Messages API through the official SDK with a cached system prompt and asks for the
+``Report`` schema as structured output, so the reply always parses as a report (the
+current models do not accept forced tool calls). Both go through the same checks.
 """
 
 from __future__ import annotations
 
-import json
-import urllib.request
 from collections.abc import Callable, Iterable
+from functools import lru_cache
 from typing import Any, Protocol
+
+import anthropic
+from pydantic import BaseModel, ValidationError
 
 from jyotish_api.narrative.evidence import EvidenceBundle, EvidenceItem
 from jyotish_api.narrative.report import Paragraph, Report, Section
 
-API_URL = "https://api.anthropic.com/v1/messages"
-API_VERSION = "2023-06-01"
-#: POST a JSON payload with headers and return the JSON reply (injectable for tests).
-Transport = Callable[[str, dict[str, str], dict[str, Any]], dict[str, Any]]
+#: Send one Messages API request (the arguments of ``messages.create``) and return the
+#: reply as a plain dict; injectable for tests.
+Transport = Callable[[dict[str, Any]], dict[str, Any]]
+#: Server-side refusal fallback: a declined request is re-run, inside the same call, on
+#: a model the API chooses by the refusal's category.
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
+#: Thinking and the answer share this budget; readings and chat answers are short.
+MAX_TOKENS = 16000
+#: Schema keywords structured outputs do not accept (checked here by pydantic instead).
+UNSUPPORTED_KEYWORDS = {"minLength", "maxLength", "minItems", "maxItems", "minimum", "maximum"}
 
 SYSTEM_PROMPT = """\
 You write Vedic astrology (Jyotish) readings for the Jyotish Platform.
@@ -40,7 +49,7 @@ Rules:
   anything.
 - Keep Sanskrit terms, explained briefly the first time (for example "dasha, a
   planetary period").
-Reply by calling write_report exactly once.
+Reply with the report in the requested JSON format.
 """
 
 
@@ -103,15 +112,51 @@ class TemplateNarrator:
         return Report(title=f"Reading: {bundle.subject}", sections=sections), None
 
 
-def http_transport(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dict[str, Any]:
-    if not url.startswith("https://"):
-        raise ValueError("the narrative transport only calls https URLs")
-    request = urllib.request.Request(
-        url, data=json.dumps(payload).encode(), headers=headers, method="POST"
-    )
-    with urllib.request.urlopen(request, timeout=120) as response:
-        reply: dict[str, Any] = json.loads(response.read())
-        return reply
+@lru_cache(maxsize=4)
+def _client(api_key: str) -> anthropic.Anthropic:
+    # The SDK retries rate limits, overloads and connection errors itself.
+    return anthropic.Anthropic(api_key=api_key, timeout=180.0)
+
+
+def sdk_transport(api_key: str) -> Transport:
+    """Requests through the Anthropic SDK, with server-side refusal fallbacks on."""
+
+    def send(params: dict[str, Any]) -> dict[str, Any]:
+        reply = _client(api_key).beta.messages.create(
+            **params, betas=[FALLBACK_BETA], fallbacks="default"
+        )
+        out: dict[str, Any] = reply.to_dict()
+        return out
+
+    return send
+
+
+def strict_schema(model: type[BaseModel]) -> dict[str, Any]:
+    """``model``'s JSON schema in the form structured outputs accept: every object closed
+    with ``additionalProperties: false`` and no length or range keywords."""
+
+    def fix(node: Any) -> Any:
+        if isinstance(node, dict):
+            out = {k: fix(v) for k, v in node.items() if k not in UNSUPPORTED_KEYWORDS}
+            if out.get("type") == "object":
+                out["additionalProperties"] = False
+            return out
+        if isinstance(node, list):
+            return [fix(v) for v in node]
+        return node
+
+    schema: dict[str, Any] = fix(model.model_json_schema())
+    return schema
+
+
+def final_text(reply: dict[str, Any]) -> str | None:
+    """The last text block of a reply (structured output arrives as one text block)."""
+    texts = [b.get("text", "") for b in reply.get("content", []) if b.get("type") == "text"]
+    return texts[-1] if texts else None
+
+
+def usage_of(reply: dict[str, Any]) -> dict[str, int]:
+    return {k: v for k, v in reply.get("usage", {}).items() if isinstance(v, int)}
 
 
 def render_bundle(bundle: EvidenceBundle, language: str) -> str:
@@ -128,26 +173,21 @@ def render_bundle(bundle: EvidenceBundle, language: str) -> str:
 
 
 class ClaudeNarrator:
-    """Claude writes the report through a forced ``write_report`` tool call."""
+    """Claude writes the report as structured output in the ``Report`` schema."""
 
     def __init__(
         self,
         api_key: str,
         model: str = "claude-opus-5-5",
-        transport: Transport = http_transport,
-        max_tokens: int = 6000,
+        transport: Transport | None = None,
+        max_tokens: int = MAX_TOKENS,
+        effort: str = "medium",
     ) -> None:
-        self.api_key = api_key
         self.name = model
-        self.transport = transport
+        self.transport = transport or sdk_transport(api_key)
         self.max_tokens = max_tokens
-
-    def headers(self) -> dict[str, str]:
-        return {
-            "x-api-key": self.api_key,
-            "anthropic-version": API_VERSION,
-            "content-type": "application/json",
-        }
+        #: How hard the model thinks (low, medium, high, xhigh, max).
+        self.effort = effort
 
     def payload(self, bundle: EvidenceBundle, language: str) -> dict[str, Any]:
         return {
@@ -157,25 +197,24 @@ class ClaudeNarrator:
                 {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}
             ],
             "messages": [{"role": "user", "content": render_bundle(bundle, language)}],
-            "tools": [
-                {
-                    "name": "write_report",
-                    "description": "The reading: sections of paragraphs citing evidence ids.",
-                    "input_schema": Report.model_json_schema(),
-                }
-            ],
-            "tool_choice": {"type": "tool", "name": "write_report"},
+            "output_config": {
+                "effort": self.effort,
+                "format": {"type": "json_schema", "schema": strict_schema(Report)},
+            },
         }
 
     def write(self, bundle: EvidenceBundle, language: str) -> tuple[Report, dict[str, int] | None]:
-        reply = self.transport(API_URL, self.headers(), self.payload(bundle, language))
+        reply = self.transport(self.payload(bundle, language))
         if reply.get("stop_reason") == "refusal":
             raise NarrativeRefusedError("the model declined to write this reading")
-        block = next((b for b in reply.get("content", []) if b.get("type") == "tool_use"), None)
-        if block is None:
+        text = final_text(reply)
+        if text is None:
             raise NarrativeRefusedError("the model did not return a report")
-        usage = {k: int(v) for k, v in reply.get("usage", {}).items() if isinstance(v, int)}
-        return Report.model_validate(block["input"]), usage
+        try:
+            report = Report.model_validate_json(text)
+        except ValidationError as error:
+            raise NarrativeRefusedError(f"the reply was not a valid report: {error}") from error
+        return report, usage_of(reply)
 
 
 def batch_requests(

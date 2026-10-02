@@ -18,7 +18,7 @@ from jyotish_engine.rules.periods import compute_period_readings
 from jyotish_engine.rules.readings import compute_readings
 from jyotish_engine.rules.yogas import compute_yogas
 
-Kind = Literal["yoga", "reading", "promise", "window", "dasha", "transit"]
+Kind = Literal["yoga", "reading", "promise", "window", "dasha", "transit", "lookup"]
 STRENGTH_ORDER = {"major": 0, "moderate": 1, "minor": 2}
 MAX_YOGAS = 25
 WINDOWS_PER_DOMAIN = 3

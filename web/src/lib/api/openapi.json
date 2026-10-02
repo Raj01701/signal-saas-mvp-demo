@@ -727,6 +727,16 @@
             ],
             "title": "Gender"
           },
+          "language": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "en",
+              "hi"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
           "messages": {
             "items": {
               "$ref": "#/components/schemas/ChatMessage"
@@ -735,6 +745,18 @@
             "minItems": 1,
             "title": "Messages",
             "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "preset": {
             "anyOf": [
@@ -1514,7 +1536,8 @@
               "promise",
               "window",
               "dasha",
-              "transit"
+              "transit",
+              "lookup"
             ],
             "title": "Kind",
             "type": "string"
@@ -6359,7 +6382,7 @@
     },
     "/v1/charts/chat": {
       "post": {
-        "description": "Answer a question about the chart from the evidence only, citing it.",
+        "description": "Answer any question about the chart in the person's own words: Claude looks up\nwhat it needs in the engine and cites it; without Claude, the engine's facts on what\nthe question names are listed instead.",
         "operationId": "chat_v1_charts_chat_post",
         "requestBody": {
           "content": {

@@ -22,7 +22,9 @@ from jyotish_api.narrative.evidence import build_bundle
 from jyotish_api.narrative.narrators import TemplateNarrator
 from jyotish_api.narrative.service import write_report
 from jyotish_engine.annual.varshaphal import compute_varshaphal
-from jyotish_engine.astro.bodies import Body
+from jyotish_engine.ask import ChartLookup
+from jyotish_engine.ask.lookup import MUNTHA as LOOKUP_MUNTHA
+from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.time import datetime_to_jd, jd_to_datetime
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.core.varga import varga_sign
@@ -32,6 +34,7 @@ from jyotish_engine.place.geocode import dms as place_dms
 from jyotish_engine.place.geocode import parse_coordinates, seconds_per_km
 from jyotish_engine.place.geocode import resolve_place as find_place
 from jyotish_engine.predict import life_reading
+from jyotish_engine.predict.domains import DOMAIN_SPECS
 from jyotish_engine.predict.timeline import compute_predictions
 from jyotish_engine.rectify.events import EventKind
 from jyotish_engine.rectify.search import LifeEvent, rectify
@@ -256,29 +259,8 @@ def rectify_report(request: dict[str, Any]) -> dict[str, Any]:
 
 #: What Muntha's house in the annual chart traditionally brings (Tajika Neelakanthi):
 #: house -> (tone, for an adult, for a child).
-MUNTHA = {
-    1: ("good", "personal initiative and fresh starts; health and confidence in focus",
-        "confidence and fresh starts"),
-    2: ("good", "income, savings and family", "family closeness and good habits"),
-    3: ("good", "courage, effort, short journeys and siblings",
-        "courage, hobbies and friendships"),
-    4: ("mixed", "home, property and mother; keep worries at home in proportion",
-        "home and family"),
-    5: ("good", "studies, creativity and children", "studies and creativity"),
-    6: ("hard", "work pressure and disputes; keep health and finances in order",
-        "keeping health and routine steady"),
-    7: ("mixed", "partnerships and marriage, which ask for patience and clear talk",
-        "patience with friends and teamwork"),
-    8: ("hard", "obstacles and delays; avoid risks and look after your health",
-        "extra care and avoiding risks"),
-    9: ("good", "one of the best placements: fortune, guidance, long journeys",
-        "good fortune and guidance from teachers"),
-    10: ("good", "one of the best placements: career, status and recognition",
-         "achievement and recognition"),
-    11: ("good", "one of the best placements: gains and wishes fulfilled",
-         "gains and wishes fulfilled"),
-    12: ("hard", "expenses, travel and rest; guard your savings", "travel, change and rest"),
-}  # fmt: skip
+#: Muntha's house in the annual chart: tone, then the year's theme for an adult and a child.
+MUNTHA = LOOKUP_MUNTHA
 #: Life areas of the year-by-year timeline, in reading order.
 TIMELINE_AREAS = (
     (Domain.CAREER, "Career"),
@@ -424,6 +406,43 @@ def birth_panchanga(chart: ChartResult, zone: ZoneInfo) -> dict[str, str]:
     }
 
 
+def chat_facts(lookup: ChartLookup, age: int) -> dict[str, Any]:
+    """What the page's chat answers from, besides the reading: every planet and house,
+    the pratyantardashas and slow transits around the present, each life area's windows
+    across the whole life, and the annual charts of the years around now."""
+    today = lookup.today
+    areas = []
+    for spec in DOMAIN_SPECS:
+        facts = lookup.area(spec.domain)
+        withheld = age < 18 and spec.domain in ADULT_AREAS
+        areas.append(
+            {
+                "area": facts.area,
+                "promise": facts.promise,
+                "reasons": facts.promise_reasons[:3],
+                "note": "Not read before adulthood." if withheld else facts.note,
+                "windows": []
+                if withheld
+                else [
+                    f"{w.start:%Y-%m} to {w.end:%Y-%m}: {w.tone}, {w.agreement} agreement, "
+                    f"during {w.periods}; {w.reasons[0][:160] if w.reasons else ''}"
+                    for w in facts.windows
+                ],
+            }
+        )
+    near = max(lookup.born, date(today.year - 25, 1, 1)), date(today.year + 26, 1, 1)
+    periods = max(lookup.born, date(today.year - 15, 1, 1)), date(today.year + 21, 1, 1)
+    annual = [(year, lookup.annual(year)) for year in range(today.year - 2, today.year + 13)]
+    return {
+        "planets": [lookup.planet(body).summary() for body in GRAHAS],
+        "houses": [lookup.house(number).summary() for number in range(1, 13)],
+        "pratyantardashas": [p.summary() for p in lookup.periods(*periods, (3,), None)],
+        "transits": [t.summary() for t in lookup.transits(*near)],
+        "areas": areas,
+        "annual": [f"{year}: {a.summary()}" for year, a in annual if a is not None],
+    }
+
+
 def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]:
     today = today or datetime.now(UTC).date()
     place, place_out = resolve_place(request)
@@ -485,11 +504,13 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     sensitivity = compute_sensitivity(chart)
     name = str(request.get("name") or "").strip() or None
     life = life_reading(chart, today, gender=gender, name=name)
+    lookup = ChartLookup(chart, today=today, gender=gender)
     interpretation = chart.time.interpretation
     return {
         "life": life.model_dump(mode="json"),
         "annual": annual_years(chart, [y.year for y in life.future], life.age, today),
         "timeline": life_timeline(chart, today, gender, life.age),
+        "facts": chat_facts(lookup, life.age),
         "time_note": time_note(sensitivity.factors),
         "transits_ahead": transits_ahead(chart, today),
         "input": {

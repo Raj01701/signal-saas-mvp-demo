@@ -15,6 +15,7 @@ A precise, explainable Vedic astrology (Jyotish) platform:
 - **Calculations you can trust:** sub-arcsecond planet positions, historically correct time zones (including Bombay Time, Calcutta Time and India's 1942–45 war time), and transparent settings.
 - **Birth-time sensitivity and rectification:** the app tells you which factors depend on an uncertain birth time.
 - **Explainable readings:** every statement cites the rule and classical text behind it.
+- **Ask anything:** a chat answers questions in your own words, in English or Hindi, by looking up your planets, houses, periods, transits and annual charts in the engine, and shows what each answer rests on.
 - **Honest accuracy:** no guaranteed predictions. Hit rates are measured against controls.
 
 Read [`docs/RESEARCH.md`](docs/RESEARCH.md) for the research behind these choices, [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, [`docs/ROADMAP.md`](docs/ROADMAP.md) for milestones and status, and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) and [`docs/SECURITY.md`](docs/SECURITY.md) for deployment and the security review.

@@ -35,9 +35,13 @@ test("calculates and shows a chart", async ({ page }) => {
   await page.getByRole("tab", { name: "Report" }).click();
   await expect(page.getByRole("heading", { name: "The present period" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Evidence" })).toBeVisible();
-  await page.getByLabel("Question").fill("How is my career now?");
+  const conversation = page.getByRole("log", { name: "Conversation about your chart" });
+  await page.getByLabel("Your question").fill("How is my career now?");
   await page.getByRole("button", { name: "Ask", exact: true }).click();
-  await expect(page.getByText(/not certainties/)).toBeVisible();
+  await expect(conversation.getByText(/not certainties/)).toBeVisible();
+  await page.getByLabel("Your question").fill("What does my 10th house show?");
+  await page.getByLabel("Your question").press("Enter");
+  await expect(conversation.getByText(/^House 10 \(career and status\)/)).toBeVisible();
   await expectAccessible(page);
   await page.getByRole("tab", { name: "Strengths" }).click();
   await expect(page.getByText("Shadbala (rupas)")).toBeVisible();

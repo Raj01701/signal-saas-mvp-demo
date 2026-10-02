@@ -60,10 +60,23 @@ def _runtime_python_packages(root: Path) -> list[str]:
         line = raw_line.strip()
         if not line or line.startswith(("#", "-")):
             continue
-        name = re.split(r"[=<>\[; ]", line, maxsplit=1)[0].strip().lower()
-        if name and name not in WORKSPACE_PACKAGES:
+        requirement, _, marker = line.partition(";")
+        name = re.split(r"[=<>\[ ]", requirement, maxsplit=1)[0].strip().lower()
+        if name and name not in WORKSPACE_PACKAGES and _applies(marker.strip()):
             names.append(name)
     return sorted(set(names))
+
+
+def _applies(marker: str) -> bool:
+    """Whether a requirement's environment marker holds here: packages only for other
+    platforms (such as the browser build of httpx2) are never installed, so not shipped."""
+    if not marker:
+        return True
+    try:
+        from packaging.markers import Marker  # noqa: PLC0415 - comes with the dev tools
+    except ImportError:
+        return "sys_platform == 'emscripten'" not in marker
+    return Marker(marker).evaluate()
 
 
 def _licence_text(dist: metadata.Distribution) -> str:

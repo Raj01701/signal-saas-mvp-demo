@@ -3,23 +3,33 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Sequence
-from datetime import UTC, date, datetime
+from datetime import date, timedelta
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from jyotish_api.narrative.evidence import EvidenceBundle, EvidenceItem, _rule_item
+from jyotish_api.narrative.evidence import EvidenceBundle, EvidenceItem
 from jyotish_api.narrative.narrators import (
-    API_URL,
+    MAX_TOKENS,
     ClaudeNarrator,
     NarrativeRefusedError,
     Narrator,
-    render_bundle,
+    final_text,
 )
 from jyotish_api.narrative.report import BANNED, NarrativeOut, check, cited
+from jyotish_api.narrative.tools import LOOKUP_TOOLS, resolve_id, run_tool
+from jyotish_engine.ask import ChartLookup
+from jyotish_engine.ask.lookup import (
+    AreaFacts,
+    YearFacts,
+    areas_in,
+    ordinal,
+    planets_in,
+)
 from jyotish_engine.models import ChartResult
-from jyotish_engine.rules.periods import compute_period_readings
+from jyotish_engine.rules.schema import Domain
 
 
 class NarrativeRejectedError(RuntimeError):
@@ -60,6 +70,21 @@ class ChatOut(BaseModel):
     narrator: str
 
 
+ChatLanguage = Literal["auto", "en", "hi"]
+LANGUAGE_LINES = {
+    "auto": "Reply in the language and script of each question.",
+    "en": "Reply in English.",
+    "hi": "Reply in Hindi, in Devanagari script.",
+}
+CLOSING = "These are traditional indications from the chart, not certainties."
+DECLINE = (
+    "The chart is not used here to time death, lifespan, accidents or illness. "
+    "What it shows about well-being is a set of tendencies, and a doctor is the right "
+    "person for any health concern."
+)
+
+# --- Offline answers: the facts the question names, without a language model ---------
+
 DOMAIN_WORDS = {
     "career": ("career", "job", "work", "promotion", "business", "profession", "naukri"),
     "marriage": ("marriage", "marry", "spouse", "wife", "husband", "partner", "wedding", "shaadi"),
@@ -73,11 +98,134 @@ DOMAIN_WORDS = {
     "travel": ("travel", "abroad", "foreign", "visa", "relocat", "settle"),
 }
 NOW_WORDS = ("now", "current", "present", "this year", "these days", "running")
-CLOSING = "These are traditional indications from the chart, not certainties."
+YEAR_WORD = re.compile(r"\b(19\d\d|20\d\d|21\d\d)\b")
+HOUSE_WORD = re.compile(
+    r"\b(1[0-2]|[1-9])(?:st|nd|rd|th)?\s+(?:house|bhava)\b|\bhouse\s+(1[0-2]|[1-9])\b"
+    r"|(1[0-2]|[1-9])\s*(?:वां|वें|वाँ)?\s*(?:भाव|घर)",
+    re.IGNORECASE,
+)
+HOUSE_ORDINALS = (
+    "first", "second", "third", "fourth", "fifth", "sixth",
+    "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth",
+)  # fmt: skip
+ORDINAL_HOUSE = re.compile(rf"\b({'|'.join(HOUSE_ORDINALS)})\s+(?:house|bhava)\b", re.IGNORECASE)
+#: Hindi ordinals ("सातवाँ भाव", "दसवें घर"), by their stems.
+HINDI_ORDINALS = (
+    "पहल", "दूसर", "तीसर", "चौथ", "पा[ंँ]चव", "छठ",
+    "सातव", "आठव", "नौव", "दसव", "ग्यारहव", "बारहव",
+)  # fmt: skip
+HINDI_HOUSE = re.compile(rf"({'|'.join(HINDI_ORDINALS)})\S*\s*(?:भाव|घर)")
+#: "Next year" and "this year", in English, Hinglish and Hindi: years from today.
+RELATIVE_YEARS = (
+    (re.compile(r"\bnext\s+year\b|\bagle\s+(?:saal|sal|varsh)\b|अगल[ाे]\s+(?:साल|वर्ष)", re.I), 1),
+    (re.compile(r"\bthis\s+year\b|\bis\s+(?:saal|sal|varsh)\b|इस\s+(?:साल|वर्ष)", re.I), 0),
+)
+SENSITIVE_WORD = re.compile(
+    r"\b(?:die|dies|death|dying|lifespan|life\s+span|longevity|accidents?)\b|मृत्यु|मौत",
+    re.IGNORECASE,
+)
+#: An offline answer covers at most this many years, houses, planets or areas.
+OFFLINE_LIMIT = 2
+#: Areas read only from adulthood (the life reading's age rule).
+ADULT_ONLY = {Domain.MARRIAGE, Domain.CHILDREN}
 
 
-def answer_offline(bundle: EvidenceBundle, question: str) -> ChatOut:
-    """Retrieval without a language model: the evidence on the areas the question names."""
+def _day(d: date) -> str:
+    return f"{d.day} {d:%b %Y}"
+
+
+def _span(start: date, end: date) -> str:
+    last = end - timedelta(days=1)
+    return (
+        f"{start:%b %Y}"
+        if (start.year, start.month) == (last.year, last.month)
+        else (f"{start:%b %Y} to {last:%b %Y}")
+    )
+
+
+def _houses_in(question: str) -> list[int]:
+    found = [int(next(g for g in m.groups() if g)) for m in HOUSE_WORD.finditer(question)]
+    found += [
+        HOUSE_ORDINALS.index(m.group(1).lower()) + 1 for m in ORDINAL_HOUSE.finditer(question)
+    ]
+    found += [
+        next(i for i, stem in enumerate(HINDI_ORDINALS, 1) if re.match(stem, m.group(1)))
+        for m in HINDI_HOUSE.finditer(question)
+    ]
+    return list(dict.fromkeys(found))
+
+
+def _years_in(question: str, today: date) -> list[int]:
+    found = [int(y) for y in YEAR_WORD.findall(question)]
+    found += [today.year + ahead for pattern, ahead in RELATIVE_YEARS if pattern.search(question)]
+    return list(dict.fromkeys(found))[:OFFLINE_LIMIT]
+
+
+def _year_lines(facts: YearFacts) -> list[str]:
+    lines = [f"{facts.year}: you turn {facts.turns} on your birthday."]
+    if facts.annual:
+        a = facts.annual
+        lines.append(
+            f"The annual chart from {_day(a.start)} puts Muntha in the {ordinal(a.muntha_house)} "
+            f"house ({a.tone}: {a.meaning}); the lord of the year is {a.year_lord}."
+        )
+    main = [p for p in facts.periods if len(p.lords) == 2]
+    if main:
+        lines.append(
+            "Periods: "
+            + "; ".join(f"{'–'.join(p.lords)} from {_day(p.start)} to {_day(p.end)}" for p in main)
+            + "."
+        )
+    for planet in ("Saturn", "Jupiter"):
+        stays = [t for t in facts.transits if t.planet == planet]
+        if stays:
+            lines.append(
+                f"{planet}: "
+                + "; then ".join(
+                    f"{t.sign} until {_day(t.end)} ({ordinal(t.house_from_moon)} from your Moon"
+                    + (f", {t.note}" if t.note and "Sade Sati" in t.note else "")
+                    + ")"
+                    for t in stays
+                )
+                + "."
+            )
+    windows = [
+        f"{area} ({_span(w.start, w.end)}, {w.tone})"
+        for area, found in facts.windows.items()
+        for w in found
+    ]
+    lines.append(
+        "Areas emphasised: " + "; ".join(windows) + "." if windows else "No area stands out."
+    )
+    return lines
+
+
+def _area_lines(facts: AreaFacts, today: date) -> list[str]:
+    reasons = " and ".join(r.rsplit(" (", 1)[0] for r in facts.promise_reasons[:2])
+    lines = [
+        f"{facts.area.title()}: the birth chart's promise is {facts.promise:.2f} "
+        f"(0.5 is average), mainly from {reasons}."
+    ]
+    if facts.note:
+        return [*lines, facts.note]
+    horizon = date(today.year + 10, today.month, 1)
+    coming = [w for w in facts.windows if w.end > today and w.start < horizon][:3]
+    if not coming:
+        return [*lines, "No window of emphasis in the next ten years."]
+    return [
+        *lines,
+        "Coming windows: "
+        + "; ".join(
+            f"{_span(w.start, w.end)} ({'running now, ' if w.start <= today else ''}"
+            f"{w.tone}, {w.agreement} agreement, {'–'.join(w.periods.split(' / '))} period)"
+            for w in coming
+        )
+        + ".",
+    ]
+
+
+def _retrieve(bundle: EvidenceBundle, question: str) -> ChatOut:
+    """Retrieval from the bundle alone: the evidence on the areas the question names."""
     q = question.lower()
     domains = [d for d, words in DOMAIN_WORDS.items() if any(w in q for w in words)]
     items = [
@@ -93,51 +241,162 @@ def answer_offline(bundle: EvidenceBundle, question: str) -> ChatOut:
     return ChatOut(answer="\n".join([*lines, CLOSING]), evidence=items[:8], narrator="template")
 
 
+def answer_offline(
+    bundle: EvidenceBundle, question: str, lookup: ChartLookup | None = None
+) -> ChatOut:
+    """An answer without a language model: the engine's facts on the years, houses,
+    planets and life areas the question names, in short sentences (English)."""
+    if lookup is None:
+        return _retrieve(bundle, question)
+    if SENSITIVE_WORD.search(question):
+        health = lookup.area(Domain.HEALTH)
+        item, _ = run_tool(lookup, "life_area", {"area": "health"})
+        return ChatOut(
+            answer="\n".join([DECLINE, *_area_lines(health, lookup.today), CLOSING]),
+            evidence=[item],
+            narrator="template",
+        )
+    lines: list[str] = []
+    items: list[EvidenceItem] = []
+    years = _years_in(question, lookup.today)
+    for year in years:
+        try:
+            item, _ = run_tool(lookup, "year", {"year": year})
+        except ValueError as error:
+            lines.append(f"{year}: {error}.")
+            continue
+        items.append(item)
+        lines += _year_lines(lookup.year(year))
+    for number in _houses_in(question)[:OFFLINE_LIMIT]:
+        item, _ = run_tool(lookup, "house", {"number": number})
+        items.append(item)
+        lines.append(item.text)
+    for body in planets_in(question)[:OFFLINE_LIMIT]:
+        item, _ = run_tool(lookup, "planet", {"name": body.value})
+        items.append(item)
+        lines.append(item.text)
+    if not years:
+        minor = lookup.age(lookup.today) < 18
+        for domain in [d for d in areas_in(question) if d.value in DOMAIN_WORDS][:OFFLINE_LIMIT]:
+            if minor and domain in ADULT_ONLY:
+                lines.append(
+                    f"{domain.value.title()} is read from adulthood; for now the chart speaks "
+                    "about studies, talents, good habits and family."
+                )
+                continue
+            item, _ = run_tool(lookup, "life_area", {"area": domain.value})
+            items.append(item)
+            lines += _area_lines(lookup.area(domain), lookup.today)
+    if not lines:
+        return _retrieve(bundle, question)
+    return ChatOut(answer="\n".join([*lines, CLOSING]), evidence=items, narrator="template")
+
+
+# --- Chat with Claude: lookups as tools, the answer as checked structured output -------
+
 CHAT_SYSTEM = """\
-You answer questions about one person's Vedic astrology (Jyotish) chart for the
-Jyotish Platform. You never calculate: use the evidence bundle in the first message,
-and call period_at to get the running periods and transits for another date. Answer
-briefly and carefully, as traditional indications rather than certainties, and cite
-the evidence ids you relied on. Never discuss death timing or longevity, never give
-medical, legal or financial directives, never promise outcomes, never press remedies.
-Finish by calling answer exactly once.
+You are the Jyotish Platform's astrologer. You answer one person's questions about their
+own Vedic (Jyotish) birth chart, warmly, plainly and personally, as a good astrologer does
+in a consultation.
+
+Facts. Never calculate or invent anything. Everything rests on the evidence in the first
+message (each item has an id) and on the lookup tools, which return the engine's own
+results: planet, house, period_at, periods, transits, life_area and year. Call a tool
+whenever a question names a date, a year, a planet, a house or a life area that the
+evidence does not already cover; call several at once when a question needs them.
+
+Answer. Lead with the direct answer, then the reasons in plain words: which period or
+transit, which house and which planet. Give timing in months and years. Usually 80 to 200
+words, in plain paragraphs or a short list with "- ". Explain any Sanskrit term in a few
+words. Follow the language line in the first message.
+
+Care. Speak of tendencies and of supportive or testing times, never of certainties. Never
+say when anyone will die, how long anyone will live, or when accidents or illnesses will
+come, and never diagnose; on health give only the traditional tendencies and suggest a
+doctor. No medical, legal or financial directives, no guarantees, no fear and no costly
+remedies. If the person is under 18, keep to studies, talents, habits and family: nothing
+about marriage, romance or children. If asked how accurate this is, say plainly that the
+calculations are exact, but the timing rules are traditional and have not beaten chance in
+controlled tests.
+
+Reply in the requested JSON format: "answer" is the text the person reads, and
+"evidence_ids" lists the id of every evidence item and lookup result (each lookup returns
+an evidence_id) the answer rests on.
 """
 
 
-def _chat_tools() -> list[dict[str, Any]]:
-    return [
-        {
-            "name": "period_at",
-            "description": "Running dasha periods and transit results for a date (YYYY-MM-DD).",
-            "input_schema": {
-                "type": "object",
-                "properties": {"date": {"type": "string", "description": "YYYY-MM-DD"}},
-                "required": ["date"],
-            },
-        },
-        {
-            "name": "answer",
-            "description": "Give the final answer with the ids of the evidence it rests on.",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "text": {"type": "string"},
-                    "evidence_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-                },
-                "required": ["text", "evidence_ids"],
-            },
-        },
+class ChatAnswer(BaseModel):
+    answer: str
+    evidence_ids: list[str]
+
+
+ANSWER_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "answer": {"type": "string"},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": ["answer", "evidence_ids"],
+    "additionalProperties": False,
+}
+
+
+def render_chat(
+    bundle: EvidenceBundle, lookup: ChartLookup, name: str | None, language: ChatLanguage
+) -> str:
+    """The first message of every chat: whose chart, the language, then the evidence."""
+    who = f"{' '.join(name.split())}, " if name and name.strip() else ""
+    lines = [
+        f"Questions about one birth chart: {bundle.subject}.",
+        f"The person asking ({who}age {lookup.age(bundle.today)}) owns this chart. "
+        f"Today is {bundle.today.isoformat()}.",
+        LANGUAGE_LINES[language],
+        "Evidence, one JSON object per line:",
     ]
+    lines += [item.model_dump_json(exclude_defaults=True) for item in bundle.items]
+    return "\n".join(lines)
 
 
-def _period_items(chart: ChartResult, day: date) -> list[EvidenceItem]:
-    moment = datetime(day.year, day.month, day.day, 12, tzinfo=UTC)
-    out = compute_period_readings(chart, moment)
-    lords = " / ".join(p.lords[-1].value.title() for p in out.dasha)
-    head = EvidenceItem(id=f"at:{day}:dasha", kind="dasha", title=f"Periods on {day}", text=lords)
-    rules = [_rule_item(r, "dasha", f"at:{day}") for r in out.dasha_readings]
-    rules += [_rule_item(r, "transit", f"at:{day}") for r in out.transit_readings]
-    return [head, *rules]
+def _tool_result(
+    lookup: ChartLookup, call: dict[str, Any], known: dict[str, EvidenceItem]
+) -> dict[str, Any]:
+    try:
+        item, data = run_tool(lookup, str(call.get("name")), dict(call.get("input") or {}))
+    except (LookupError, ValueError, KeyError, TypeError) as error:
+        return {
+            "type": "tool_result",
+            "tool_use_id": call["id"],
+            "content": f"Error: {error}",
+            "is_error": True,
+        }
+    known[item.id] = item
+    return {"type": "tool_result", "tool_use_id": call["id"], "content": json.dumps(data)}
+
+
+def _problems(
+    reply: dict[str, Any], lookup: ChartLookup, known: dict[str, EvidenceItem]
+) -> tuple[ChatAnswer | None, list[EvidenceItem], list[str]]:
+    """The parsed answer, the evidence it cites, and what keeps it from being shown."""
+    text = final_text(reply)
+    try:
+        answer = ChatAnswer.model_validate_json(text or "")
+    except ValueError:
+        return None, [], ["the reply was not the requested JSON"]
+    cited: list[EvidenceItem] = []
+    unknown: list[str] = []
+    for item_id in dict.fromkeys(answer.evidence_ids):
+        item = known.get(item_id) or resolve_id(lookup, item_id)
+        if item is None:
+            unknown.append(item_id)
+        else:
+            known[item_id] = item
+            cited.append(item)
+    problems = [f"unknown evidence ids {unknown}"] if unknown else []
+    problems += [] if cited else ["no evidence cited"]
+    problems += [
+        f"{reason}: {m.group(0)!r}" for p, reason in BANNED if (m := p.search(answer.answer))
+    ]
+    return answer, cited, problems
 
 
 def chat_with_claude(
@@ -145,46 +404,57 @@ def chat_with_claude(
     chart: ChartResult,
     bundle: EvidenceBundle,
     messages: Sequence[ChatMessage],
-    max_rounds: int = 4,
+    *,
+    lookup: ChartLookup | None = None,
+    name: str | None = None,
+    language: ChatLanguage = "auto",
+    max_rounds: int = 6,
 ) -> ChatOut:
-    """Tool-grounded chat: the model may look up any date; its answer must cite known ids."""
+    """Tool-grounded chat: the model looks things up in the engine, then answers in a
+    fixed JSON shape; an answer citing unknown evidence or making a banned claim is sent
+    back for another try instead of being shown."""
+    lookup = lookup or ChartLookup(chart, today=bundle.today)
     known = {i.id: i for i in bundle.items}
     history: list[dict[str, Any]] = [
-        {"role": "user", "content": render_bundle(bundle, "en")},
-        {"role": "assistant", "content": "I have the evidence. What would you like to know?"},
+        {"role": "user", "content": render_chat(bundle, lookup, name, language)}
     ]
     history += [{"role": m.role, "content": m.content} for m in messages]
     for _ in range(max_rounds):
-        payload = {
-            "model": narrator.name,
-            "max_tokens": 1500,
-            "system": [
-                {"type": "text", "text": CHAT_SYSTEM, "cache_control": {"type": "ephemeral"}}
-            ],
-            "messages": history,
-            "tools": _chat_tools(),
-            "tool_choice": {"type": "any"},
-        }
-        reply = narrator.transport(API_URL, narrator.headers(), payload)
+        reply = narrator.transport(
+            {
+                "model": narrator.name,
+                "max_tokens": MAX_TOKENS,
+                "system": [{"type": "text", "text": CHAT_SYSTEM}],
+                "messages": history,
+                "tools": LOOKUP_TOOLS,
+                "output_config": {
+                    "effort": narrator.effort,
+                    "format": {"type": "json_schema", "schema": ANSWER_SCHEMA},
+                },
+                # Cache the growing prefix: the evidence and the conversation so far.
+                "cache_control": {"type": "ephemeral"},
+            }
+        )
         if reply.get("stop_reason") == "refusal":
             raise NarrativeRefusedError("the model declined to answer")
-        calls = [b for b in reply.get("content", []) if b.get("type") == "tool_use"]
-        final = next((c for c in calls if c["name"] == "answer"), None)
-        if final is not None:
-            text, ids = final["input"]["text"], final["input"]["evidence_ids"]
-            unknown = [i for i in ids if i not in known]
-            banned = [reason for pattern, reason in BANNED if pattern.search(text)]
-            if unknown or banned:
-                raise NarrativeRejectedError(f"unknown evidence {unknown}; banned: {banned}")
-            return ChatOut(answer=text, evidence=[known[i] for i in ids], narrator=narrator.name)
-        results = []
-        for call in calls:
-            items = _period_items(chart, date.fromisoformat(call["input"]["date"]))
-            known.update({i.id: i for i in items})
-            content = json.dumps([i.model_dump(exclude_defaults=True) for i in items])
-            results.append({"type": "tool_result", "tool_use_id": call["id"], "content": content})
-        history += [
-            {"role": "assistant", "content": reply["content"]},
-            {"role": "user", "content": results},
-        ]
-    raise NarrativeRejectedError("the model did not answer within the allowed tool rounds")
+        content = reply.get("content", [])
+        history.append({"role": "assistant", "content": content})
+        calls = [b for b in content if b.get("type") == "tool_use"]
+        if calls:
+            history.append(
+                {"role": "user", "content": [_tool_result(lookup, c, known) for c in calls]}
+            )
+            continue
+        answer, evidence, problems = _problems(reply, lookup, known)
+        if answer is not None and not problems:
+            return ChatOut(answer=answer.answer, evidence=evidence, narrator=narrator.name)
+        history.append(
+            {
+                "role": "user",
+                "content": "That answer cannot be shown: "
+                + "; ".join(problems)
+                + ". Answer again within the rules, citing only ids from the evidence "
+                "or from lookups.",
+            }
+        )
+    raise NarrativeRejectedError("the model gave no acceptable answer within the allowed rounds")
