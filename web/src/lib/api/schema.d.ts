@@ -1434,6 +1434,11 @@ export interface components {
              */
             today: string;
             wedding?: components["schemas"]["WeddingCheckOut"] | null;
+            /**
+             * Windows
+             * @default []
+             */
+            windows?: components["schemas"]["LifeWindowOut"][];
         };
         /** LifeReadingRequest */
         LifeReadingRequest: {
@@ -1452,6 +1457,57 @@ export interface components {
              * @default 5
              */
             years_ahead?: number;
+        };
+        /**
+         * LifeWindowOut
+         * @description A stretch when a life area is active, as the reading tells it. Every section of the
+         *     reading, the timeline and the chat use these same windows.
+         */
+        LifeWindowOut: {
+            /** Ages */
+            ages: string;
+            /**
+             * Agreement
+             * @default
+             */
+            agreement?: string;
+            /** Area */
+            area: string;
+            domain: components["schemas"]["Domain"];
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Peak
+             * Format: date
+             */
+            peak: string;
+            /** Periods */
+            periods: string;
+            /**
+             * Reasons
+             * @default []
+             */
+            reasons?: string[];
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * Strength
+             * @enum {string}
+             */
+            strength: "strong" | "light";
+            /**
+             * Tone
+             * @enum {string}
+             */
+            tone: "good" | "mixed" | "hard";
+            /** When */
+            when: string;
         };
         /**
          * LimbSpanOut

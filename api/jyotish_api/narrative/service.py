@@ -29,6 +29,8 @@ from jyotish_engine.ask.lookup import (
     planets_in,
 )
 from jyotish_engine.models import ChartResult, MaritalInput, MaritalStatus
+from jyotish_engine.predict.story import Reader
+from jyotish_engine.predict.topics import marriage_timing
 from jyotish_engine.rules.schema import Domain
 
 
@@ -217,7 +219,9 @@ def _area_lines(facts: AreaFacts, today: date) -> list[str]:
         "Coming windows: "
         + "; ".join(
             f"{_span(w.start, w.end)} ({'running now, ' if w.start <= today else ''}"
-            f"{w.tone}, {w.agreement} agreement, {'–'.join(w.periods.split(' / '))} period)"
+            f"{w.tone}, {w.strength}"
+            + (f", {w.agreement} agreement" if w.agreement else "")
+            + f", during {w.periods})"
             for w in coming
         )
         + ".",
@@ -227,34 +231,24 @@ def _area_lines(facts: AreaFacts, today: date) -> list[str]:
 def _marriage_lines(
     facts: AreaFacts, lookup: ChartLookup, marital: MaritalInput | None
 ) -> list[str]:
-    """Marriage for the life the person has: the windows already passed (from 21) as
-    well as the coming ones, read by what they said about being married."""
+    """Marriage for the life the person has, in the reading's own words: its timing
+    paragraph (the windows passed and the next ones, read by what they said about being
+    married), then the coming windows."""
+    reader = (
+        lookup.reader
+        if marital == lookup.marital
+        else Reader(lookup.chart, lookup.today, lookup.gender, None, 5, marital, life=lookup.life)
+    )
     status = marital.status if marital else MaritalStatus.UNKNOWN
     head, *rest = _area_lines(facts, lookup.today)
-    adult = date(lookup.born.year + 21, lookup.born.month, 1)
-    past = [w for w in facts.windows if w.end <= lookup.today and w.start >= adult][-3:]
     lines = [head]
-    if past:
-        lines.append(
-            "Past windows from age 21: "
-            + "; ".join(f"{_span(w.start, w.end)} ({w.tone})" for w in past)
-            + "."
-        )
     if status is MaritalStatus.MARRIED:
         year = marital.wedding_year if marital else None
-        wedding = f" (wedding in {year})" if year else ""
-        lines.append(
-            f"You said you are married{wedding}: compare the wedding with the past windows; "
-            "the coming windows are read as times for married life."
-        )
+        lines.append(f"You said you are married{f' (wedding in {year})' if year else ''}.")
     elif status is MaritalStatus.SINGLE:
-        lines.append("You said you are not married, so the coming windows are the ones to watch.")
-    elif past:
-        lines.append(
-            "If you are already married, compare your wedding date with the past windows; if "
-            "not, the coming windows are the ones to watch."
-        )
-    return [*lines, *rest]
+        lines.append("You said you are not married.")
+    timing = marriage_timing(reader)
+    return [*lines, *([timing] if timing else []), *rest]
 
 
 def _retrieve(bundle: EvidenceBundle, question: str) -> ChatOut:

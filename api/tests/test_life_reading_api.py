@@ -36,11 +36,16 @@ def test_life_reading_route() -> None:
 def test_life_reading_reads_marriage_for_the_life_given() -> None:
     client = TestClient(create_app(ApiSettings(rate_limit="1000/minute")))
     body = {"birth": BIRTH, "today": "2026-09-30", "gender": "male"}
-    married = {**body, "marital": {"status": "married", "wedding_year": 2016}}
+    married = {**body, "marital": {"status": "married", "wedding_year": 2017}}
     reading = client.post("/v1/charts/life-reading", json=married).json()
-    assert reading["marital"] == {"status": "married", "wedding_year": 2016, "wedding_month": None}
-    assert reading["wedding"]["when"] == "2016" and reading["wedding"]["fit"] == "inside"
+    assert reading["marital"] == {"status": "married", "wedding_year": 2017, "wedding_month": None}
+    assert reading["wedding"]["when"] == "2017" and reading["wedding"]["fit"] == "inside"
     assert reading["wedding"]["text"] in reading["marriage"]["paragraphs"][-1]
+    window = reading["wedding"]["window"]
+    assert any(
+        w["domain"] == "marriage" and (w["start"], w["end"]) == (window["start"], window["end"])
+        for w in reading["windows"]
+    )
     unknown = client.post("/v1/charts/life-reading", json=body).json()
     assert unknown["marital"]["status"] == "unknown" and unknown["wedding"] is None
     for bad in (

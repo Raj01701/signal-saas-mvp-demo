@@ -265,13 +265,13 @@ def test_marriage_and_spouse(reading: LifeReadingOut) -> None:
 
 @pytest.fixture(scope="module")
 def by_status(chart: ChartResult) -> dict[str, LifeReadingOut]:
-    """The same life read for someone single, married, and married in 2016 (inside a
+    """The same life read for someone single, married, and married in 2017 (inside a
     window for marriage) or 2009 (outside every window)."""
     married = MaritalStatus.MARRIED
     statuses = {
         "single": MaritalInput(status=MaritalStatus.SINGLE),
         "married": MaritalInput(status=married),
-        "wed 2016": MaritalInput(status=married, wedding_year=2016),
+        "wed 2017": MaritalInput(status=married, wedding_year=2017),
         "wed 2009": MaritalInput(status=married, wedding_year=2009, wedding_month=11),
     }
     return {
@@ -288,14 +288,14 @@ def test_marriage_timing_allows_for_either_when_nobody_has_said(reading: LifeRea
     assert reading.marital.status is MaritalStatus.UNKNOWN and reading.wedding is None
     assert reading.marriage is not None
     timing = reading.marriage.paragraphs[-1]
-    assert "If you are married, compare it with your wedding date" in timing
+    assert re.search(r"If you are married, compare (it|them) with your wedding date", timing)
     assert "if you are single" in timing
 
 
 def test_a_married_person_reads_married_life_ahead(
     by_status: dict[str, LifeReadingOut],
 ) -> None:
-    for key in ("married", "wed 2016", "wed 2009"):
+    for key in ("married", "wed 2017", "wed 2009"):
         r = by_status[key]
         assert r.marriage is not None
         timing = r.marriage.paragraphs[-1]
@@ -308,14 +308,14 @@ def test_a_married_person_reads_married_life_ahead(
 def test_the_wedding_is_checked_against_the_windows(
     by_status: dict[str, LifeReadingOut],
 ) -> None:
-    inside = by_status["wed 2016"].wedding
-    assert inside is not None and inside.fit == "inside" and inside.when == "2016"
-    assert inside.window is not None and inside.window.start <= date(2016, 12, 31)
-    assert inside.window.end > date(2016, 1, 1)
-    marriage = by_status["wed 2016"].marriage
+    inside = by_status["wed 2017"].wedding
+    assert inside is not None and inside.fit == "inside" and inside.when == "2017"
+    assert inside.window is not None and inside.window.start <= date(2017, 12, 31)
+    assert inside.window.end > date(2017, 1, 1)
+    marriage = by_status["wed 2017"].marriage
     assert marriage is not None and marriage.paragraphs[-1].startswith(inside.text)
-    check = next(c for c in by_status["wed 2016"].checks if c.domain is Domain.MARRIAGE)
-    assert "Your wedding, in 2016," in check.text
+    check = next(c for c in by_status["wed 2017"].checks if c.domain is Domain.MARRIAGE)
+    assert "Your wedding, in 2017," in check.text
     outside = by_status["wed 2009"].wedding
     assert outside is not None and outside.fit == "outside" and outside.when == "November 2009"
     assert "the birth time may need checking" in outside.text

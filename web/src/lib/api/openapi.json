@@ -2386,6 +2386,14 @@
                 "type": "null"
               }
             ]
+          },
+          "windows": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LifeWindowOut"
+            },
+            "title": "Windows",
+            "type": "array"
           }
         },
         "required": [
@@ -2492,6 +2500,89 @@
           "birth"
         ],
         "title": "LifeReadingRequest",
+        "type": "object"
+      },
+      "LifeWindowOut": {
+        "description": "A stretch when a life area is active, as the reading tells it. Every section of the\nreading, the timeline and the chat use these same windows.",
+        "properties": {
+          "ages": {
+            "title": "Ages",
+            "type": "string"
+          },
+          "agreement": {
+            "default": "",
+            "title": "Agreement",
+            "type": "string"
+          },
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "domain": {
+            "$ref": "#/components/schemas/Domain"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "peak": {
+            "format": "date",
+            "title": "Peak",
+            "type": "string"
+          },
+          "periods": {
+            "title": "Periods",
+            "type": "string"
+          },
+          "reasons": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          },
+          "strength": {
+            "enum": [
+              "strong",
+              "light"
+            ],
+            "title": "Strength",
+            "type": "string"
+          },
+          "tone": {
+            "enum": [
+              "good",
+              "mixed",
+              "hard"
+            ],
+            "title": "Tone",
+            "type": "string"
+          },
+          "when": {
+            "title": "When",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "area",
+          "start",
+          "end",
+          "peak",
+          "ages",
+          "when",
+          "tone",
+          "strength",
+          "periods"
+        ],
+        "title": "LifeWindowOut",
         "type": "object"
       },
       "LimbSpanOut": {

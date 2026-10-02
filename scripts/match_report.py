@@ -6,7 +6,8 @@ The request has ``groom`` and ``bride``, each a birth as ``chart_report.py`` tak
 (``date``, ``time``, ``place`` or ``latitude`` and ``longitude``, and optionally
 ``name`` and ``time_source``). The kootas, doshas, poruthams, Kuja dosha and papasamya
 come from the engine (``match/``), the checks beyond the kootas from
-``match/compatibility.py`` and the marriage windows from the prediction timeline, all
+``match/compatibility.py`` and each partner's marriage windows from that partner's life
+reading (``life_windows``: the same windows the reading tells, strong ones only), all
 with the settings most Indian software uses.
 
 A couple already married adds ``married: true`` and, if they like, ``wedding_year`` (and
@@ -18,7 +19,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from chart_report import SIGN_NAMES, ordinal_suffix, resolve_place
@@ -27,8 +28,16 @@ from jyotish_engine.astro.bodies import Body
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.match.compatibility import cross_checks, dasha_sandhi
 from jyotish_engine.match.compute import compute_match
-from jyotish_engine.models import BirthInput, BirthTimeSource, ChartResult, MatchOut
-from jyotish_engine.predict.timeline import compute_predictions
+from jyotish_engine.models import (
+    BirthInput,
+    BirthTimeSource,
+    ChartResult,
+    LifeWindowOut,
+    MaritalInput,
+    MaritalStatus,
+    MatchOut,
+)
+from jyotish_engine.predict import life_windows
 from jyotish_engine.rules.schema import Domain
 from jyotish_engine.settings import Preset, preset
 
@@ -101,22 +110,28 @@ def _month(day: date) -> str:
     return day.strftime("%B %Y")
 
 
-def _windows(chart: ChartResult, gender: str, today: date) -> list[dict[str, Any]]:
-    """The strongest marriage windows in the coming years, in order of time."""
-    start = today.replace(day=1)
-    end = start.replace(year=start.year + YEARS_AHEAD)
-    timeline = compute_predictions(chart, start, end, gender=gender)
-    marriage = next(d for d in timeline.domains if d.domain is Domain.MARRIAGE)
-    best = sorted(marriage.windows, key=lambda w: -w.score)[:4]
+def _strong_marriage(windows: list[LifeWindowOut]) -> list[LifeWindowOut]:
+    return [w for w in windows if w.domain is Domain.MARRIAGE and w.strength == "strong"]
+
+
+def _windows(windows: list[LifeWindowOut], today: date) -> list[dict[str, Any]]:
+    """The partner's strong marriage windows in the coming years, as their reading tells
+    them, in order of time."""
+    until = date(today.year + YEARS_AHEAD, today.month, 1)
+    ahead = [
+        w
+        for w in _strong_marriage(windows)
+        if w.end > today and w.start < until and w.tone != "hard"
+    ]
     return [
         {
             "start": w.start.isoformat(),
             "end": w.end.isoformat(),
-            "when": f"{_month(w.start)} to {_month(w.end)}",
-            "confidence": w.confidence,
-            "score": w.score,
+            "when": f"{w.when} {w.ages}",
+            "confidence": w.agreement,
+            "periods": w.periods,
         }
-        for w in sorted(best, key=lambda w: w.start)
+        for w in ahead[:4]
     ]
 
 
@@ -142,41 +157,38 @@ def _wedding(
 
 
 def _wedding_fit(
-    chart: ChartResult, gender: str, name: str, wedding: tuple[date, date]
+    windows: list[LifeWindowOut], name: str, wedding: tuple[date, date]
 ) -> dict[str, Any]:
-    """One partner's marriage windows around the wedding: inside one, within a year of one,
-    or further away."""
+    """One partner's strong marriage windows around the wedding: inside one, within a year
+    of one, or further away."""
     start, end = wedding
-    born = chart.birth.local_datetime.date()
-    first = max(date(start.year - 5, 1, 1), born.replace(day=1))
-    timeline = compute_predictions(chart, first, date(end.year + 5, 1, 1), gender=gender)
-    windows = next(d for d in timeline.domains if d.domain is Domain.MARRIAGE).windows
-    if not windows:
-        text = f"{name}'s chart shows no marriage window in the years around the wedding."
+    strong = _strong_marriage(windows)
+    if not strong:
+        text = f"{name}'s chart shows no strong window for marriage."
         return {"fit": "outside", "window": None, "text": text}
 
-    def gap(w: Any) -> int:
+    def gap(w: LifeWindowOut) -> int:
         if w.start < end and start < w.end:
             return 0
         return (w.start - end).days if w.start >= end else (start - w.end).days
 
-    nearest = min(windows, key=lambda w: (gap(w), -w.score))
-    when = f"{_month(nearest.start)} to {_month(nearest.end)}"
+    nearest = min(strong, key=lambda w: (gap(w), w.start))
+    when = f"{nearest.when} {nearest.ages}"
     days = gap(nearest)
     if days == 0:
         fit, text = (
             "inside",
-            f"{name}'s chart had a marriage window from {when}, and the wedding falls inside it.",
+            f"{name}'s chart had a window for marriage in {when}, and the wedding falls inside it.",
         )
     elif days <= 366:
         fit, text = (
             "near",
-            f"{name}'s chart had a marriage window from {when}, within a year of the wedding.",
+            f"{name}'s chart had a window for marriage in {when}, within a year of the wedding.",
         )
     else:
         fit, text = (
             "outside",
-            f"The wedding did not fall in one of {name}'s marriage windows; the nearest "
+            f"The wedding did not fall in one of {name}'s windows for marriage; the nearest "
             f"was {when}.",
         )
     return {"fit": fit, "window": when, "text": text}
@@ -188,8 +200,12 @@ def _overlap(a: list[dict[str, Any]], b: list[dict[str, Any]]) -> list[str]:
         for y in b:
             start, end = max(x["start"], y["start"]), min(x["end"], y["end"])
             if start < end:
+                first = date.fromisoformat(start)
+                last = date.fromisoformat(end) - timedelta(days=1)
                 out.append(
-                    f"{_month(date.fromisoformat(start))} to {_month(date.fromisoformat(end))}"
+                    _month(first)
+                    if (first.year, first.month) == (last.year, last.month)
+                    else f"{_month(first)} to {_month(last)}"
                 )
     return out
 
@@ -201,6 +217,7 @@ def _person(
     match: MatchOut,
     role: str,
     today: date,
+    windows: list[LifeWindowOut],
 ) -> dict[str, Any]:
     moon = next(g for g in chart.grahas if g.body is Body.MOON)
     kuja = match.groom_kuja if role == "groom" else match.bride_kuja
@@ -223,9 +240,7 @@ def _person(
             f"{REFERENCES.get(i.reference, i.reference)} ({i.points:g})"
             for i in papa.items
         ],
-        "windows": _windows(chart, "male" if role == "groom" else "female", today)
-        if age >= ADULT
-        else [],
+        "windows": _windows(windows, today) if age >= ADULT else [],
     }
 
 
@@ -338,14 +353,34 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
         role: SIGN_NAMES[int(next(g for g in chart.grahas if g.body is Body.MOON).sign)]
         for role, chart in (("groom", groom), ("bride", bride))
     }
-    people = {
-        "groom": _person(request["groom"], groom, groom_place, match, "groom", today),
-        "bride": _person(request["bride"], bride, bride_place, match, "bride", today),
-    }
-    adults = all(p["age"] >= ADULT for p in people.values())
     married = bool(request.get("married"))
     births = (groom.birth.local_datetime.date(), bride.birth.local_datetime.date())
     wedding = _wedding(request, births, today)
+    # Each partner's windows as their own reading tells them: married life for a married
+    # couple (checked against the wedding when given), openings for marriage otherwise.
+    marital = (
+        MaritalInput(
+            status=MaritalStatus.MARRIED,
+            wedding_year=wedding[0].year if wedding else None,
+            wedding_month=wedding[0].month
+            if wedding and request.get("wedding_month") not in (None, "")
+            else None,
+        )
+        if married
+        else MaritalInput(status=MaritalStatus.SINGLE)
+    )
+    windows = {
+        role: life_windows(chart, today, gender=gender, marital=marital)
+        for role, chart, gender in (("groom", groom, "male"), ("bride", bride, "female"))
+    }
+    people = {
+        role: _person(request[role], chart, place, match, role, today, windows[role])
+        for role, chart, place in (
+            ("groom", groom, groom_place),
+            ("bride", bride, bride_place),
+        )
+    }
+    adults = all(p["age"] >= ADULT for p in people.values())
     sandhi = dasha_sandhi(groom, bride, today)
     timing_notes = []
     wedding_out = None
@@ -356,8 +391,8 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
             else _month(wedding[0])
         )
         fits = {
-            role: _wedding_fit(chart, gender, people[role]["name"], wedding)
-            for role, chart, gender in (("groom", groom, "male"), ("bride", bride, "female"))
+            role: _wedding_fit(windows[role], people[role]["name"], wedding)
+            for role in ("groom", "bride")
         }
         wedding_out = {"when": given, **fits}
         inside = sum(f["fit"] == "inside" for f in fits.values())

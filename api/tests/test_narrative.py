@@ -268,12 +268,12 @@ def test_offline_marriage_answers_allow_for_a_wedding_already_held(
 ) -> None:
     question = "When will I get married?"
     unknown = answer_offline(bundle, question, lookup).answer
-    assert "Past windows from age 21:" in unknown and "If you are already married" in unknown
+    assert "If you are married, compare" in unknown or "if you are single" in unknown, unknown
     married = answer_offline(
         bundle, question, lookup, MaritalInput(status="married", wedding_year=2016)
     ).answer
     assert "You said you are married (wedding in 2016)" in married
-    assert "If you are already married" not in married
+    assert "If you are married, compare" not in married and "Your wedding in 2016" in married
     single = answer_offline(bundle, question, lookup, MaritalInput(status="single")).answer
     assert "You said you are not married" in single
 

@@ -74,7 +74,13 @@ def _inputs(
 ) -> tuple[ChartResult, EvidenceBundle]:
     cache: ChartCache = request.app.state.charts
     chart = cache.chart(body.birth, resolve_settings(body.settings, body.preset))
-    bundle = build_bundle(chart, today=body.today, gender=body.gender, include_sensitive=sensitive)
+    bundle = build_bundle(
+        chart,
+        today=body.today,
+        gender=body.gender,
+        include_sensitive=sensitive,
+        marital=getattr(body, "marital", None),
+    )
     return chart, bundle
 
 
@@ -98,7 +104,7 @@ def chat(request: Request, body: ChatRequest) -> ChatOut:
     if body.messages[-1].role != "user":
         raise HTTPException(422, "the last message must be the user's question")
     chart, bundle = _inputs(request, body)
-    lookup = ChartLookup(chart, today=bundle.today, gender=body.gender)
+    lookup = ChartLookup(chart, today=bundle.today, gender=body.gender, marital=body.marital)
     narrator = narrator_for(request.app.state.settings)
     if not isinstance(narrator, ClaudeNarrator):
         return answer_offline(bundle, body.messages[-1].content, lookup, body.marital)

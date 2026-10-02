@@ -33,6 +33,8 @@ from jyotish_engine.models import (
     BirthInput,
     BirthTimeSource,
     ChartResult,
+    LifeReadingOut,
+    LifeWindowOut,
     MaritalInput,
     MaritalStatus,
     PlaceInput,
@@ -43,7 +45,6 @@ from jyotish_engine.place.geocode import parse_coordinates, seconds_per_km
 from jyotish_engine.place.geocode import resolve_place as find_place
 from jyotish_engine.predict import life_reading
 from jyotish_engine.predict.domains import DOMAIN_SPECS
-from jyotish_engine.predict.timeline import compute_predictions
 from jyotish_engine.rectify.events import EventKind
 from jyotish_engine.rectify.search import LifeEvent, rectify
 from jyotish_engine.rules.schema import Domain
@@ -322,33 +323,46 @@ def ordinal_suffix(n: int) -> str:
     return "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
 
 
+def _window_out(w: LifeWindowOut) -> dict[str, Any]:
+    return {
+        "area": w.area,
+        "start": w.start.isoformat(),
+        "end": (w.end - timedelta(days=1)).isoformat(),
+        "when": w.when,
+        "ages": w.ages,
+        "tone": w.tone,
+        "strength": w.strength,
+        "periods": w.periods,
+    }
+
+
 def life_timeline(
-    chart: ChartResult, today: date, gender: str | None, age: int, years_ahead: int = 10
+    chart: ChartResult, today: date, life: LifeReadingOut, years_ahead: int = 10
 ) -> dict[str, Any]:
-    """Each life area's emphasis by year, birth to ``years_ahead`` from now, scaled 0-1
-    within the area, with the mahadashas for a band above it."""
+    """Each life area's windows by year, birth to ``years_ahead`` from now: the same
+    windows the reading tells (1 for a year a strong window touches, 0.5 for a lighter
+    one), with the windows themselves and the mahadashas for a band above."""
     born = chart.birth.local_datetime.date()
-    end = date(today.year + years_ahead + 1, 1, 1)
-    timeline = compute_predictions(chart, born.replace(day=1), end, gender=gender)
-    first = born.year
-    years = list(range(first, end.year))
-    by_domain = {d.domain: d for d in timeline.domains}
+    last = today.year + years_ahead
+    years = list(range(born.year, last + 1))
     rows = []
     for domain, label in TIMELINE_AREAS:
-        if domain in ADULT_AREAS and age < 18:
+        if domain in ADULT_AREAS and life.age < 18:
             continue
-        line = by_domain[domain]
-        # Each year's average emphasis, so one strong month does not fill the year.
-        totals, counts = [0.0] * len(years), [0] * len(years)
-        for month, score in zip(timeline.months, line.scores, strict=True):
-            index = month.year - first
-            if 0 <= index < len(years):
-                totals[index] += score
-                counts[index] += 1
-        yearly = [t / n if n else 0.0 for t, n in zip(totals, counts, strict=True)]
-        top = max(yearly) or 1.0
+        windows = [w for w in life.windows if w.domain is domain and w.start.year <= last]
+        values = []
+        for year in years:
+            first, after = date(year, 1, 1), date(year + 1, 1, 1)
+            touching = [w for w in windows if w.start < after and w.end > first]
+            strong = any(w.strength == "strong" for w in touching)
+            values.append(1.0 if strong else 0.5 if touching else 0.0)
         rows.append(
-            {"key": domain.value, "label": label, "values": [round(v / top, 2) for v in yearly]}
+            {
+                "key": domain.value,
+                "label": label,
+                "values": values,
+                "windows": [_window_out(w) for w in windows],
+            }
         )
     mahadashas = [
         {
@@ -357,9 +371,15 @@ def life_timeline(
             "end": p.end.date().isoformat(),
         }
         for p in chart.dashas.vimshottari.periods
-        if len(p.lords) == 1 and p.end.year >= first and p.start.year < end.year
+        if len(p.lords) == 1 and p.end.year >= born.year and p.start.year <= last
     ]
     return {"years": years, "today": today.isoformat(), "areas": rows, "mahadashas": mahadashas}
+
+
+def coming_windows(life: LifeReadingOut, today: date) -> list[dict[str, Any]]:
+    """The reading's windows that run in the twelve months from ``today``."""
+    until = date(today.year + 1, today.month, 1)
+    return [_window_out(w) for w in life.windows if w.end > today and w.start < until]
 
 
 def place_note(place_out: dict[str, Any], factors: list[Any]) -> str:
@@ -429,13 +449,7 @@ def chat_facts(lookup: ChartLookup, age: int) -> dict[str, Any]:
                 "promise": facts.promise,
                 "reasons": facts.promise_reasons[:3],
                 "note": "Not read before adulthood." if withheld else facts.note,
-                "windows": []
-                if withheld
-                else [
-                    f"{w.start:%Y-%m} to {w.end:%Y-%m}: {w.tone}, {w.agreement} agreement, "
-                    f"during {w.periods}; {w.reasons[0][:160] if w.reasons else ''}"
-                    for w in facts.windows
-                ],
+                "windows": [] if withheld else [w.summary() for w in facts.windows],
             }
         )
     near = max(lookup.born, date(today.year - 25, 1, 1)), date(today.year + 26, 1, 1)
@@ -519,22 +533,22 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     )
     current_md = running[0].lords[0] if running else None
     yogas = compute_yogas(chart, gender=gender)
-    predictions = compute_predictions(
-        chart,
-        today.replace(day=1),
-        (today.replace(day=1) + timedelta(days=370)).replace(day=1),
-        gender=gender,
+    marital = marital_of(request)
+    # One whole-life timeline for the reading, the chat facts and the written report, so
+    # all of them name the same windows.
+    lookup = ChartLookup(chart, today=today, gender=gender, marital=marital)
+    narrative = write_report(
+        build_bundle(chart, today=today, gender=gender, marital=marital, life=lookup.life),
+        TemplateNarrator(),
     )
-    narrative = write_report(build_bundle(chart, today=today, gender=gender), TemplateNarrator())
     sensitivity = compute_sensitivity(chart)
     name = str(request.get("name") or "").strip() or None
-    life = life_reading(chart, today, gender=gender, name=name, marital=marital_of(request))
-    lookup = ChartLookup(chart, today=today, gender=gender)
+    life = life_reading(chart, today, gender=gender, name=name, marital=marital, life=lookup.life)
     interpretation = chart.time.interpretation
     return {
         "life": life.model_dump(mode="json"),
         "annual": annual_years(chart, [y.year for y in life.future], life.age, today),
-        "timeline": life_timeline(chart, today, gender, life.age),
+        "timeline": life_timeline(chart, today, life),
         "facts": chat_facts(lookup, life.age),
         "time_note": time_note(sensitivity.factors),
         "transits_ahead": transits_ahead(chart, today),
@@ -667,27 +681,14 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
             ],
             "disclaimer": narrative.disclaimer,
         },
-        "windows": sorted(
-            (
-                {
-                    "domain": str(d.domain.value).replace("_", " "),
-                    "start": str(w.start),
-                    "end": str(w.end),
-                    "confidence": w.confidence,
-                    "tone": round(w.tone, 2),
-                }
-                for d in predictions.domains
-                for w in d.windows
-            ),
-            key=lambda w: w["start"],
-        ),
+        "windows": coming_windows(life, today),
         "promises": sorted(
             (
                 {
                     "domain": str(d.domain.value).replace("_", " "),
                     "score": round(d.promise.score, 2),
                 }
-                for d in predictions.domains
+                for d in lookup.life.domains
             ),
             key=lambda p: -p["score"],
         ),

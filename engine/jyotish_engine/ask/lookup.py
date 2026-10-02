@@ -21,7 +21,7 @@ at the birth place.
 from __future__ import annotations
 
 import re
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from functools import cached_property
 from zoneinfo import ZoneInfo
 
@@ -40,11 +40,13 @@ from jyotish_engine.models import (
     DashaPeriodOut,
     DomainTimelineOut,
     GrahaOut,
+    LifeWindowOut,
+    MaritalInput,
     PredictionsOut,
-    PredictionWindowOut,
     StrengthsOut,
 )
 from jyotish_engine.predict.domains import DOMAIN_SPECS, karakas
+from jyotish_engine.predict.story import Reader
 from jyotish_engine.predict.timeline import compute_predictions
 from jyotish_engine.predict.words import HOUSE_AREAS
 from jyotish_engine.rules.periods import compute_period_readings
@@ -375,24 +377,36 @@ class MomentFacts(BaseModel):
 
 
 class WindowFacts(BaseModel):
-    """A stretch when the prediction timeline emphasises a life area."""
+    """A window when a life area is active: one of the windows the life reading tells, so
+    the chat names the same times as the reading."""
 
     start: date
     #: The first day after the window.
     end: date
     peak: date
+    ages: str = ""
     tone: str
-    #: Strong: two dasha systems agree and a transit confirms (not a probability).
+    #: Strong: at least 80% as active as the area's strongest window (the reading tells a
+    #: wedding or a birth only for a strong one); otherwise light.
+    strength: str = ""
+    #: How far the timing systems agree at the peak (not a probability).
     agreement: str
-    #: Vimshottari lords at the peak.
+    #: The Vimshottari sub-periods the window falls in.
     periods: str
     reasons: list[str]
 
     def summary(self) -> str:
-        return (
-            f"{self.start:%Y-%m} to {self.end:%Y-%m}, {self.tone}, {self.agreement} agreement, "
-            f"during {self.periods}: {'; '.join(self.reasons[:3])}"
+        last = self.end - timedelta(days=1)
+        span = (
+            f"{self.start:%Y-%m}"
+            if (self.start.year, self.start.month) == (last.year, last.month)
+            else f"{self.start:%Y-%m} to {last:%Y-%m}"
         )
+        ages = f" {self.ages}" if self.ages else ""
+        strength = f", {self.strength}" if self.strength else ""
+        agreement = f", {self.agreement} agreement" if self.agreement else ""
+        reasons = f": {'; '.join(self.reasons[:3])}" if self.reasons else ""
+        return f"{span}{ages}, {self.tone}{strength}{agreement}, during {self.periods}{reasons}"
 
 
 class AreaFacts(BaseModel):
@@ -474,11 +488,14 @@ class ChartLookup:
         today: date | None = None,
         gender: str | None = None,
         include_sensitive: bool = False,
+        marital: MaritalInput | None = None,
     ) -> None:
         self.chart = chart
         self.today = today or datetime.now(UTC).date()
         self.gender = gender
         self.include_sensitive = include_sensitive
+        #: What the person said about marriage: it decides how marriage windows are told.
+        self.marital = marital
         self.zone = ZoneInfo(chart.time.zone or "UTC")
         self.grahas: dict[Body, GrahaOut] = {g.body: g for g in chart.grahas if g.body in GRAHAS}
         self.lagna = int(chart.ascendant.sign)
@@ -513,15 +530,17 @@ class ChartLookup:
         )
 
     @staticmethod
-    def _window(window: PredictionWindowOut) -> WindowFacts:
+    def _window(window: LifeWindowOut) -> WindowFacts:
         return WindowFacts(
             start=window.start,
             end=window.end,
             peak=window.peak,
-            tone=tone_word(window.tone),
-            agreement=window.confidence,
-            periods=" / ".join(_title(b) for b in window.dasha),
-            reasons=[f.label for f in window.factors[:4]],
+            ages=window.ages,
+            tone=window.tone,
+            strength=window.strength,
+            agreement=window.agreement,
+            periods=window.periods,
+            reasons=window.reasons,
         )
 
     @cached_property
@@ -541,6 +560,26 @@ class ChartLookup:
         return compute_predictions(
             self.chart, first, date(first.year + 100, first.month, 1), gender=self.gender
         )
+
+    @cached_property
+    def reader(self) -> Reader:
+        """The life reading's reader for this chart, today and what the person said about
+        marriage: the chat tells the windows and the marriage timing the reading tells."""
+        return Reader(self.chart, self.today, self.gender, None, 5, self.marital, life=self.life)
+
+    @cached_property
+    def windows(self) -> list[LifeWindowOut]:
+        """The windows the life reading tells, over the whole life."""
+        return self.reader.windows()
+
+    def _windows(self, domain: Domain, start: date, end: date) -> list[WindowFacts]:
+        if self._hidden(domain):
+            return []
+        return [
+            self._window(w)
+            for w in self.windows
+            if w.domain is domain and w.end > start and w.start < end
+        ]
 
     def _domain(self, domain: Domain) -> DomainTimelineOut:
         return next(d for d in self.life.domains if d.domain is domain)
@@ -717,12 +756,7 @@ class ChartLookup:
         domain = name if isinstance(name, Domain) else area_of(name)
         spec = SPECS[domain]
         timeline = self._domain(domain)
-        low, high = start or date.min, end or date.max
-        windows = [
-            self._window(w)
-            for w in timeline.windows
-            if not self._hidden(domain) and w.end > low and w.start < high
-        ]
+        windows = self._windows(domain, start or date.min, end or date.max)
         top = sorted(timeline.promise.factors, key=lambda f: -abs(f.score) * f.weight)[:4]
         return AreaFacts(
             area=domain.value,
@@ -762,8 +796,7 @@ class ChartLookup:
         windows = {
             d.domain.value: found
             for d in self.life.domains
-            if not self._hidden(d.domain)
-            and (found := [self._window(w) for w in d.windows if w.end > start and w.start < end])
+            if (found := self._windows(d.domain, start, end))
         }
         return YearFacts(
             year=year,

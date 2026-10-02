@@ -195,11 +195,11 @@ If several major apps agree on a reading the engine does not use, change the def
 
 A match can be made for a couple already married (`married` with an optional `wedding_year` and `wedding_month` in `scripts/match_report.py`, and on the Kundli Check page). The report then:
 
-- checks the wedding against each partner's marriage windows (inside one, within a year of one, or further away);
+- checks the wedding against each partner's strong windows for marriage (inside one, within a year of one, or further away);
 - reads the windows ahead as times for married life, not wedding dates;
 - states that the score describes how the two charts fit by tradition, not how the marriage is or will be.
 
-The same applies to a single person's reading. Someone who says they are married has the wedding checked against the chart and later stretches read as married life. Someone who says they are not married gets the windows that have passed and the next one. When nobody has said, the reading allows for either.
+Each partner's windows are the ones that partner's own life reading tells (`life_windows`, strong windows only), so the match, the reading, its timeline and the chat name the same times. The same applies to a single person's reading. Someone who says they are married has the wedding checked against the chart and later stretches read as married life. Someone who says they are not married gets the windows that have passed and the next one. When nobody has said, the reading allows for either.
 
 ## Limits
 

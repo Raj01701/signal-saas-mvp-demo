@@ -369,7 +369,7 @@ STEADY = (
 BRIGHTEST = (
     "The year's brightest area is {area}.",
     "{Area} is where this year shines most.",
-    "On the brighter side, {area} looks well supported this year.",
+    "On the brighter side, this year gives good support to {area}.",
 )
 
 #: A planet's sub-period in a few words, for the years ahead.
@@ -684,6 +684,47 @@ SINGLE_LATER = Moment(
     "relationship questions, and talk of marriage",
     "relationship hurdles: delays or second thoughts about commitment",
 )
+
+#: Strong marriage stretches at 24 to 35 for someone who has not said whether they are
+#: married (or, married, has not given the wedding date): past ones as the chart's times
+#: for marriage, not as weddings that happened; coming ones allow for either.
+MARRIAGE_WINDOW = Moment(
+    24,
+    35,
+    "a strong time for marriage or a serious commitment",
+    "relationship and marriage matters coming to a head, with some hesitation or family discussion",
+    "relationship hurdles: delays, objections or second thoughts about commitment",
+)
+MARRIAGE_AHEAD = Moment(
+    24,
+    35,
+    "marriage or a serious commitment, or, if you are married, a warm time with your spouse",
+    "relationship and marriage matters coming to a head, with some hesitation or family discussion",
+    "relationship hurdles: delays, objections or second thoughts about commitment",
+)
+
+#: Children stretches for someone not known to be married: family plans, not a birth.
+FAMILY_PLANS = Moment(
+    25,
+    45,
+    "family matters in focus: plans for children, or happy news in the family",
+    "family plans in focus",
+    "family matters that need patience",
+)
+FAMILY_LATER = Moment(
+    45,
+    None,
+    "happy news in the family, among the children or the younger generation",
+    "family matters in focus",
+    "family matters that ask for patience",
+)
+#: A year's title when its leading stretch is about children, for someone not known to be
+#: married.
+FAMILY_TITLES: dict[Tone, str] = {
+    "good": "a happy year for the family",
+    "mixed": "family plans in focus",
+    "hard": "family matters need patience",
+}
 
 #: Short names for life areas, for headings and summaries.
 AREA_NAMES: dict[Domain, str] = {

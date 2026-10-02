@@ -7,13 +7,13 @@ engine computes; the narrator only words the results.
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
 from pydantic import BaseModel
 
-from jyotish_engine.models import ChartResult, CitationOut, YogaOut
-from jyotish_engine.predict import compute_predictions
+from jyotish_engine.models import ChartResult, CitationOut, MaritalInput, PredictionsOut, YogaOut
+from jyotish_engine.predict import compute_predictions, life_windows
 from jyotish_engine.rules.periods import compute_period_readings
 from jyotish_engine.rules.readings import compute_readings
 from jyotish_engine.rules.yogas import compute_yogas
@@ -72,8 +72,12 @@ def build_bundle(
     gender: str | None = None,
     include_sensitive: bool = False,
     horizon_years: int = 5,
+    marital: MaritalInput | None = None,
+    life: PredictionsOut | None = None,
 ) -> EvidenceBundle:
-    """Evidence for a reading of ``chart`` as of ``today``: natal and for the coming years."""
+    """Evidence for a reading of ``chart`` as of ``today``: natal and for the coming years.
+    The windows are the life reading's own (``life_windows``), so a report or a chat names
+    the same times as the reading; ``marital`` decides how marriage windows are told."""
     today = today or datetime.now(UTC).date()
     items: list[EvidenceItem] = []
     readings = compute_readings(chart, include_sensitive=include_sensitive).readings
@@ -82,10 +86,13 @@ def build_bundle(
     yogas = sorted(yogas, key=lambda y: STRENGTH_ORDER[y.strength.value])[:MAX_YOGAS]
     items += [_rule_item(y, "yoga") for y in yogas]
 
-    start = date(today.year - 1, today.month, 1)
+    born = chart.birth.local_datetime.date().replace(day=1)
+    life = life or compute_predictions(
+        chart, born, date(born.year + 100, born.month, 1), gender=gender
+    )
     end = date(today.year + horizon_years, today.month, 1)
-    predictions = compute_predictions(chart, start, end, gender=gender)
-    for domain in predictions.domains:
+    windows = life_windows(chart, today, gender=gender, marital=marital, life=life)
+    for domain in life.domains:
         name = domain.domain.value
         top = sorted(domain.promise.factors, key=lambda f: -abs(f.score) * f.weight)[:4]
         items.append(
@@ -103,27 +110,26 @@ def build_bundle(
                 else "mixed",
             )
         )
-        upcoming = [w for w in domain.windows if w.end > today]
-        for window in sorted(upcoming, key=lambda w: -w.score)[:WINDOWS_PER_DOMAIN]:
-            tone = (
-                "favourable"
-                if window.tone > 0.15
-                else "challenging"
-                if window.tone < -0.15
-                else "mixed"
-            )
-            lords = " / ".join(b.value.title() for b in window.dasha)
-            reasons = "; ".join(f.label for f in window.factors[:4])
+        upcoming = [
+            w for w in windows if w.domain is domain.domain and w.end > today and w.start < end
+        ]
+        # Strong windows first, then the soonest.
+        chosen = sorted(upcoming, key=lambda w: (w.strength != "strong", w.start))
+        for window in sorted(chosen[:WINDOWS_PER_DOMAIN], key=lambda w: w.start):
+            tone = {"good": "favourable", "hard": "challenging"}.get(window.tone, "mixed")
+            last = window.end - timedelta(days=1)
+            reasons = "; ".join(window.reasons) or "the running periods"
+            agreement = f", {window.agreement} agreement" if window.agreement else ""
             items.append(
                 EvidenceItem(
                     id=f"window:{name}:{window.start.isoformat()[:7]}",
                     kind="window",
                     title=f"{name.title()} window",
-                    text=f"{window.confidence} emphasis, {tone}, during {lords}: {reasons}.",
+                    text=f"{window.strength} window, {tone}{agreement}, during "
+                    f"{window.periods}: {reasons}.",
                     domains=[name],
                     polarity=tone,
-                    period=f"{window.start.isoformat()[:7]} to {window.end.isoformat()[:7]}",
-                    sources=[r.id for r in window.rules],
+                    period=f"{window.start.isoformat()[:7]} to {last.isoformat()[:7]}",
                 )
             )
 

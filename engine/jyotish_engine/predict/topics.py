@@ -17,7 +17,7 @@ from jyotish_engine.astro.bodies import Body
 from jyotish_engine.core.zodiac import SIGN_LORDS, Sign
 from jyotish_engine.models import ReadingSectionOut, RemedyOut, Tone
 from jyotish_engine.predict import lore, words
-from jyotish_engine.predict.voice import ages, cap, join, month, when_future, when_past
+from jyotish_engine.predict.voice import cap, join, month, when_future
 from jyotish_engine.rules.schema import Domain
 from jyotish_engine.special.karakas import Karaka
 
@@ -390,12 +390,12 @@ def _sub_periods(r: Reader, lords: Sequence[Body], years: int) -> str:
         who = _planet(period.lords[-1])
         if start <= r.today:
             return (
-                f"The {who} sub-period running until {month(end)} is a natural time for "
-                "travel abroad."
+                f"By the classical rule, the {who} sub-period running until {month(end)} "
+                "favours travel abroad."
             )
         return (
-            f"The {who} sub-period, from {month(start)} to {month(end - timedelta(days=1))}, "
-            "is a natural time for travel abroad."
+            f"By the classical rule, the {who} sub-period, from {month(start)} to "
+            f"{month(end - timedelta(days=1))}, favours travel abroad."
         )
     return ""
 
@@ -568,13 +568,13 @@ def marriage(r: Reader) -> ReadingSectionOut | None:
     status, _ = r.manglik()
     if status == "Yes":
         life += (
-            " You are Manglik, which is traditionally checked when matching charts; see "
-            "'Good to know'."
+            f" You are Manglik, counted from {join(r.manglik_from())}, which is traditionally "
+            "checked when matching charts; see the Manglik note under 'Doshas and remedies'."
         )
     elif status == "Cancelled":
         life += " A Manglik placement is present but cancelled, so it is not counted."
     paragraphs = [" ".join(first), spouse, life]
-    timing = _marriage_timing(r)
+    timing = marriage_timing(r)
     if timing:
         paragraphs.append(timing)
     tone: Tone = r.level_tone(level)
@@ -590,62 +590,70 @@ def marriage(r: Reader) -> ReadingSectionOut | None:
     )
 
 
-def _marriage_timing(r: Reader) -> str:
-    """Marriage timing for the life the person has: for someone married, the wedding
-    against the chart and married life ahead; for someone single, the windows passed and
-    the next one; when nobody has said, both readings."""
-    past = r.best_past(Domain.MARRIAGE)
-    was = f"{when_past(past.start, past.end)} {ages(r.birth, past.start, past.end)}" if past else ""
-    ahead = [
-        e
-        for e in r.episodes
-        if e.domain is Domain.MARRIAGE and e.start > r.today and e.tone != "hard" and r.told(e)
-    ]
-    best = max(ahead, key=lambda e: e.score) if ahead else None
-    when = (
-        f"{when_future(best.start, best.end)} {ages(r.birth, best.start, best.end)}" if best else ""
-    )
+def marriage_timing(r: Reader) -> str:
+    """Marriage timing for the life the person has, from the reading's own windows (the
+    same ones the checks, the years ahead and the windows list name): for someone
+    married, the wedding against the chart and married life ahead; for someone single,
+    the windows passed and the next one; when nobody has said, both readings."""
+    past = r.main_windows(Domain.MARRIAGE, past=True)[:2]
+    were = join([r.when(e) for e in past])
+    ahead = r.main_windows(Domain.MARRIAGE, past=False)
+    first = ahead[0] if ahead else None
+    top = max(ahead, key=lambda e: e.score) if ahead else None
+    later = f", and the strongest ahead is {r.when(top)}" if top is not first and top else ""
     parts: list[str] = []
     if r.married:
         check = r.wedding_check()
         if check is not None:
             parts.append(check.text)
-        elif past is not None:
+        elif past:
+            main = "main window" if len(past) == 1 else "main windows"
             parts.append(
-                f"The chart's main window for marriage was {was}; if that is when you married, "
-                "the chart's timing fits your life."
+                f"The chart's {main} for marriage {'was' if len(past) == 1 else 'were'} {were}; "
+                f"if you married {'then' if len(past) == 1 else 'in one of them'}, the "
+                "chart's timing fits your life."
             )
-        if best is not None:
+        if first is not None:
             parts.append(
-                f"Ahead, {when} brings warmth to married life."
-                if best.tone == "good"
-                else f"Ahead, {when} brings shared plans and changes in married life."
+                f"Ahead, {r.when(first)} brings warmth to married life."
+                if first.tone == "good"
+                else f"Ahead, {r.when(first)} brings shared plans and changes in married life."
             )
         return " ".join(parts)
     if r.single:
-        if past is not None:
+        if past:
             parts.append(
-                f"An earlier window for marriage, {was}, has passed; a chart shows when the "
+                f"{'An earlier window' if len(past) == 1 else 'Earlier windows'} for marriage, "
+                f"{were}, {'has' if len(past) == 1 else 'have'} passed; a chart shows when the "
                 "door is open, and choices and circumstances decide the rest."
             )
-        if best is not None:
-            parts.append(f"The next strong window for marriage is {when}.")
+        if first is not None:
+            parts.append(f"The next strong window for marriage is {r.when(first)}{later}.")
         return " ".join(parts)
-    if past is not None:
+    if past:
+        main = "main window" if len(past) == 1 else "main windows"
         parts.append(
-            f"The chart's main window for marriage so far was {was}. If you are married, "
-            "compare it with your wedding date: a close match suggests the birth time is right."
+            f"The chart's {main} for marriage so far {'was' if len(past) == 1 else 'were'} "
+            f"{were}. If you are married, compare {'it' if len(past) == 1 else 'them'} with "
+            "your wedding date: a close match suggests the birth time is right."
         )
-    if best is not None:
-        if r.marriage_age(best.start) >= 36:
-            parts.append(
-                f"Ahead, {when} brings warmth to married life, or a real opening for "
-                "partnership if you are single."
+    if first is not None:
+        if r.marriage_age(max(first.start, r.today)) >= 36:
+            what = (
+                "warmth to married life"
+                if first.tone == "good"
+                else "shared plans and changes in married life"
             )
-        elif past is not None or r.age >= 24:
-            parts.append(f"If you are not married yet, the next strong window is {when}.")
+            parts.append(
+                f"Ahead, {r.when(first)} brings {what}, or a real opening for partnership if "
+                "you are single."
+            )
+        elif past or r.age >= 24:
+            parts.append(
+                f"If you are not married yet, the next strong window is {r.when(first)}{later}."
+            )
         else:
-            parts.append(f"The next strong window for marriage is {when}.")
+            parts.append(f"The next strong window for marriage is {r.when(first)}{later}.")
     return " ".join(parts)
 
 

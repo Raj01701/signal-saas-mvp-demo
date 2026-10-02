@@ -1062,6 +1062,30 @@ class WeddingCheckOut(BaseModel):
     text: str
 
 
+class LifeWindowOut(BaseModel):
+    """A stretch when a life area is active, as the reading tells it. Every section of the
+    reading, the timeline and the chat use these same windows."""
+
+    domain: Domain
+    area: str
+    start: date
+    #: The first day after the window.
+    end: date
+    peak: date
+    ages: str
+    when: str
+    tone: Tone
+    #: Strong: at least 80% as active as the area's strongest stretch at the ages it is
+    #: mainly read. A wedding or a birth is told only for a strong window.
+    strength: Literal["strong", "light"]
+    #: The Vimshottari sub-periods the window falls in, such as "Mars–Jupiter".
+    periods: str
+    #: At the peak: how far the timing systems agree (strong, moderate or weak; not a
+    #: probability) and the main reasons, for astrologers and the chat.
+    agreement: str = ""
+    reasons: list[str] = []
+
+
 class LifeReadingOut(BaseModel):
     """A life reading as an astrologer would tell it: who you are, your life so far,
     where you stand now and the years ahead, built from the engine's own results."""
@@ -1089,6 +1113,8 @@ class LifeReadingOut(BaseModel):
     marital: MaritalInput = MaritalInput()
     #: The wedding given, against the chart's windows for marriage.
     wedding: WeddingCheckOut | None = None
+    #: Every window the reading tells, across the whole life, in time order.
+    windows: list[LifeWindowOut] = []
     #: Manglik, Sade Sati, Kala Sarpa and favourable things.
     good_to_know: list[ReadingSectionOut]
     #: Traditional remedies chosen for the chart, last.
