@@ -64,3 +64,16 @@ def test_regions_and_search_carry_state_names() -> None:
     assert match_region("up") == ("IN", "36") and match_region("Texas") == ("US", "TX")
     assert match_country("India") == "IN" and match_country("USA") == "US"
     assert search_places("Sirsa", limit=1)[0].admin1_name == "Haryana"
+
+
+def test_honorifics_and_a_state_without_a_comma() -> None:
+    # "Sri" is typed many ways; GeoNames keeps "Sri Ganganagar" but plain "Muktsar".
+    for typed in ("sir ganganagar, rajasthan", "shri ganganagar", "shree ganganagar rajasthan"):
+        found = resolve_place(typed)
+        assert found.label == "Sri Ganganagar, Rajasthan, India", typed
+        assert 'read as "Sri Ganganagar"' in found.how
+    assert resolve_place("Sri Muktsar Sahib, Punjab").label == "Muktsar, Punjab, India"
+    # The joined spelling comes before dropping the honorific: "sri nagar" is Srinagar.
+    assert resolve_place("sri nagar").label.startswith("Srinagar, Jammu and Kashmir")
+    # A state after the town, without a comma, narrows the search like one with a comma.
+    assert resolve_place("sirsa haryana").how == "matched in Haryana, as entered"

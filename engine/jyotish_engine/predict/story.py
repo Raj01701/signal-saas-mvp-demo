@@ -104,6 +104,9 @@ HOLD_QUANTILE = 0.7
 MERGE_GAP_MONTHS = 2
 #: A single high month is a passing transit, not a stretch.
 MIN_MONTHS = 2
+#: A longer window is narrowed to its own strongest months: a whole favourable mahadasha
+#: is read through the sub-periods and transits that peak within it.
+MAX_WINDOW_MONTHS = 24
 #: Tenor of a stretch from its quality (see ``_episodes``).
 GOOD_ABOVE = 0.06
 HARD_BELOW = -0.06
@@ -277,6 +280,26 @@ def _held_runs(scores: Sequence[float], threshold: float, hold: float) -> list[t
     ]
 
 
+def _narrow(
+    scores: Sequence[float], first: int, stop: int, threshold: float, hold: float
+) -> list[tuple[int, int]]:
+    """A long window's own peaks: its months in the top 40% of the window, held while they
+    stay in its top 60%, again until each part lasts at most MAX_WINDOW_MONTHS (or nothing
+    inside stands out)."""
+    if stop - first <= MAX_WINDOW_MONTHS:
+        return [(first, stop)]
+    inner = [s for s in scores[first:stop] if s > 0]
+    top = max(threshold, _quantile(inner, 0.6))
+    keep = min(top, max(hold, _quantile(inner, 0.4)))
+    parts = _held_runs(scores[first:stop], top, keep)
+    if not parts or parts == [(0, stop - first)]:
+        return [(first, stop)]
+    out: list[tuple[int, int]] = []
+    for a, b in parts:
+        out += _narrow(scores, first + a, first + b, top, keep)
+    return out
+
+
 def _episodes(
     life: PredictionsOut,
     birth: date,
@@ -302,13 +325,18 @@ def _episodes(
         threshold = max(MIN_SCORE, _quantile(positive, ACTIVE_QUANTILE))
         hold = min(threshold, max(MIN_SCORE, _quantile(positive, HOLD_QUANTILE)))
         runs: list[tuple[int, int]] = []
-        for first, stop in _held_runs(scores, threshold, hold):
-            # Runs inside one sub-period are one window: the sub-period sets the time,
-            # the transits only pick the months within it.
-            if runs and dashas.at(months[runs[-1][1] - 1], 2) is dashas.at(months[first], 2):
-                runs[-1] = (runs[-1][0], stop)
-            else:
-                runs.append((first, stop))
+        for held in _held_runs(scores, threshold, hold):
+            for first, stop in _narrow(scores, *held, threshold, hold):
+                # Runs inside one sub-period are one window (the sub-period sets the time,
+                # the transits only pick the months within it), up to the longest window.
+                if (
+                    runs
+                    and dashas.at(months[runs[-1][1] - 1], 2) is dashas.at(months[first], 2)
+                    and stop - runs[-1][0] <= MAX_WINDOW_MONTHS
+                ):
+                    runs[-1] = (runs[-1][0], stop)
+                else:
+                    runs.append((first, stop))
         for first, stop in runs:
             span = range(first, stop)
             peak = max(span, key=lambda i: scores[i])

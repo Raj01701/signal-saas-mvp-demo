@@ -104,10 +104,13 @@ def test_the_next_window_is_the_first_one_ahead(reading: LifeReadingOut) -> None
     match = re.search(r"next strong window(?: for marriage)? is ([^,.]+\))", timing)
     if match is None:
         return
-    ahead = [
+    ahead = [  # strong windows still to come, a difficult one never named as the next
         w
         for w in reading.windows
-        if w.domain is Domain.MARRIAGE and w.end > reading.today and w.strength == "strong"
+        if w.domain is Domain.MARRIAGE
+        and w.end > reading.today
+        and w.strength == "strong"
+        and w.tone != "hard"
     ]
     assert ahead and match.group(1) == f"{ahead[0].when} {ahead[0].ages}"
 

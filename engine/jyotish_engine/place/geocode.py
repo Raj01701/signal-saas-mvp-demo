@@ -186,6 +186,44 @@ class Resolution:
     ambiguous: bool = False
 
 
+#: Honorifics that Indian place names carry, spelt many ways ("Sri Ganganagar" is also typed
+#: "Shri", "Shree" or "Sir Ganganagar"; "Sri Muktsar Sahib" is "Muktsar" in GeoNames): a
+#: name that is not found is tried with "Sri", "Shri" and without its honorifics.
+HONORIFIC_START = re.compile(r"^(?:sri|shri|shree|sree|siri|shiri|sir|sh)\.?\s+", re.IGNORECASE)
+HONORIFIC_END = re.compile(r"\s+(?:sahib|saheb|sahab|ji)$", re.IGNORECASE)
+
+
+def _variants(name: str) -> list[str]:
+    name = " ".join(name.split())
+    core = HONORIFIC_END.sub("", HONORIFIC_START.sub("", name))
+    if not core or core == name:
+        return [name]
+    # Joined forms first ("sri nagar" is Srinagar), the bare name last.
+    return list(
+        dict.fromkeys([name, f"Sri {core}", f"Shri {core}", f"Sri{core}", f"Shri{core}", core])
+    )
+
+
+def _lookup(name: str) -> tuple[str, list[Place], list[Place]]:
+    """The first spelling of ``name`` the gazetteer knows, with its exact and prefix matches."""
+    for variant in _variants(name):
+        exact, prefix = gazetteer().matches(variant)
+        if exact or prefix:
+            return variant, exact, prefix
+    return name, [], []
+
+
+def _trailing_region(text: str) -> tuple[str, list[str]]:
+    """A state or country typed after the town without a comma ("ganganagar rajasthan")."""
+    words = text.split()
+    for k in (1, 2, 3):
+        if len(words) > k:
+            tail = " ".join(words[-k:])
+            if match_region(tail) is not None or match_country(tail) is not None:
+                return " ".join(words[:-k]), [tail]
+    return text, []
+
+
 def _in_region(region: tuple[str, str]) -> Callable[[Place], bool]:
     return lambda p: (p.country_code, p.admin1_code) == region
 
@@ -209,11 +247,18 @@ def resolve_place(text: str) -> Resolution:
     if not parts:
         raise ValueError("enter a place name or its coordinates")
     head, qualifiers = parts[0], parts[1:]
+    typed = head
+    used, exact, prefix = _lookup(head)
+    if not exact and not prefix and not qualifiers:
+        town, tail = _trailing_region(head)
+        if tail:
+            found = _lookup(town)
+            if found[1] or found[2]:
+                (used, exact, prefix), head, qualifiers = found, town, tail
+    if not exact and not prefix:
+        raise ValueError(f'no place called "{typed}" was found; enter its coordinates instead')
     regions = [r for q in qualifiers if (r := match_region(q)) is not None]
     countries = [c for q in qualifiers if (c := match_country(q)) is not None]
-    exact, prefix = gazetteer().matches(head)
-    if not exact and not prefix:
-        raise ValueError(f'no place called "{head}" was found; enter its coordinates instead')
     # The narrowest qualifier that finds the place wins: a state, then a country.
     filters: list[tuple[str, Callable[[Place], bool]]] = []
     for r in regions:
@@ -258,6 +303,8 @@ def resolve_place(text: str) -> Resolution:
         )
     else:
         how = f'best match for "{text.strip()}" (population {best.population:,})'
+    if normalize(used) != normalize(head):
+        how = f'"{head}" read as "{best.name}"; ' + how
     return Resolution(
         best.latitude,
         best.longitude,
