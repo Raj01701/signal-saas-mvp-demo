@@ -49,6 +49,7 @@ Each milestone ends tested, committed and pushed. The status column is kept curr
   - A domain.
   - Payments (Razorpay or Stripe), if monetising.
 - **Reviewers:**
+  - A run of the check pairs in [MATCHING.md](MATCHING.md) on two or three of the large matchmaking apps, to confirm which reading of the Gana and Yoni tables they use (the build environment cannot reach them).
   - A qualified Jyotishi to review knowledge-base rules.
   - Legal review of terms, privacy policy and disclaimers.
 - **Before launch** (see [RUNBOOK.md](RUNBOOK.md) and [SECURITY.md](SECURITY.md)):

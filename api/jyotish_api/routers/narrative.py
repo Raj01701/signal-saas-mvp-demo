@@ -31,7 +31,7 @@ from jyotish_api.narrative.service import (
 from jyotish_api.ratelimit import narrative_quota
 from jyotish_api.schemas import ChartRequest
 from jyotish_engine.ask import ChartLookup
-from jyotish_engine.models import ChartResult
+from jyotish_engine.models import ChartResult, MaritalInput
 
 router = APIRouter(prefix="/v1", tags=["narrative"])
 
@@ -55,6 +55,8 @@ class ChatRequest(NarrativeRequest):
     language: ChatLanguage = "auto"
     #: The person's first name, for a more personal answer.
     name: str | None = Field(default=None, max_length=60)
+    #: What the person says about marriage; unknown when absent.
+    marital: MaritalInput | None = None
 
 
 def narrator_for(settings: ApiSettings) -> Narrator:
@@ -99,7 +101,7 @@ def chat(request: Request, body: ChatRequest) -> ChatOut:
     lookup = ChartLookup(chart, today=bundle.today, gender=body.gender)
     narrator = narrator_for(request.app.state.settings)
     if not isinstance(narrator, ClaudeNarrator):
-        return answer_offline(bundle, body.messages[-1].content, lookup)
+        return answer_offline(bundle, body.messages[-1].content, lookup, body.marital)
     try:
         return chat_with_claude(
             narrator,
@@ -109,6 +111,7 @@ def chat(request: Request, body: ChatRequest) -> ChatOut:
             lookup=lookup,
             name=body.name,
             language=body.language,
+            marital=body.marital,
         )
     except (NarrativeRefusedError, NarrativeRejectedError) as error:
         raise HTTPException(502, str(error)) from error

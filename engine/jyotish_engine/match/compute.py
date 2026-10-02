@@ -8,7 +8,10 @@ both partners are manglik or neither is.
 
 from __future__ import annotations
 
+import math
+
 from jyotish_engine.astro.bodies import Body
+from jyotish_engine.core.nakshatra import NAKSHATRA_SPAN
 from jyotish_engine.match.ashtakoota import MoonPlacement, ashtakoota
 from jyotish_engine.match.compatibility import papasamya
 from jyotish_engine.match.dashakoota import dashakoota
@@ -16,10 +19,13 @@ from jyotish_engine.match.tables import KootaProfile
 from jyotish_engine.models import (
     ChartResult,
     CitationOut,
+    KootaDifferenceOut,
     KootaOut,
+    KootaVariantOut,
     KujaOut,
     MatchDoshaOut,
     MatchOut,
+    MoonMarginOut,
     PoruthamOut,
 )
 from jyotish_engine.rules.catalogue import Catalogue, default_catalogue
@@ -56,6 +62,29 @@ def kuja_status(facts: ChartFacts, catalogue: Catalogue | None = None) -> KujaOu
 def moon_of(chart: ChartResult) -> MoonPlacement:
     moon = next(g for g in chart.grahas if g.body is Body.MOON)
     return MoonPlacement(moon.sidereal_longitude)
+
+
+def moon_margin(chart: ChartResult) -> MoonMarginOut:
+    """Hours the Moon stayed within the boundaries matching reads (nakshatra, sign, and
+    the 15-degree split of Dhanu and Makara for Vashya), before and after birth."""
+    moon = next(g for g in chart.grahas if g.body is Body.MOON)
+    longitude, speed = moon.sidereal_longitude % 360.0, abs(moon.speed) or 13.2
+    sign = int(longitude // 30.0)
+    edges = [math.floor(longitude / NAKSHATRA_SPAN) * NAKSHATRA_SPAN, sign * 30.0]
+    if sign in (8, 9):  # Vashya changes halfway through Dhanu and Makara
+        edges.append(sign * 30.0 + (15.0 if longitude - sign * 30.0 >= 15.0 else 0.0))
+    starts = max(edges)
+    ends = [
+        math.floor(longitude / NAKSHATRA_SPAN) * NAKSHATRA_SPAN + NAKSHATRA_SPAN,
+        sign * 30.0 + 30.0,
+    ]
+    if sign in (8, 9) and longitude - sign * 30.0 < 15.0:
+        ends.append(sign * 30.0 + 15.0)
+    hours = 24.0 / speed
+    return MoonMarginOut(
+        holds_before_hours=round((longitude - starts) * hours, 2),
+        holds_after_hours=round((min(ends) - longitude) * hours, 2),
+    )
 
 
 def match_moons(
@@ -96,6 +125,24 @@ def compute_match(
     groom: ChartResult, bride: ChartResult, profile: KootaProfile = KootaProfile.POPULAR
 ) -> MatchOut:
     kootas, doshas, poruthams = match_moons(moon_of(groom), moon_of(bride), profile)
+    variants = []
+    for other in KootaProfile:
+        if other is profile:
+            continue
+        theirs = {
+            k.name: k.points for k in ashtakoota(moon_of(groom), moon_of(bride), other).kootas
+        }
+        variants.append(
+            KootaVariantOut(
+                profile=other.value,
+                total=sum(theirs.values()),
+                differences=[
+                    KootaDifferenceOut(name=k.name, points=k.points, variant_points=theirs[k.name])
+                    for k in kootas
+                    if theirs[k.name] != k.points
+                ],
+            )
+        )
     groom_kuja = kuja_status(ChartFacts.from_chart(groom, gender="male"))
     bride_kuja = kuja_status(ChartFacts.from_chart(bride, gender="female"))
     groom_papa, bride_papa = papasamya(groom), papasamya(bride)
@@ -112,6 +159,9 @@ def compute_match(
         groom_papa=groom_papa,
         bride_papa=bride_papa,
         papasamya_balanced=bride_papa.points <= groom_papa.points,
+        variants=variants,
+        groom_moon=moon_margin(groom),
+        bride_moon=moon_margin(bride),
         sources=_citations(
             (
                 Citation(text="raman_muhurtha", locator="Kuja dosha in marriage"),

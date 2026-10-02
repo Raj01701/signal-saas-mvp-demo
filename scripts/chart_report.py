@@ -5,9 +5,10 @@
 The request is a JSON object: ``date`` (YYYY-MM-DD), ``time`` (HH:MM or HH:MM:SS,
 local clock time), ``place`` (a place name) or ``latitude`` and ``longitude``, and
 optionally ``name``, ``gender`` ("male" or "female"), ``time_source`` and
-``uncertainty_minutes``. Everything comes from the engine and the knowledge base with
-the Classic Parashari settings; the plain-language reading is the offline template
-narrator's.
+``uncertainty_minutes``, and what the person says about marriage: ``marital_status``
+("single", "married" or "unknown") with ``wedding_year`` and ``wedding_month``. Everything
+comes from the engine and the knowledge base with the Classic Parashari settings; the
+plain-language reading is the offline template narrator's.
 """
 
 from __future__ import annotations
@@ -28,7 +29,14 @@ from jyotish_engine.astro.bodies import GRAHAS, Body
 from jyotish_engine.astro.time import datetime_to_jd, jd_to_datetime
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.core.varga import varga_sign
-from jyotish_engine.models import BirthInput, BirthTimeSource, ChartResult, PlaceInput
+from jyotish_engine.models import (
+    BirthInput,
+    BirthTimeSource,
+    ChartResult,
+    MaritalInput,
+    MaritalStatus,
+    PlaceInput,
+)
 from jyotish_engine.panchanga.day import compute_panchanga
 from jyotish_engine.place.geocode import dms as place_dms
 from jyotish_engine.place.geocode import parse_coordinates, seconds_per_km
@@ -443,6 +451,23 @@ def chat_facts(lookup: ChartLookup, age: int) -> dict[str, Any]:
     }
 
 
+def marital_of(request: dict[str, Any]) -> MaritalInput | None:
+    """What the person said about marriage; a wedding year implies they are married."""
+    status = str(request.get("marital_status") or "unknown")
+    year, number = request.get("wedding_year"), request.get("wedding_month")
+    if year not in (None, ""):
+        status = MaritalStatus.MARRIED.value
+    if status not in {s.value for s in MaritalStatus}:
+        raise ValueError(f"unknown marital status {status!r}")
+    if status == MaritalStatus.UNKNOWN.value:
+        return None
+    return MaritalInput(
+        status=MaritalStatus(status),
+        wedding_year=int(year) if year not in (None, "") else None,
+        wedding_month=int(number) if number not in (None, "") and year not in (None, "") else None,
+    )
+
+
 def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]:
     today = today or datetime.now(UTC).date()
     place, place_out = resolve_place(request)
@@ -503,7 +528,7 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     narrative = write_report(build_bundle(chart, today=today, gender=gender), TemplateNarrator())
     sensitivity = compute_sensitivity(chart)
     name = str(request.get("name") or "").strip() or None
-    life = life_reading(chart, today, gender=gender, name=name)
+    life = life_reading(chart, today, gender=gender, name=name, marital=marital_of(request))
     lookup = ChartLookup(chart, today=today, gender=gender)
     interpretation = chart.time.interpretation
     return {
@@ -525,6 +550,9 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
                 "gender",
                 "time_source",
                 "uncertainty_minutes",
+                "marital_status",
+                "wedding_year",
+                "wedding_month",
             )
         },
         "place": {

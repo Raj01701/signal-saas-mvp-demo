@@ -9,6 +9,10 @@ It is written for the person, not for astrologers:
   then. Childhood is about home, school and family; marriage is read from 21 and
   children from 23; career and money from 18 (see ``words.MOMENTS``). A house is
   described by what it means at that age, so a child's chapter never mentions marriage.
+* **Life-aware.** Marriage timing follows what the person says: for someone married,
+  stretches after the wedding are about married life and the wedding is checked against
+  the chart's windows; for someone single, later stretches are openings; when nobody
+  has said, the reading allows for either.
 * **Tense-aware.** The past is told in the past tense and dated in years, the way
   people remember it; the future is dated to the month, the way people plan.
 * **Human.** A few strong moments per chapter instead of every window; sentences vary
@@ -27,6 +31,7 @@ import statistics
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from typing import Literal
 
 from jyotish_engine.astro.bodies import Body
 from jyotish_engine.astro.time import datetime_to_jd, jd_to_datetime
@@ -40,10 +45,13 @@ from jyotish_engine.models import (
     GlanceItemOut,
     LifeMomentOut,
     LifeReadingOut,
+    MaritalInput,
+    MaritalStatus,
     PredictionsOut,
     ReadingSectionOut,
     StoryChapterOut,
     Tone,
+    WeddingCheckOut,
     YearOutlookOut,
     YogasOut,
 )
@@ -310,6 +318,7 @@ class Reader:
         gender: str | None,
         name: str | None,
         years_ahead: int,
+        marital: MaritalInput | None = None,
     ) -> None:
         self.chart = chart
         self.today = today
@@ -328,6 +337,8 @@ class Reader:
         center = self.center = _center(self.life)
         self.female = gender == "female"
         self.minor = self.age < 18
+        self.marital = marital or MaritalInput()
+        self.wedding = self._wedding_span()
         lifetime = _episodes(self.life, self.birth, self.dashas, center, female=self.female)
         # The years ahead are also read against each other, as an astrologer compares one
         # year with the next; these stretches never displace the lifetime ones.
@@ -354,6 +365,8 @@ class Reader:
             )
         else:
             self.marriage = None
+        if self.wedding is not None:
+            self.marriage = self.wedding[0]
         self.yogas: YogasOut = compute_yogas(chart, gender=gender)
         self.moon_sign = int(self.facts.signs[Body.MOON])
         self.sade_sati = self._sade_sati()
@@ -377,6 +390,50 @@ class Reader:
     def marriage_age(self, day: date) -> float:
         """Age on ``day`` as marriage is read (two years on for women)."""
         return years_between(self.birth, day) + (FEMALE_MARRIAGE_OFFSET if self.female else 0)
+
+    @property
+    def married(self) -> bool:
+        return self.marital.status is MaritalStatus.MARRIED
+
+    @property
+    def single(self) -> bool:
+        return self.marital.status is MaritalStatus.SINGLE
+
+    def _wedding_span(self) -> tuple[date, date] | None:
+        """The wedding as a span of days: its month, or its year when no month was given."""
+        year, number = self.marital.wedding_year, self.marital.wedding_month
+        if year is None:
+            return None
+        if number is None:
+            start, end = date(year, 1, 1), date(year + 1, 1, 1)
+        else:
+            start, end = date(year, number, 1), date(year + number // 12, number % 12 + 1, 1)
+        if years_between(self.birth, end) < 12 or start > self.today:
+            raise ValueError("the wedding must come after the 12th birthday and not after today")
+        return start, end
+
+    def band(self, domain: Domain, start: date, end: date) -> words.Moment | None:
+        """How a stretch reads: by the age it starts at, and for marriage also by what the
+        person said. For someone married, stretches after the wedding (and any running now
+        or ahead) are about married life; for someone single, past stretches are times when
+        relationships were in focus and later ones are openings."""
+        band = _band(domain, years_between(self.birth, start), self.female)
+        if domain is not Domain.MARRIAGE or band is None:
+            return band
+        current = end > self.today
+        if self.married:
+            after = current or (self.wedding is not None and start >= self.wedding[0])
+            return words.MARRIED_LIFE if after else band
+        if self.single:
+            if not current:
+                return words.SINGLE_PAST if band.from_age >= 24 else band
+            return words.SINGLE_LATER if band.until_age is None else band
+        return band
+
+    def area_name(self, domain: Domain) -> str:
+        if domain is Domain.MARRIAGE and self.married:
+            return "married life"
+        return words.AREA_NAMES[domain]
 
     def area(self, house: int, age: float) -> str:
         if self.minor and house in words.MINOR_AREAS and age >= 18:
@@ -430,7 +487,7 @@ class Reader:
     def moment(
         self, item: _Episode, tense: words.Tense, *, with_ages: bool = True
     ) -> LifeMomentOut | None:
-        band = _band(item.domain, years_between(self.birth, item.start), self.female)
+        band = self.band(item.domain, item.start, item.end)
         what = band.words(item.tone) if band else None
         if what is None:
             return None
@@ -472,7 +529,7 @@ class Reader:
     def told(self, item: _Episode) -> bool:
         if self.minor and item.domain in (Domain.MARRIAGE, Domain.CHILDREN):
             return False
-        band = _band(item.domain, years_between(self.birth, item.start), self.female)
+        band = self.band(item.domain, item.start, item.end)
         if band is None or band.words(item.tone) is None:
             return False
         if item.domain is Domain.CHILDREN and self.marriage is not None:
@@ -1149,7 +1206,7 @@ class Reader:
             best = max(ahead, key=lambda e: e.score)
             lines.append(
                 f"The most promising stretch ahead is {when_future(best.start, best.end)}, for "
-                f"{words.AREA_NAMES[best.domain]}."
+                f"{self.area_name(best.domain)}."
             )
         if self.age < 14:
             lines.append(
@@ -1202,6 +1259,25 @@ class Reader:
                 continue
             when = when_past(best.start, best.end)
             span = ages(self.birth, best.start, best.end)
+            label = words.CHECK_LABELS[domain]
+            if domain is Domain.MARRIAGE and self.single:
+                label = words.CHECK_LABEL_SINGLE
+            text = f"{label}: {when} {span}" + (
+                f", strongest around {best.peak.year}."
+                if (best.end - best.start).days > 900
+                else "."
+            )
+            if domain is Domain.MARRIAGE and self.wedding is not None:
+                start, end = self.wedding
+                wedding = f" Your wedding, in {self._wedding_words()},"
+                check = self.wedding_check()
+                if best.start < end and start < best.end:
+                    text += f"{wedding} falls inside it."
+                elif check is not None and check.fit != "outside" and check.window is not None:
+                    where = "came in" if check.fit == "inside" else "came close to"
+                    text += f"{wedding} {where} another window for marriage, {check.window.when}."
+                else:
+                    text += f"{wedding} falls outside it."
             out.append(
                 LifeMomentOut(
                     domain=domain,
@@ -1210,17 +1286,72 @@ class Reader:
                     end=best.end,
                     ages=span,
                     when=when,
-                    text=f"{words.CHECK_LABELS[domain]}: {when} {span}"
-                    + (
-                        f", strongest around {best.peak.year}."
-                        if (best.end - best.start).days > 900
-                        else "."
-                    ),
+                    text=text,
                     tone=best.tone,
                     basis=f"{domain.value}: activation {best.score:.2f} peaking {best.peak:%b %Y}",
                 )
             )
         return sorted(out, key=lambda m: m.start)
+
+    def _wedding_words(self) -> str:
+        assert self.wedding is not None
+        start = self.wedding[0]
+        return str(start.year) if self.marital.wedding_month is None else month(start)
+
+    def wedding_check(self) -> WeddingCheckOut | None:
+        """The wedding the person gave, against the chart's windows for marriage: inside
+        one, within a year of one, or further away."""
+        if self.wedding is None:
+            return None
+        start, end = self.wedding
+        when = self._wedding_words()
+        windows = [e for e in self.episodes if e.domain is Domain.MARRIAGE]
+        if not windows:
+            return WeddingCheckOut(
+                when=when,
+                fit="outside",
+                text=f"Your wedding in {when} cannot be compared with the chart: no window "
+                "for marriage stands out at the ages it is read.",
+            )
+
+        def gap(item: _Episode) -> int:
+            if item.start < end and start < item.end:
+                return 0
+            return (item.start - end).days if item.start >= end else (start - item.end).days
+
+        nearest = min(windows, key=lambda e: (gap(e), -e.score))
+        days = gap(nearest)
+        span = (
+            when_past(nearest.start, nearest.end)
+            + " "
+            + ages(self.birth, nearest.start, nearest.end)
+        )
+        name = (
+            "the chart's main window for marriage"
+            if nearest is self.best_past(Domain.MARRIAGE)
+            else "one of the chart's windows for marriage"
+        )
+        if days == 0:
+            fit: Literal["inside", "near", "outside"] = "inside"
+            text = (
+                f"Your wedding in {when} came during {name}, {span}, so the chart's timing "
+                "fits your life here."
+            )
+        elif days <= 366:
+            fit = "near"
+            text = (
+                f"Your wedding in {when} came within a year of {name}, {span}: close, as the "
+                "chart's timing often runs a little early or late."
+            )
+        else:
+            fit = "outside"
+            text = (
+                f"Your wedding in {when} did not fall in a window the chart marks for "
+                f"marriage; the nearest was {span}. Life events do not always follow the "
+                "chart's timing, but if other dates under 'Your life so far' are also off, "
+                "the birth time may need checking."
+            )
+        return WeddingCheckOut(when=when, fit=fit, window=self.moment(nearest, "past"), text=text)
 
 
 def _planet(body: Body) -> str:
@@ -1305,10 +1436,12 @@ def life_reading(
     gender: str | None = None,
     name: str | None = None,
     years_ahead: int = 5,
+    marital: MaritalInput | None = None,
 ) -> LifeReadingOut:
-    """Who you are, your life so far, where you stand now and the years ahead."""
+    """Who you are, your life so far, where you stand now and the years ahead. What the
+    person says about marriage (``marital``) decides how its timing is told."""
     today = today or datetime.now(UTC).date()
-    reader = Reader(chart, today, gender, name, years_ahead)
+    reader = Reader(chart, today, gender, name, years_ahead, marital)
     mahadashas = reader.dashas.levels[1]
     past = [
         reader.chapter(p, "past")
@@ -1333,6 +1466,8 @@ def life_reading(
         later=later,
         areas=reader.areas_section(),
         marriage=topics.marriage(reader),
+        marital=reader.marital,
+        wedding=None if reader.minor else reader.wedding_check(),
         good_to_know=reader.good_to_know(),
         remedies=topics.remedies(reader),
         notes=NOTES,

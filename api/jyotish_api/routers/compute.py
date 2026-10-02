@@ -142,6 +142,7 @@ def life(request: Request, body: LifeReadingRequest) -> LifeReadingOut:
         gender=body.gender,
         name=body.name,
         years_ahead=body.years_ahead,
+        marital=body.marital,
     )
 
 

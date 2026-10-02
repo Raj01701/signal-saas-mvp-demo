@@ -12,7 +12,14 @@ import pytest
 from jyotish_engine.astro.bodies import Body
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.core.zodiac import Sign
-from jyotish_engine.models import BirthInput, ChartResult, LifeReadingOut, PlaceInput
+from jyotish_engine.models import (
+    BirthInput,
+    ChartResult,
+    LifeReadingOut,
+    MaritalInput,
+    MaritalStatus,
+    PlaceInput,
+)
 from jyotish_engine.predict import life_reading, words
 from jyotish_engine.predict.voice import (
     Voice,
@@ -254,6 +261,93 @@ def test_marriage_and_spouse(reading: LifeReadingOut) -> None:
     assert "The chart describes a partner who is" in text
     assert "You are likely to meet your partner" in text
     assert ("love marriage" in text) != ("arranged" in text)
+
+
+@pytest.fixture(scope="module")
+def by_status(chart: ChartResult) -> dict[str, LifeReadingOut]:
+    """The same life read for someone single, married, and married in 2016 (inside a
+    window for marriage) or 2009 (outside every window)."""
+    married = MaritalStatus.MARRIED
+    statuses = {
+        "single": MaritalInput(status=MaritalStatus.SINGLE),
+        "married": MaritalInput(status=married),
+        "wed 2016": MaritalInput(status=married, wedding_year=2016),
+        "wed 2009": MaritalInput(status=married, wedding_year=2009, wedding_month=11),
+    }
+    return {
+        key: life_reading(chart, TODAY, gender="male", name="arjun", marital=marital)
+        for key, marital in statuses.items()
+    }
+
+
+def _ahead(r: LifeReadingOut) -> str:
+    return " ".join(m.text for y in r.future for m in y.moments if m.domain is Domain.MARRIAGE)
+
+
+def test_marriage_timing_allows_for_either_when_nobody_has_said(reading: LifeReadingOut) -> None:
+    assert reading.marital.status is MaritalStatus.UNKNOWN and reading.wedding is None
+    assert reading.marriage is not None
+    timing = reading.marriage.paragraphs[-1]
+    assert "If you are married, compare it with your wedding date" in timing
+    assert "if you are single" in timing
+
+
+def test_a_married_person_reads_married_life_ahead(
+    by_status: dict[str, LifeReadingOut],
+) -> None:
+    for key in ("married", "wed 2016", "wed 2009"):
+        r = by_status[key]
+        assert r.marriage is not None
+        timing = r.marriage.paragraphs[-1]
+        assert "next strong window" not in timing and "married life" in timing, key
+        ahead = _ahead(r)
+        assert "spouse" in ahead and "partner" not in ahead, key
+        assert not re.search(r"proposal|settle down|opening for marriage", ahead), key
+
+
+def test_the_wedding_is_checked_against_the_windows(
+    by_status: dict[str, LifeReadingOut],
+) -> None:
+    inside = by_status["wed 2016"].wedding
+    assert inside is not None and inside.fit == "inside" and inside.when == "2016"
+    assert inside.window is not None and inside.window.start <= date(2016, 12, 31)
+    assert inside.window.end > date(2016, 1, 1)
+    marriage = by_status["wed 2016"].marriage
+    assert marriage is not None and marriage.paragraphs[-1].startswith(inside.text)
+    check = next(c for c in by_status["wed 2016"].checks if c.domain is Domain.MARRIAGE)
+    assert "Your wedding, in 2016," in check.text
+    outside = by_status["wed 2009"].wedding
+    assert outside is not None and outside.fit == "outside" and outside.when == "November 2009"
+    assert "the birth time may need checking" in outside.text
+    assert by_status["married"].wedding is None
+
+
+def test_a_single_person_reads_openings_ahead(by_status: dict[str, LifeReadingOut]) -> None:
+    r = by_status["single"]
+    assert r.marriage is not None
+    timing = r.marriage.paragraphs[-1]
+    assert "has passed" in timing and "The next strong window for marriage is" in timing
+    assert "spouse" not in _ahead(r)
+    check = next(c for c in r.checks if c.domain is Domain.MARRIAGE)
+    assert check.text.startswith(words.CHECK_LABEL_SINGLE)
+
+
+def test_every_status_reads_plainly(by_status: dict[str, LifeReadingOut]) -> None:
+    for r in by_status.values():
+        for text in _texts(r):
+            assert not JARGON.search(DEITIES.sub("", text)), text
+            assert not SENSITIVE.search(text), text
+
+
+def test_the_wedding_must_fit_the_life(chart: ChartResult) -> None:
+    married = MaritalStatus.MARRIED
+    for year in (1995, 2027):  # before the 12th birthday; after today
+        with pytest.raises(ValueError, match="wedding"):
+            life_reading(chart, TODAY, marital=MaritalInput(status=married, wedding_year=year))
+    with pytest.raises(ValueError, match="needs the status"):
+        MaritalInput(status=MaritalStatus.SINGLE, wedding_year=2016)
+    with pytest.raises(ValueError, match="needs a wedding year"):
+        MaritalInput(status=married, wedding_month=5)
 
 
 def test_remedies_close_the_reading(reading: LifeReadingOut) -> None:

@@ -32,7 +32,7 @@ from jyotish_api.narrative.service import (
 from jyotish_api.narrative.tools import LOOKUP_TOOLS, resolve_id, run_tool
 from jyotish_engine.ask import ChartLookup
 from jyotish_engine.chart import compute_chart
-from jyotish_engine.models import BirthInput, ChartResult, PlaceInput
+from jyotish_engine.models import BirthInput, ChartResult, MaritalInput, PlaceInput
 
 DELHI = {"name": "New Delhi", "latitude": 28.6139, "longitude": 77.2090}
 BIRTH = {"local_datetime": "1990-05-17T12:00:00", "place": DELHI}
@@ -263,6 +263,21 @@ def test_lookup_tools_are_strict_and_resolvable(lookup: ChartLookup) -> None:
         run_tool(lookup, "horoscope", {})
 
 
+def test_offline_marriage_answers_allow_for_a_wedding_already_held(
+    bundle: EvidenceBundle, lookup: ChartLookup
+) -> None:
+    question = "When will I get married?"
+    unknown = answer_offline(bundle, question, lookup).answer
+    assert "Past windows from age 21:" in unknown and "If you are already married" in unknown
+    married = answer_offline(
+        bundle, question, lookup, MaritalInput(status="married", wedding_year=2016)
+    ).answer
+    assert "You said you are married (wedding in 2016)" in married
+    assert "If you are already married" not in married
+    single = answer_offline(bundle, question, lookup, MaritalInput(status="single")).answer
+    assert "You said you are not married" in single
+
+
 def test_claude_chat_looks_things_up_and_cites_them(
     chart: ChartResult, bundle: EvidenceBundle
 ) -> None:
@@ -283,6 +298,7 @@ def test_claude_chat_looks_things_up_and_cites_them(
         [ChatMessage(role="user", content="How is 2028 for my studies?")],
         name="Asha",
         language="hi",
+        marital=MaritalInput(status="married", wedding_year=2015, wedding_month=2),
     )
     # A cited lookup it did not call ("year:2028") is resolved by running it.
     assert [e.id for e in out.evidence] == ["at:2028-01-15", "year:2028"]
@@ -291,6 +307,8 @@ def test_claude_chat_looks_things_up_and_cites_them(
     assert first["output_config"]["format"]["schema"]["required"] == ["answer", "evidence_ids"]
     context = first["messages"][0]["content"]
     assert "Asha, age 36" in context and "Devanagari" in context
+    assert "They say they are married; the wedding was in 02-2015." in context
+    assert "Never assume whether the person is married" in first["system"][0]["text"]
     # The tool result went back with the call's id, after the assistant turn unchanged.
     second = sent[1]["messages"]
     assert second[-2]["content"][0]["type"] == "thinking"

@@ -31,3 +31,22 @@ def test_life_reading_route() -> None:
     assert client.post("/v1/charts/life-reading", json=too_far).status_code == 422
     before_birth = {**body, "today": "1989-01-01"}
     assert client.post("/v1/charts/life-reading", json=before_birth).status_code == 422
+
+
+def test_life_reading_reads_marriage_for_the_life_given() -> None:
+    client = TestClient(create_app(ApiSettings(rate_limit="1000/minute")))
+    body = {"birth": BIRTH, "today": "2026-09-30", "gender": "male"}
+    married = {**body, "marital": {"status": "married", "wedding_year": 2016}}
+    reading = client.post("/v1/charts/life-reading", json=married).json()
+    assert reading["marital"] == {"status": "married", "wedding_year": 2016, "wedding_month": None}
+    assert reading["wedding"]["when"] == "2016" and reading["wedding"]["fit"] == "inside"
+    assert reading["wedding"]["text"] in reading["marriage"]["paragraphs"][-1]
+    unknown = client.post("/v1/charts/life-reading", json=body).json()
+    assert unknown["marital"]["status"] == "unknown" and unknown["wedding"] is None
+    for bad in (
+        {"status": "single", "wedding_year": 2016},  # a wedding needs "married"
+        {"status": "married", "wedding_year": 2030},  # after today
+        {"status": "widowed"},
+    ):
+        response = client.post("/v1/charts/life-reading", json={**body, "marital": bad})
+        assert response.status_code == 422, bad

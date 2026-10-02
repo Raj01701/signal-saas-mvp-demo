@@ -878,6 +878,7 @@ export interface components {
              * @enum {string}
              */
             language?: "auto" | "en" | "hi";
+            marital?: components["schemas"]["MaritalInput"] | null;
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
             /** Name */
@@ -1256,6 +1257,15 @@ export interface components {
          * @enum {string}
          */
         Karaka: "atmakaraka" | "amatyakaraka" | "bhratrikaraka" | "matrikaraka" | "pitrikaraka" | "putrakaraka" | "gnatikaraka" | "darakaraka";
+        /** KootaDifferenceOut */
+        KootaDifferenceOut: {
+            /** Name */
+            name: string;
+            /** Points */
+            points: number;
+            /** Variant Points */
+            variant_points: number;
+        };
         /** KootaOut */
         KootaOut: {
             /** Bride */
@@ -1278,6 +1288,18 @@ export interface components {
          * @enum {string}
          */
         KootaProfile: "popular" | "maitreya";
+        /**
+         * KootaVariantOut
+         * @description The same match scored with another profile's tables, and where it differs.
+         */
+        KootaVariantOut: {
+            /** Differences */
+            differences: components["schemas"]["KootaDifferenceOut"][];
+            /** Profile */
+            profile: string;
+            /** Total */
+            total: number;
+        };
         /**
          * KpChartOut
          * @description KP chart: cusps with their lords, planets, significators, ruling planets.
@@ -1384,6 +1406,12 @@ export interface components {
             good_to_know: components["schemas"]["ReadingSectionOut"][];
             /** Later */
             later: components["schemas"]["StoryChapterOut"][];
+            /**
+             * @default {
+             *       "status": "unknown"
+             *     }
+             */
+            marital?: components["schemas"]["MaritalInput"];
             marriage?: components["schemas"]["ReadingSectionOut"] | null;
             /** Name */
             name?: string | null;
@@ -1405,12 +1433,14 @@ export interface components {
              * Format: date
              */
             today: string;
+            wedding?: components["schemas"]["WeddingCheckOut"] | null;
         };
         /** LifeReadingRequest */
         LifeReadingRequest: {
             birth: components["schemas"]["BirthInput"];
             /** Gender */
             gender?: ("male" | "female") | null;
+            marital?: components["schemas"]["MaritalInput"] | null;
             /** Name */
             name?: string | null;
             preset?: components["schemas"]["Preset"] | null;
@@ -1481,6 +1511,24 @@ export interface components {
             /** Start Jd Ut */
             start_jd_ut: number;
         };
+        /**
+         * MaritalInput
+         * @description What the person says about marriage, so its timing is read against their life.
+         *     With the status unknown, the reading allows for either.
+         */
+        MaritalInput: {
+            /** @default unknown */
+            status?: components["schemas"]["MaritalStatus"];
+            /** Wedding Month */
+            wedding_month?: number | null;
+            /** Wedding Year */
+            wedding_year?: number | null;
+        };
+        /**
+         * MaritalStatus
+         * @enum {string}
+         */
+        MaritalStatus: "unknown" | "single" | "married";
         /** MatchDoshaOut */
         MatchDoshaOut: {
             /** Cancelled */
@@ -1504,6 +1552,7 @@ export interface components {
             /** Ashtakoota Total */
             ashtakoota_total: number;
             bride_kuja: components["schemas"]["KujaOut"];
+            bride_moon?: components["schemas"]["MoonMarginOut"] | null;
             bride_papa: components["schemas"]["PapasamyaOut"];
             /** Dashakoota */
             dashakoota: components["schemas"]["PoruthamOut"][];
@@ -1512,6 +1561,7 @@ export interface components {
             /** Doshas */
             doshas: components["schemas"]["MatchDoshaOut"][];
             groom_kuja: components["schemas"]["KujaOut"];
+            groom_moon?: components["schemas"]["MoonMarginOut"] | null;
             groom_papa: components["schemas"]["PapasamyaOut"];
             /** Kuja Balanced */
             kuja_balanced: boolean;
@@ -1521,6 +1571,11 @@ export interface components {
             profile: string;
             /** Sources */
             sources: components["schemas"]["CitationOut"][];
+            /**
+             * Variants
+             * @default []
+             */
+            variants?: components["schemas"]["KootaVariantOut"][];
         };
         /** MatchRequest */
         MatchRequest: {
@@ -1546,6 +1601,18 @@ export interface components {
         MeUpdate: {
             /** Research Consent */
             research_consent: boolean;
+        };
+        /**
+         * MoonMarginOut
+         * @description How long the Moon kept the nakshatra, sign and Vashya half that matching reads:
+         *     hours before and after the birth time, at the Moon's speed then. A birth time
+         *     wrong by less than this cannot change the guna score.
+         */
+        MoonMarginOut: {
+            /** Holds After Hours */
+            holds_after_hours: number;
+            /** Holds Before Hours */
+            holds_before_hours: number;
         };
         /**
          * MoonTable
@@ -2783,6 +2850,22 @@ export interface components {
             year_lord_aspects_lagna: boolean;
             /** Years Completed */
             years_completed: number;
+        };
+        /**
+         * WeddingCheckOut
+         * @description The wedding the person gave, against the chart's windows for marriage.
+         */
+        WeddingCheckOut: {
+            /**
+             * Fit
+             * @enum {string}
+             */
+            fit: "inside" | "near" | "outside";
+            /** Text */
+            text: string;
+            /** When */
+            when: string;
+            window?: components["schemas"]["LifeMomentOut"] | null;
         };
         /** YearOutlookOut */
         YearOutlookOut: {

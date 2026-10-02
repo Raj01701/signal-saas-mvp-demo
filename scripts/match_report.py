@@ -8,6 +8,10 @@ The request has ``groom`` and ``bride``, each a birth as ``chart_report.py`` tak
 come from the engine (``match/``), the checks beyond the kootas from
 ``match/compatibility.py`` and the marriage windows from the prediction timeline, all
 with the settings most Indian software uses.
+
+A couple already married adds ``married: true`` and, if they like, ``wedding_year`` (and
+``wedding_month``): the wedding is then checked against both charts' windows, and the
+windows ahead are read as times for married life rather than wedding dates.
 """
 
 from __future__ import annotations
@@ -116,6 +120,68 @@ def _windows(chart: ChartResult, gender: str, today: date) -> list[dict[str, Any
     ]
 
 
+def _wedding(
+    request: dict[str, Any], births: tuple[date, date], today: date
+) -> tuple[date, date] | None:
+    """The wedding as a span of days (its month, or its year), when a married couple gave it."""
+    year = request.get("wedding_year")
+    if not request.get("married") or year in (None, ""):
+        return None
+    year = int(year)
+    number = request.get("wedding_month")
+    if number in (None, ""):
+        start, end = date(year, 1, 1), date(year + 1, 1, 1)
+    else:
+        number = int(number)
+        if not 1 <= number <= 12:
+            raise ValueError("the wedding month must be 1 to 12")
+        start, end = date(year, number, 1), date(year + number // 12, number % 12 + 1, 1)
+    if start > today or any(end.year - born.year < 12 for born in births):
+        raise ValueError("the wedding must come after both partners turned 12 and not after today")
+    return start, end
+
+
+def _wedding_fit(
+    chart: ChartResult, gender: str, name: str, wedding: tuple[date, date]
+) -> dict[str, Any]:
+    """One partner's marriage windows around the wedding: inside one, within a year of one,
+    or further away."""
+    start, end = wedding
+    born = chart.birth.local_datetime.date()
+    first = max(date(start.year - 5, 1, 1), born.replace(day=1))
+    timeline = compute_predictions(chart, first, date(end.year + 5, 1, 1), gender=gender)
+    windows = next(d for d in timeline.domains if d.domain is Domain.MARRIAGE).windows
+    if not windows:
+        text = f"{name}'s chart shows no marriage window in the years around the wedding."
+        return {"fit": "outside", "window": None, "text": text}
+
+    def gap(w: Any) -> int:
+        if w.start < end and start < w.end:
+            return 0
+        return (w.start - end).days if w.start >= end else (start - w.end).days
+
+    nearest = min(windows, key=lambda w: (gap(w), -w.score))
+    when = f"{_month(nearest.start)} to {_month(nearest.end)}"
+    days = gap(nearest)
+    if days == 0:
+        fit, text = (
+            "inside",
+            f"{name}'s chart had a marriage window from {when}, and the wedding falls inside it.",
+        )
+    elif days <= 366:
+        fit, text = (
+            "near",
+            f"{name}'s chart had a marriage window from {when}, within a year of the wedding.",
+        )
+    else:
+        fit, text = (
+            "outside",
+            f"The wedding did not fall in one of {name}'s marriage windows; the nearest "
+            f"was {when}.",
+        )
+    return {"fit": fit, "window": when, "text": text}
+
+
 def _overlap(a: list[dict[str, Any]], b: list[dict[str, Any]]) -> list[str]:
     out = []
     for x in a:
@@ -141,7 +207,7 @@ def _person(
     papa = match.groom_papa if role == "groom" else match.bride_papa
     age = _age(chart, today)
     return {
-        "name": str(request.get("name") or ("Groom" if role == "groom" else "Bride")),
+        "name": _display_name(request.get("name"), "Groom" if role == "groom" else "Bride"),
         "age": age,
         "born": chart.birth.local_datetime.strftime("%-I:%M %p on %A, %-d %B %Y"),
         "place": place_out,
@@ -160,6 +226,48 @@ def _person(
         "windows": _windows(chart, "male" if role == "groom" else "female", today)
         if age >= ADULT
         else [],
+    }
+
+
+def _display_name(name: Any, fallback: str) -> str:
+    """The name as typed, capitalised when it was typed all in lower case."""
+    text = " ".join(str(name or "").split())
+    if not text:
+        return fallback
+    return text if any(c.isupper() for c in text) else text.title()
+
+
+#: Other software's tables, by profile.
+PROFILE_LABELS = {"maitreya": "the Maitreya program's tables"}
+
+
+def _hours(value: float) -> str:
+    if value < 1:
+        return f"{round(value * 60)} minutes"
+    return f"{value:.0f} hour{'s' if round(value) != 1 else ''}"
+
+
+def _precision(name: str, before: float, after: float) -> dict[str, str]:
+    """Whether a slightly wrong birth time could change the score: how long the Moon kept
+    the nakshatra and sign (and Vashya half) that matching reads."""
+    margin = min(before, after)
+    span = f"{_hours(before)} before and {_hours(after)} after the given time"
+    if margin >= 3:
+        return {
+            "tone": "good",
+            "text": f"{name}'s Moon keeps the same nakshatra and sign from {span}, so a "
+            "birth time off by an hour or two does not change the score.",
+        }
+    if margin >= 1:
+        return {
+            "tone": "mixed",
+            "text": f"{name}'s Moon keeps the same nakshatra and sign from {span}; a birth "
+            "time off by more than that would change the score.",
+        }
+    return {
+        "tone": "hard",
+        "text": f"{name}'s Moon changes nakshatra or sign within {_hours(margin)} of the "
+        "given time, so the score depends on an exact birth time.",
     }
 
 
@@ -235,11 +343,54 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
         "bride": _person(request["bride"], bride, bride_place, match, "bride", today),
     }
     adults = all(p["age"] >= ADULT for p in people.values())
+    married = bool(request.get("married"))
+    births = (groom.birth.local_datetime.date(), bride.birth.local_datetime.date())
+    wedding = _wedding(request, births, today)
     sandhi = dasha_sandhi(groom, bride, today)
     timing_notes = []
+    wedding_out = None
+    if wedding is not None:
+        given = (
+            str(wedding[0].year)
+            if request.get("wedding_month") in (None, "")
+            else _month(wedding[0])
+        )
+        fits = {
+            role: _wedding_fit(chart, gender, people[role]["name"], wedding)
+            for role, chart, gender in (("groom", groom, "male"), ("bride", bride, "female"))
+        }
+        wedding_out = {"when": given, **fits}
+        inside = sum(f["fit"] == "inside" for f in fits.values())
+        close = sum(f["fit"] != "outside" for f in fits.values())
+        if inside == 2:
+            verdict = (
+                "Both charts had a marriage window at that time, so their timing fits your life."
+            )
+        elif close == 2:
+            verdict = (
+                "Both charts had a marriage window at or within a year of that time, so their "
+                "timing broadly fits your life."
+            )
+        elif close == 1:
+            verdict = "One of the two charts had a marriage window at or close to that time."
+        else:
+            verdict = (
+                "Neither chart marks that time for marriage; life events do not always follow "
+                "the chart's timing, but if other dates are off too, the birth times may need "
+                "checking."
+            )
+        timing_notes.append(f"You married in {given}. {verdict}")
     if adults:
         overlap = _overlap(people["groom"]["windows"], people["bride"]["windows"])
-        if overlap:
+        if married and overlap:
+            timing_notes.append(
+                "Ahead, both charts emphasise married life together in "
+                + "; ".join(overlap)
+                + ": good times for shared plans."
+            )
+        elif married:
+            pass
+        elif overlap:
             timing_notes.append(
                 "Both charts favour marriage together in " + "; ".join(overlap) + "."
             )
@@ -251,6 +402,9 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     if sandhi.within_a_year:
         timing_notes.append(
             "Both partners' main periods (mahadashas) change within a year of each other "
+            "(dasha sandhi), a time of adjustment for the couple."
+            if married
+            else "Both partners' main periods (mahadashas) change within a year of each other "
             "(dasha sandhi), a time traditionally avoided for the wedding itself."
         )
     for hostile in sandhi.hostile:
@@ -260,9 +414,30 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
         "groom": people["groom"],
         "bride": people["bride"],
         "adults": adults,
+        "married": married,
+        "wedding": wedding_out,
         "score": match.ashtakoota_total,
         "maximum": 36,
         "verdict": _verdict(match),
+        "variants": [
+            {
+                "profile": v.profile,
+                "label": PROFILE_LABELS.get(v.profile, v.profile),
+                "total": v.total,
+                "differences": [
+                    f"{KOOTAS.get(d.name, (d.name, ''))[0]} {d.variant_points:g} instead of "
+                    f"{d.points:g}"
+                    for d in v.differences
+                ],
+            }
+            for v in match.variants
+            if v.differences
+        ],
+        "precision": [
+            _precision(people[role]["name"], margin.holds_before_hours, margin.holds_after_hours)
+            for role, margin in (("groom", match.groom_moon), ("bride", match.bride_moon))
+            if margin is not None
+        ],
         "kootas": [
             {
                 "key": k.name,
@@ -328,9 +503,22 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
             "Matching follows the classical Ashtakoota (36 points) with the traditional "
             "exceptions, Mangal dosha from the lagna, the Moon and Venus, papasamya and the "
             "ten South Indian poruthams, with the Lahiri ayanamsa.",
+            "Points follow the tables Indian matchmaking guides and apps print, read with the "
+            "bride's side down the rows as they print them (for Gana, a Deva bride with a "
+            "Manushya groom gets 6 and the reverse 5). Some programs read a few cells "
+            "differently, so their totals can differ by a point or two; where the best-known "
+            "alternative tables give another total, it is shown alongside.",
             "A score is a traditional guide, not a verdict on two people: understanding, "
             "shared values and effort matter at least as much. Consider it alongside a "
             "conversation with an experienced astrologer.",
+            *(
+                [
+                    "You are already married: the score describes how the two charts fit by "
+                    "tradition, not how your marriage is or will be."
+                ]
+                if married
+                else []
+            ),
         ],
     }
 

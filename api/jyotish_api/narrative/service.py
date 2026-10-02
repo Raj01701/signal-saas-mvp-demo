@@ -28,7 +28,7 @@ from jyotish_engine.ask.lookup import (
     ordinal,
     planets_in,
 )
-from jyotish_engine.models import ChartResult
+from jyotish_engine.models import ChartResult, MaritalInput, MaritalStatus
 from jyotish_engine.rules.schema import Domain
 
 
@@ -224,6 +224,39 @@ def _area_lines(facts: AreaFacts, today: date) -> list[str]:
     ]
 
 
+def _marriage_lines(
+    facts: AreaFacts, lookup: ChartLookup, marital: MaritalInput | None
+) -> list[str]:
+    """Marriage for the life the person has: the windows already passed (from 21) as
+    well as the coming ones, read by what they said about being married."""
+    status = marital.status if marital else MaritalStatus.UNKNOWN
+    head, *rest = _area_lines(facts, lookup.today)
+    adult = date(lookup.born.year + 21, lookup.born.month, 1)
+    past = [w for w in facts.windows if w.end <= lookup.today and w.start >= adult][-3:]
+    lines = [head]
+    if past:
+        lines.append(
+            "Past windows from age 21: "
+            + "; ".join(f"{_span(w.start, w.end)} ({w.tone})" for w in past)
+            + "."
+        )
+    if status is MaritalStatus.MARRIED:
+        year = marital.wedding_year if marital else None
+        wedding = f" (wedding in {year})" if year else ""
+        lines.append(
+            f"You said you are married{wedding}: compare the wedding with the past windows; "
+            "the coming windows are read as times for married life."
+        )
+    elif status is MaritalStatus.SINGLE:
+        lines.append("You said you are not married, so the coming windows are the ones to watch.")
+    elif past:
+        lines.append(
+            "If you are already married, compare your wedding date with the past windows; if "
+            "not, the coming windows are the ones to watch."
+        )
+    return [*lines, *rest]
+
+
 def _retrieve(bundle: EvidenceBundle, question: str) -> ChatOut:
     """Retrieval from the bundle alone: the evidence on the areas the question names."""
     q = question.lower()
@@ -242,7 +275,10 @@ def _retrieve(bundle: EvidenceBundle, question: str) -> ChatOut:
 
 
 def answer_offline(
-    bundle: EvidenceBundle, question: str, lookup: ChartLookup | None = None
+    bundle: EvidenceBundle,
+    question: str,
+    lookup: ChartLookup | None = None,
+    marital: MaritalInput | None = None,
 ) -> ChatOut:
     """An answer without a language model: the engine's facts on the years, houses,
     planets and life areas the question names, in short sentences (English)."""
@@ -286,7 +322,12 @@ def answer_offline(
                 continue
             item, _ = run_tool(lookup, "life_area", {"area": domain.value})
             items.append(item)
-            lines += _area_lines(lookup.area(domain), lookup.today)
+            facts = lookup.area(domain)
+            lines += (
+                _marriage_lines(facts, lookup, marital)
+                if domain is Domain.MARRIAGE
+                else _area_lines(facts, lookup.today)
+            )
     if not lines:
         return _retrieve(bundle, question)
     return ChatOut(answer="\n".join([*lines, CLOSING]), evidence=items, narrator="template")
@@ -319,6 +360,13 @@ about marriage, romance or children. If asked how accurate this is, say plainly 
 calculations are exact, but the timing rules are traditional and have not beaten chance in
 controlled tests.
 
+Marriage. Never assume whether the person is married: the first message says what they
+told us. When it is not known and they ask when they will marry, give the chart's main
+window already passed (life_area lists windows across the whole life) as well as the next
+one, saying which applies if they are already married, or ask them. For someone married,
+read later marriage windows as times for married life, and when they give their wedding
+date, compare it with the windows.
+
 Reply in the requested JSON format: "answer" is the text the person reads, and
 "evidence_ids" lists the id of every evidence item and lookup result (each lookup returns
 an evidence_id) the answer rests on.
@@ -341,8 +389,25 @@ ANSWER_SCHEMA: dict[str, Any] = {
 }
 
 
+def _marital_line(marital: MaritalInput | None) -> str:
+    status = marital.status if marital else MaritalStatus.UNKNOWN
+    if status is MaritalStatus.MARRIED:
+        assert marital is not None
+        if marital.wedding_year is None:
+            return "They say they are married; the wedding date was not given."
+        month = f"{marital.wedding_month:02d}-" if marital.wedding_month else ""
+        return f"They say they are married; the wedding was in {month}{marital.wedding_year}."
+    if status is MaritalStatus.SINGLE:
+        return "They say they are not married."
+    return "Whether they are married is not known."
+
+
 def render_chat(
-    bundle: EvidenceBundle, lookup: ChartLookup, name: str | None, language: ChatLanguage
+    bundle: EvidenceBundle,
+    lookup: ChartLookup,
+    name: str | None,
+    language: ChatLanguage,
+    marital: MaritalInput | None = None,
 ) -> str:
     """The first message of every chat: whose chart, the language, then the evidence."""
     who = f"{' '.join(name.split())}, " if name and name.strip() else ""
@@ -350,6 +415,7 @@ def render_chat(
         f"Questions about one birth chart: {bundle.subject}.",
         f"The person asking ({who}age {lookup.age(bundle.today)}) owns this chart. "
         f"Today is {bundle.today.isoformat()}.",
+        _marital_line(marital),
         LANGUAGE_LINES[language],
         "Evidence, one JSON object per line:",
     ]
@@ -408,6 +474,7 @@ def chat_with_claude(
     lookup: ChartLookup | None = None,
     name: str | None = None,
     language: ChatLanguage = "auto",
+    marital: MaritalInput | None = None,
     max_rounds: int = 6,
 ) -> ChatOut:
     """Tool-grounded chat: the model looks things up in the engine, then answers in a
@@ -416,7 +483,7 @@ def chat_with_claude(
     lookup = lookup or ChartLookup(chart, today=bundle.today)
     known = {i.id: i for i in bundle.items}
     history: list[dict[str, Any]] = [
-        {"role": "user", "content": render_chat(bundle, lookup, name, language)}
+        {"role": "user", "content": render_chat(bundle, lookup, name, language, marital)}
     ]
     history += [{"role": m.role, "content": m.content} for m in messages]
     for _ in range(max_rounds):

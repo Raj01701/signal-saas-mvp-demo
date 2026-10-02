@@ -5,18 +5,21 @@ The groups (varna, vashya, yoni, gana, nadi, rajju, vedha) agree across the
 references consulted. The points tables do not, so each disputed table is kept as a
 named variant, and a :class:`KootaProfile` picks one of each:
 
-* ``POPULAR``, the default, follows Indian matchmaking guides: earth signs
-  Vaishya and air signs Shudra, the Vashya table they print, and graha maitri on
-  the 5-4-3-1-0.5-0 scale.
+* ``POPULAR``, the default, follows Indian matchmaking guides and apps: earth signs
+  Vaishya and air signs Shudra, the Vashya table they print (as Astroyogi publishes
+  it, the bride's group down the rows), and graha maitri on the 5-4-3-1-0.5-0 scale.
 * ``MAITREYA`` reproduces the tables of the Maitreya program as documented on its
   companion site Saravali: air signs Vaishya, its own Vashya table, and graha
   maitri on a 5-4-3-2-1-0 scale.
 
-Both profiles share Maitreya's Yoni and Gana tables, which are the most fully
-documented. Its Yoni table is kept as published, including two cells that differ
-from their mirror images (horse bride with deer groom 3, the reverse 1; lion bride
-with buffalo groom 2, the reverse 1). Some almanacs print the Gana
-table transposed, and some give Deva with Rakshasa 1 point either way.
+Both profiles share Maitreya's Yoni and Gana tables. Astroyogi prints the same Gana
+table, also with the bride's gana down the rows (a Deva bride with a Manushya groom
+6, a Manushya bride with a Deva groom 5); ClickAstro likewise gives a Deva boy with
+a Manushya girl 5, and PyJHora uses the table. Some guides print it the other way
+round. The Yoni table is kept as published, including two cells that differ from
+their mirror images (horse bride with deer groom 3, the reverse 1; lion bride with
+buffalo groom 2, the reverse 1); PyJHora gives 1 both ways. ``docs/MATCHING.md``
+sets out the evidence, and test pairs that tell the readings apart in any app.
 
 Two-dimensional tables are indexed ``[bride][groom]``, as the sources print them.
 Nakshatras are 0-based from Ashwini, signs 0-based from Mesha.
@@ -229,7 +232,13 @@ SOURCES: dict[str, dict[KootaProfile, tuple[Citation, ...]]] = {
             MAITREYA,
         ),
     },
-    "gana": dict.fromkeys(KootaProfile, (MAITREYA,)),
+    "gana": {
+        KootaProfile.POPULAR: (
+            MAITREYA,
+            _popular("Gana koota table of matchmaking guides, the bride's gana down the rows"),
+        ),
+        KootaProfile.MAITREYA: (MAITREYA,),
+    },
     "bhakoot": dict.fromkeys(KootaProfile, (MAITREYA, _popular("Bhakoot (rasi) koota"))),
     "nadi": dict.fromkeys(KootaProfile, (MAITREYA, _popular("Nadi koota"))),
 }

@@ -496,7 +496,13 @@ def marriage(r: Reader) -> ReadingSectionOut | None:
     h7 = facts.house(lord7)
     inside = [b for b in facts.occupants(7) if b in lore.SPOUSE_PLANET]
     level = r.level(Domain.MARRIAGE)
-    first = [words.AREA_PROMISE[Domain.MARRIAGE][level]]
+    promise = words.AREA_PROMISE[Domain.MARRIAGE][level]
+    if r.married and level == "effort":
+        promise = (
+            "Relationships ask for extra patience in your chart: married life does best with "
+            "time, adjustment and talking things through."
+        )
+    first = [promise]
     if facts.dignified(Body.VENUS):
         lead = "On the bright side, " if level in ("average", "effort") else ""
         first.append(f"{lead}Venus, the planet of love, is strong in your chart.")
@@ -507,8 +513,11 @@ def marriage(r: Reader) -> ReadingSectionOut | None:
         )
     if Body.SATURN in inside or facts.aspects_sign(Body.SATURN, int(sign7)):
         first.append(
-            "Saturn's influence on your house of marriage often brings marriage a little later, "
-            "and it works best with a mature, steady partner."
+            "Saturn's influence on your house of marriage asks for patience and maturity in "
+            "married life, and it gives a lasting bond."
+            if r.married
+            else "Saturn's influence on your house of marriage often brings marriage a little "
+            "later, and it works best with a mature, steady partner."
         )
     if Body.JUPITER in inside or facts.aspects_sign(Body.JUPITER, int(sign7)):
         first.append("Jupiter's blessing on your house of marriage protects married life.")
@@ -582,25 +591,61 @@ def marriage(r: Reader) -> ReadingSectionOut | None:
 
 
 def _marriage_timing(r: Reader) -> str:
-    parts = []
+    """Marriage timing for the life the person has: for someone married, the wedding
+    against the chart and married life ahead; for someone single, the windows passed and
+    the next one; when nobody has said, both readings."""
     past = r.best_past(Domain.MARRIAGE)
-    if past is not None:
-        parts.append(
-            f"The chart's main window for marriage so far was {when_past(past.start, past.end)} "
-            f"{ages(r.birth, past.start, past.end)}."
-        )
+    was = f"{when_past(past.start, past.end)} {ages(r.birth, past.start, past.end)}" if past else ""
     ahead = [
         e
         for e in r.episodes
         if e.domain is Domain.MARRIAGE and e.start > r.today and e.tone != "hard" and r.told(e)
     ]
-    if ahead:
-        best = max(ahead, key=lambda e: e.score)
-        when = f"{when_future(best.start, best.end)} {ages(r.birth, best.start, best.end)}"
-        if r.marriage_age(best.start) < 36:
+    best = max(ahead, key=lambda e: e.score) if ahead else None
+    when = (
+        f"{when_future(best.start, best.end)} {ages(r.birth, best.start, best.end)}" if best else ""
+    )
+    parts: list[str] = []
+    if r.married:
+        check = r.wedding_check()
+        if check is not None:
+            parts.append(check.text)
+        elif past is not None:
+            parts.append(
+                f"The chart's main window for marriage was {was}; if that is when you married, "
+                "the chart's timing fits your life."
+            )
+        if best is not None:
+            parts.append(
+                f"Ahead, {when} brings warmth to married life."
+                if best.tone == "good"
+                else f"Ahead, {when} brings shared plans and changes in married life."
+            )
+        return " ".join(parts)
+    if r.single:
+        if past is not None:
+            parts.append(
+                f"An earlier window for marriage, {was}, has passed; a chart shows when the "
+                "door is open, and choices and circumstances decide the rest."
+            )
+        if best is not None:
             parts.append(f"The next strong window for marriage is {when}.")
+        return " ".join(parts)
+    if past is not None:
+        parts.append(
+            f"The chart's main window for marriage so far was {was}. If you are married, "
+            "compare it with your wedding date: a close match suggests the birth time is right."
+        )
+    if best is not None:
+        if r.marriage_age(best.start) >= 36:
+            parts.append(
+                f"Ahead, {when} brings warmth to married life, or a real opening for "
+                "partnership if you are single."
+            )
+        elif past is not None or r.age >= 24:
+            parts.append(f"If you are not married yet, the next strong window is {when}.")
         else:
-            parts.append(f"Ahead, {when} brings warmth to married life.")
+            parts.append(f"The next strong window for marriage is {when}.")
     return " ".join(parts)
 
 

@@ -439,8 +439,8 @@ def _strength_and_rules_section() -> list[str]:
         "",
         "## Yogas and doshas (M4)",
         "",
-        f"{len(catalogue)} rules in `knowledge/yogas/`, all `draft` until a qualified "
-        f"Jyotishi reviews them. They carry {len(citations)} citations, "
+        f"{len(catalogue)} rules in the knowledge base (`knowledge/`), all `draft` until a "
+        f"qualified Jyotishi reviews them. They carry {len(citations)} citations, "
         f"{sum(c.verified for c in citations)} checked against their edition so far. "
         f"Provenance: {provenance['classical']} classical, {provenance['traditional']} "
         f"traditional (documented by modern authors, classical source not yet identified), "
@@ -639,7 +639,9 @@ def _match_section() -> list[str]:
         "",
         f"All {total} pairs of nakshatra padas (groom and bride). Koota tables differ between "
         "published sources, so the engine keeps named profiles and cites each table "
-        "(`match/tables.py`); PyJHora was run with the Vashya table of the default profile.",
+        "(`match/tables.py`); PyJHora was run with the Vashya table of the default profile. "
+        "`docs/MATCHING.md` sets out the sources of each table and how to check the scores "
+        "against matchmaking apps.",
         "",
         "| Koota or kuta | Pairs identical | Remaining pairs |",
         "|---|---|---|",

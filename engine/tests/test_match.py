@@ -12,7 +12,7 @@ from jyotish_engine.chart import compute_chart
 from jyotish_engine.match import tables as t
 from jyotish_engine.match.ashtakoota import MoonPlacement, ashtakoota
 from jyotish_engine.match.compatibility import cross_checks, dasha_sandhi, papasamya
-from jyotish_engine.match.compute import compute_match
+from jyotish_engine.match.compute import compute_match, moon_margin, moon_of
 from jyotish_engine.match.dashakoota import dashakoota
 from jyotish_engine.match.tables import KootaProfile
 from jyotish_engine.models import BirthInput, ChartResult, PlaceInput
@@ -20,7 +20,7 @@ from jyotish_engine.rules.catalogue import Sources, default_knowledge_dir
 
 P = MoonPlacement.from_pada
 ASHVINI, BHARANI, ARDRA, PUNARVASU, U_PHALGUNI, CHITRA = 0, 1, 5, 6, 11, 13
-ANURADHA, JYESHTHA, MULA = 16, 17, 18
+MAGHA, ANURADHA, JYESHTHA, MULA = 9, 16, 17, 18
 
 
 def _points(
@@ -73,9 +73,18 @@ def test_kootas_by_hand() -> None:
     cancer, gemini = P(7, 2), P(ARDRA, 2)  # Pushya, Ardra
     assert _points(cancer, gemini)["graha_maitri"] == 1.0
     assert _points(cancer, gemini, KootaProfile.MAITREYA)["graha_maitri"] == 2.0
-    # Gana: bride's gana picks the row, groom's the column.
+    # Gana: bride's gana picks the row, groom's the column, as Saravali and Astroyogi
+    # print the table: a Deva bride with a Manushya groom 6, the reverse 5.
+    assert _points(P(BHARANI, 1), P(ASHVINI, 1))["gana"] == 6  # Manushya groom, Deva bride
+    assert _points(P(ASHVINI, 1), P(BHARANI, 1))["gana"] == 5  # Deva groom, Manushya bride
     assert _points(P(ASHVINI, 1), P(MULA, 1))["gana"] == 1  # Deva groom, Rakshasa bride
     assert _points(P(MULA, 1), P(ASHVINI, 1))["gana"] == 0  # Rakshasa groom, Deva bride
+    assert _points(P(BHARANI, 1), P(MULA, 1))["gana"] == 0  # Manushya and Rakshasa
+    assert _points(P(MULA, 1), P(BHARANI, 1))["gana"] == 0
+    # Yoni as published: a horse bride (Ashvini) with a deer groom (Anuradha) 3, the
+    # reverse 1.
+    assert _points(P(ANURADHA, 1), P(ASHVINI, 1))["yoni"] == 3
+    assert _points(P(ASHVINI, 1), P(ANURADHA, 1))["yoni"] == 1
 
 
 def test_doshas_and_exceptions() -> None:
@@ -147,6 +156,57 @@ def test_compute_match_of_two_charts(profile: KootaProfile) -> None:
 def _delhi_chart(when: datetime) -> ChartResult:
     delhi = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090)
     return compute_chart(BirthInput(local_datetime=when, place=delhi))
+
+
+#: The people of docs/MATCHING.md for checking matchmaking apps, born in New Delhi with
+#: the Moon well inside its nakshatra.
+CHECK_PEOPLE = {
+    "P1": (datetime(1990, 1, 5, 18, 0), ASHVINI),
+    "P2": (datetime(1991, 1, 24, 12, 0), BHARANI),
+    "P3": (datetime(1990, 1, 22, 1, 0), ANURADHA),
+    "P4": (datetime(1991, 1, 14, 1, 0), MULA),
+    "P5": (datetime(1990, 1, 14, 6, 0), MAGHA),
+}
+#: Boy, girl, the eight koota points in order, and the total with Maitreya's tables.
+CHECK_PAIRS = (
+    ("P1", "P2", (1, 2, 3, 2, 5, 5, 7, 8), 33.0),
+    ("P2", "P1", (1, 2, 3, 2, 5, 6, 7, 8), 34.0),
+    ("P1", "P4", (1, 1, 3, 2, 5, 1, 0, 0), 13.0),
+    ("P4", "P1", (1, 1, 3, 2, 5, 0, 0, 0), 11.0),
+    ("P3", "P1", (1, 1, 1.5, 3, 5, 6, 0, 8), 24.5),
+    ("P5", "P1", (1, 1.5, 3, 2, 5, 0, 0, 8), 19.5),
+    ("P1", "P5", (1, 0, 3, 2, 5, 1, 0, 8), 20.0),
+)
+
+
+def test_app_check_pairs_of_the_matching_doc() -> None:
+    charts = {key: _delhi_chart(when) for key, (when, _) in CHECK_PEOPLE.items()}
+    for key, (_, nakshatra) in CHECK_PEOPLE.items():
+        assert moon_of(charts[key]).nakshatra == nakshatra, key
+        margin = moon_margin(charts[key])
+        assert min(margin.holds_before_hours, margin.holds_after_hours) > 8, key
+    for groom, bride, points, maitreya in CHECK_PAIRS:
+        match = compute_match(charts[groom], charts[bride])
+        assert tuple(k.points for k in match.ashtakoota) == points, (groom, bride)
+        assert match.ashtakoota_total == sum(points)
+        (variant,) = match.variants
+        assert variant.profile == "maitreya"
+        assert variant.total == maitreya, (groom, bride)
+        # The differences listed account for the whole gap between the totals.
+        gap = sum(d.variant_points - d.points for d in variant.differences)
+        assert gap == maitreya - match.ashtakoota_total
+
+
+def test_moon_margin_reads_the_moons_motion() -> None:
+    chart = _delhi_chart(datetime(1990, 1, 5, 18, 0))  # Ashwini, Mesha 5.3 degrees
+    moon = next(g for g in chart.grahas if g.body is Body.MOON)
+    margin = moon_margin(chart)
+    hours = 24.0 / abs(moon.speed)
+    # Ashwini begins with Mesha, at 0 degrees, and ends at 13 degrees 20 minutes.
+    assert margin.holds_before_hours == pytest.approx(moon.sidereal_longitude * hours, abs=0.01)
+    assert margin.holds_after_hours == pytest.approx(
+        (40 / 3 - moon.sidereal_longitude) * hours, abs=0.01
+    )
 
 
 def test_papasamya_counts_malefics_from_lagna_moon_and_venus() -> None:

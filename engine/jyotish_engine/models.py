@@ -6,7 +6,7 @@ from datetime import date, datetime
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from jyotish_engine.astro.bodies import Body
 from jyotish_engine.astro.houses import HouseSystem
@@ -664,6 +664,29 @@ class DashaSandhiOut(BaseModel):
     hostile: list[str]
 
 
+class KootaDifferenceOut(BaseModel):
+    name: str
+    points: float
+    variant_points: float
+
+
+class KootaVariantOut(BaseModel):
+    """The same match scored with another profile's tables, and where it differs."""
+
+    profile: str
+    total: float
+    differences: list[KootaDifferenceOut]
+
+
+class MoonMarginOut(BaseModel):
+    """How long the Moon kept the nakshatra, sign and Vashya half that matching reads:
+    hours before and after the birth time, at the Moon's speed then. A birth time
+    wrong by less than this cannot change the guna score."""
+
+    holds_before_hours: float
+    holds_after_hours: float
+
+
 class MatchOut(BaseModel):
     """Marriage matching of two charts (groom first)."""
 
@@ -684,6 +707,11 @@ class MatchOut(BaseModel):
     bride_papa: PapasamyaOut
     papasamya_balanced: bool
     sources: list[CitationOut]
+    #: The total under each other profile's tables, so differences between software
+    #: are visible.
+    variants: list[KootaVariantOut] = []
+    groom_moon: MoonMarginOut | None = None
+    bride_moon: MoonMarginOut | None = None
 
 
 class KpCuspOut(BaseModel):
@@ -998,6 +1026,42 @@ class YearOutlookOut(BaseModel):
     moments: list[LifeMomentOut]
 
 
+class MaritalStatus(StrEnum):
+    UNKNOWN = "unknown"
+    SINGLE = "single"
+    MARRIED = "married"
+
+
+class MaritalInput(BaseModel):
+    """What the person says about marriage, so its timing is read against their life.
+    With the status unknown, the reading allows for either."""
+
+    status: MaritalStatus = MaritalStatus.UNKNOWN
+    #: The wedding year, and month if known (married only).
+    wedding_year: int | None = Field(default=None, ge=1900, le=2200)
+    wedding_month: int | None = Field(default=None, ge=1, le=12)
+
+    @model_validator(mode="after")
+    def _consistent(self) -> MaritalInput:
+        if self.wedding_year is not None and self.status is not MaritalStatus.MARRIED:
+            raise ValueError("a wedding year needs the status 'married'")
+        if self.wedding_month is not None and self.wedding_year is None:
+            raise ValueError("a wedding month needs a wedding year")
+        return self
+
+
+class WeddingCheckOut(BaseModel):
+    """The wedding the person gave, against the chart's windows for marriage."""
+
+    #: The wedding as given: "2014" or "November 2014".
+    when: str
+    #: Inside a window, within a year of one, or further away.
+    fit: Literal["inside", "near", "outside"]
+    #: The window it fell in, or the nearest.
+    window: LifeMomentOut | None = None
+    text: str
+
+
 class LifeReadingOut(BaseModel):
     """A life reading as an astrologer would tell it: who you are, your life so far,
     where you stand now and the years ahead, built from the engine's own results."""
@@ -1021,6 +1085,10 @@ class LifeReadingOut(BaseModel):
     areas: list[ReadingSectionOut]
     #: Marriage and the spouse, for readers 18 and over.
     marriage: ReadingSectionOut | None = None
+    #: What the person said about marriage, as the reading used it.
+    marital: MaritalInput = MaritalInput()
+    #: The wedding given, against the chart's windows for marriage.
+    wedding: WeddingCheckOut | None = None
     #: Manglik, Sade Sati, Kala Sarpa and favourable things.
     good_to_know: list[ReadingSectionOut]
     #: Traditional remedies chosen for the chart, last.

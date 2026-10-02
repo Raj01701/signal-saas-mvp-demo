@@ -737,6 +737,16 @@
             "title": "Language",
             "type": "string"
           },
+          "marital": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaritalInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "messages": {
             "items": {
               "$ref": "#/components/schemas/ChatMessage"
@@ -1902,6 +1912,29 @@
         "title": "Karaka",
         "type": "string"
       },
+      "KootaDifferenceOut": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "points": {
+            "title": "Points",
+            "type": "number"
+          },
+          "variant_points": {
+            "title": "Variant Points",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "points",
+          "variant_points"
+        ],
+        "title": "KootaDifferenceOut",
+        "type": "object"
+      },
       "KootaOut": {
         "properties": {
           "bride": {
@@ -1955,6 +1988,33 @@
         ],
         "title": "KootaProfile",
         "type": "string"
+      },
+      "KootaVariantOut": {
+        "description": "The same match scored with another profile's tables, and where it differs.",
+        "properties": {
+          "differences": {
+            "items": {
+              "$ref": "#/components/schemas/KootaDifferenceOut"
+            },
+            "title": "Differences",
+            "type": "array"
+          },
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "number"
+          }
+        },
+        "required": [
+          "profile",
+          "total",
+          "differences"
+        ],
+        "title": "KootaVariantOut",
+        "type": "object"
       },
       "KpChartOut": {
         "description": "KP chart: cusps with their lords, planets, significators, ruling planets.",
@@ -2250,6 +2310,12 @@
             "title": "Later",
             "type": "array"
           },
+          "marital": {
+            "$ref": "#/components/schemas/MaritalInput",
+            "default": {
+              "status": "unknown"
+            }
+          },
           "marriage": {
             "anyOf": [
               {
@@ -2310,6 +2376,16 @@
             "format": "date",
             "title": "Today",
             "type": "string"
+          },
+          "wedding": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeddingCheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2349,6 +2425,16 @@
               }
             ],
             "title": "Gender"
+          },
+          "marital": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaritalInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "anyOf": [
@@ -2527,6 +2613,52 @@
         "title": "LunarMonthOut",
         "type": "object"
       },
+      "MaritalInput": {
+        "description": "What the person says about marriage, so its timing is read against their life.\nWith the status unknown, the reading allows for either.",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/MaritalStatus",
+            "default": "unknown"
+          },
+          "wedding_month": {
+            "anyOf": [
+              {
+                "maximum": 12.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wedding Month"
+          },
+          "wedding_year": {
+            "anyOf": [
+              {
+                "maximum": 2200.0,
+                "minimum": 1900.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wedding Year"
+          }
+        },
+        "title": "MaritalInput",
+        "type": "object"
+      },
+      "MaritalStatus": {
+        "enum": [
+          "unknown",
+          "single",
+          "married"
+        ],
+        "title": "MaritalStatus",
+        "type": "string"
+      },
       "MatchDoshaOut": {
         "properties": {
           "cancelled": {
@@ -2583,6 +2715,16 @@
           "bride_kuja": {
             "$ref": "#/components/schemas/KujaOut"
           },
+          "bride_moon": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoonMarginOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "bride_papa": {
             "$ref": "#/components/schemas/PapasamyaOut"
           },
@@ -2607,6 +2749,16 @@
           "groom_kuja": {
             "$ref": "#/components/schemas/KujaOut"
           },
+          "groom_moon": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoonMarginOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "groom_papa": {
             "$ref": "#/components/schemas/PapasamyaOut"
           },
@@ -2627,6 +2779,14 @@
               "$ref": "#/components/schemas/CitationOut"
             },
             "title": "Sources",
+            "type": "array"
+          },
+          "variants": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/KootaVariantOut"
+            },
+            "title": "Variants",
             "type": "array"
           }
         },
@@ -2734,6 +2894,25 @@
           "research_consent"
         ],
         "title": "MeUpdate",
+        "type": "object"
+      },
+      "MoonMarginOut": {
+        "description": "How long the Moon kept the nakshatra, sign and Vashya half that matching reads:\nhours before and after the birth time, at the Moon's speed then. A birth time\nwrong by less than this cannot change the guna score.",
+        "properties": {
+          "holds_after_hours": {
+            "title": "Holds After Hours",
+            "type": "number"
+          },
+          "holds_before_hours": {
+            "title": "Holds Before Hours",
+            "type": "number"
+          }
+        },
+        "required": [
+          "holds_before_hours",
+          "holds_after_hours"
+        ],
+        "title": "MoonMarginOut",
         "type": "object"
       },
       "MoonTable": {
@@ -6014,6 +6193,45 @@
           "patyayini"
         ],
         "title": "VarshaphalOut",
+        "type": "object"
+      },
+      "WeddingCheckOut": {
+        "description": "The wedding the person gave, against the chart's windows for marriage.",
+        "properties": {
+          "fit": {
+            "enum": [
+              "inside",
+              "near",
+              "outside"
+            ],
+            "title": "Fit",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "when": {
+            "title": "When",
+            "type": "string"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LifeMomentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "when",
+          "fit",
+          "text"
+        ],
+        "title": "WeddingCheckOut",
         "type": "object"
       },
       "YearOutlookOut": {

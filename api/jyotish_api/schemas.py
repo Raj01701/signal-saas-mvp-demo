@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from jyotish_engine.match.tables import KootaProfile
-from jyotish_engine.models import BirthInput, PlaceInput
+from jyotish_engine.models import BirthInput, MaritalInput, PlaceInput
 from jyotish_engine.rectify import EventKind
 from jyotish_engine.settings import Preset, Settings
 
@@ -54,6 +54,8 @@ class LifeReadingRequest(ChartRequest):
     today: date | None = None
     #: Years told one by one after today.
     years_ahead: int = Field(default=5, ge=1, le=10)
+    #: What the person says about marriage (status, wedding year); unknown when absent.
+    marital: MaritalInput | None = None
 
 
 class RectifyEventIn(BaseModel):

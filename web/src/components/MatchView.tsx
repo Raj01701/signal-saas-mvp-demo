@@ -34,10 +34,16 @@ type MatchRequest = Schemas["MatchRequest"];
 type Profile = Schemas["KootaProfile"];
 
 const PROFILES: { value: Profile; label: string }[] = [
-  { value: "popular", label: "Popular tables (most Indian software)" },
+  { value: "popular", label: "Popular tables (Indian guides and apps)" },
   { value: "maitreya", label: "Maitreya tables" },
 ];
 const cell = "py-1.5 pr-3 align-top";
+
+/** Hours as the margin section shows them: minutes under an hour, whole hours above. */
+function marginText(hours: number, hindi: boolean): string {
+  if (hours < 1) return hindi ? `${Math.round(hours * 60)} मिनट` : `${Math.round(hours * 60)} min`;
+  return hindi ? `${Math.round(hours)} घंटे` : `${Math.round(hours)} h`;
+}
 
 /** Horoscope matching: Ashtakoota with its doshas, Raman's ten kutas and Kuja dosha. */
 export function MatchView() {
@@ -104,6 +110,13 @@ function MatchResult({ request }: { request: MatchRequest }) {
     hindi
       ? d.cancelled ? "उपस्थित, अपवाद से निरस्त" : d.present ? "उपस्थित" : "अनुपस्थित"
       : d.cancelled ? "present, cancelled by an exception" : d.present ? "present" : "not present";
+  const variants = (data.variants ?? []).filter((v) => v.differences.length > 0);
+  const margins = (
+    [
+      [m.groom, data.groom_moon],
+      [m.bride, data.bride_moon],
+    ] as const
+  ).filter((entry): entry is readonly [string, Schemas["MoonMarginOut"]] => !!entry[1]);
   const citations = [...data.ashtakoota.flatMap((k) => k.sources), ...data.doshas.flatMap((d) => d.sources), ...data.sources];
   const unique = [...new Map(citations.map((c) => [JSON.stringify(c), c])).values()];
   return (
@@ -140,6 +153,55 @@ function MatchResult({ request }: { request: MatchRequest }) {
           </table>
         </div>
       </section>
+
+      {variants.length > 0 && (
+        <section aria-labelledby="variants-heading" className="text-sm">
+          <h2 id="variants-heading" className="mb-2 text-lg font-semibold">
+            {hindi ? "अन्य तालिकाओं से" : "With other tables"}
+          </h2>
+          <ul className="grid gap-1">
+            {variants.map((v) => (
+              <li key={v.profile}>
+                <span className="font-medium">
+                  {hindi ? `${v.profile} तालिकाएँ: कुल ${points(v.total)}` : `${title(v.profile)} tables: total ${points(v.total)}`}
+                </span>{" "}
+                (
+                {v.differences
+                  .map((d) =>
+                    hindi
+                      ? `${kootaName(d.name, lang)} ${points(d.variant_points)}, यहाँ ${points(d.points)}`
+                      : `${kootaName(d.name, lang)} ${points(d.variant_points)} instead of ${points(d.points)}`,
+                  )
+                  .join("; ")}
+                )
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {margins.length > 0 && (
+        <section aria-labelledby="margin-heading" className="text-sm">
+          <h2 id="margin-heading" className="mb-2 text-lg font-semibold">
+            {hindi ? "जन्म समय पर निर्भरता" : "Birth-time margin"}
+          </h2>
+          <p className="mb-1 text-zinc-600 dark:text-zinc-400">
+            {hindi
+              ? "दिए गए जन्म समय से पहले और बाद, कितने समय तक चंद्रमा उसी नक्षत्र, राशि और वश्य भाग में रहा। जन्म समय की अनिश्चितता इससे अधिक हो तो अंक बदल सकते हैं।"
+              : "How long the Moon kept the nakshatra, sign and Vashya half that matching reads, before and after the given birth time. A birth time less certain than this can change the score."}
+          </p>
+          <ul className="grid gap-1">
+            {margins.map(([who, margin]) => (
+              <li key={who}>
+                {who}:{" "}
+                {hindi
+                  ? `${marginText(margin.holds_before_hours, true)} पहले, ${marginText(margin.holds_after_hours, true)} बाद`
+                  : `${marginText(margin.holds_before_hours, false)} before, ${marginText(margin.holds_after_hours, false)} after`}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby="doshas-heading">
         <h2 id="doshas-heading" className="mb-2 text-lg font-semibold">{m.doshas}</h2>

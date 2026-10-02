@@ -660,6 +660,31 @@ MOMENTS: dict[Domain, tuple[Moment, ...]] = {
     ),
 }
 
+#: Marriage stretches after the wedding, for someone who says they are married.
+MARRIED_LIFE = Moment(
+    0,
+    None,
+    "warmth and closeness with your spouse, and happy shared plans",
+    "changes that involve your spouse: new shared plans or responsibilities",
+    "a time when your marriage needs more patience and honest talking",
+)
+#: Marriage stretches for someone who says they are not married: past ones as times when
+#: relationships were in focus, later ones as openings rather than married life.
+SINGLE_PAST = Moment(
+    24,
+    None,
+    "relationships in focus: a serious relationship, or proposals and family talk of marriage",
+    "relationship questions, and family talk about marriage",
+    "relationship hurdles or disappointments",
+)
+SINGLE_LATER = Moment(
+    35,
+    None,
+    "a real opening for marriage or a committed partnership",
+    "relationship questions, and talk of marriage",
+    "relationship hurdles: delays or second thoughts about commitment",
+)
+
 #: Short names for life areas, for headings and summaries.
 AREA_NAMES: dict[Domain, str] = {
     Domain.CAREER: "career",
@@ -1096,6 +1121,8 @@ PLANET_GIFTS: dict[Body, str] = {
     Body.VENUS: "charm, taste and a talent for enjoying life",
     Body.SATURN: "discipline, patience and staying power",
 }
+#: The marriage check for someone who says they are not married.
+CHECK_LABEL_SINGLE = "A serious relationship, or proposals and family talk of marriage"
 #: Checks for the past: what to compare with real events, by life area.
 CHECK_LABELS: dict[Domain, str] = {
     Domain.EDUCATION: "Studies: a key exam, an admission or a change of course",

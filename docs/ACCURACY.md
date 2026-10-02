@@ -1,6 +1,6 @@
 # Accuracy report
 
-*Generated 2026-09-30 by `scripts/accuracy_report.py`, engine 0.1.0, ephemeris DE421.* Reference: Swiss Ephemeris 2.10.03 (pyswisseph), files sepl_18/semo_18; 412 cases (1900–2050, latitudes −60° to +78°, seed 20260929).
+*Generated 2026-10-02 by `scripts/accuracy_report.py`, engine 0.1.0, ephemeris DE421.* Reference: Swiss Ephemeris 2.10.03 (pyswisseph), files sepl_18/semo_18; 412 cases (1900–2050, latitudes −60° to +78°, seed 20260929).
 
 The engine and the reference are given identical TT/UT1 instants, so these numbers measure the astronomy itself. Delta T is compared separately.
 
@@ -165,19 +165,26 @@ The 36 sahams of Rao's table on 300 random sets of positions, day and night: 101
 
 ## Yogas and doshas (M4)
 
-312 rules in `knowledge/yogas/`, all `draft` until a qualified Jyotishi reviews them. They carry 493 citations, 0 checked against their edition so far. Provenance: 235 classical, 57 traditional (documented by modern authors, classical source not yet identified), 20 modern.
+982 rules in the knowledge base (`knowledge/`), all `draft` until a qualified Jyotishi reviews them. They carry 1308 citations, 0 checked against their edition so far. Provenance: 812 classical, 138 traditional (documented by modern authors, classical source not yet identified), 32 modern.
 
 | Category | Rules |
 |---|---|
+| dasha | 155 |
+| lord_in_house | 144 |
+| transit | 140 |
+| planet_in_house | 108 |
+| planet_in_sign | 84 |
 | parivartana | 66 |
 | conjunction | 56 |
 | named | 40 |
 | nabhasa | 32 |
+| nakshatra | 27 |
 | bhava | 23 |
 | dosha | 23 |
 | dhana | 14 |
 | malika | 12 |
 | raja | 12 |
+| lagna | 12 |
 | chandra | 11 |
 | neecha_bhanga | 7 |
 | mahapurusha | 5 |
@@ -185,7 +192,7 @@ The 36 sahams of Rao's table on 300 random sets of positions, day and night: 101
 | surya | 4 |
 | viparita | 3 |
 
-* Test charts: 736 of 736 behave as each rule specifies (present, absent, or present but cancelled).
+* Test charts: 2118 of 2118 behave as each rule specifies (present, absent, or present but cancelled).
 * Property tests on random charts check catalogue invariants (for example, exactly one of Sunapha, Anapha, Durudhura and Kemadruma holds) and compare the Mahapurusha, Parivartana, Gajakesari, Kala Sarpa and lunar yogas with separate plain-Python implementations (`test_rules_properties.py`).
 
 ## Panchanga (M5) versus Swiss Ephemeris
@@ -223,7 +230,7 @@ Reference: Swiss Ephemeris 2.10.03 (Lahiri, apparent; Hindu sunrise) and PyJHora
 
 ## Marriage matching (M5) versus PyJHora
 
-All 11664 pairs of nakshatra padas (groom and bride). Koota tables differ between published sources, so the engine keeps named profiles and cites each table (`match/tables.py`); PyJHora was run with the Vashya table of the default profile.
+All 11664 pairs of nakshatra padas (groom and bride). Koota tables differ between published sources, so the engine keeps named profiles and cites each table (`match/tables.py`); PyJHora was run with the Vashya table of the default profile. `docs/MATCHING.md` sets out the sources of each table and how to check the scores against matchmaking apps.
 
 | Koota or kuta | Pairs identical | Remaining pairs |
 |---|---|---|
