@@ -3,17 +3,19 @@ ten South Indian kutas, and matching two charts."""
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
+from jyotish_engine.astro.bodies import Body
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.match import tables as t
 from jyotish_engine.match.ashtakoota import MoonPlacement, ashtakoota
+from jyotish_engine.match.compatibility import cross_checks, dasha_sandhi, papasamya
 from jyotish_engine.match.compute import compute_match
 from jyotish_engine.match.dashakoota import dashakoota
 from jyotish_engine.match.tables import KootaProfile
-from jyotish_engine.models import BirthInput, PlaceInput
+from jyotish_engine.models import BirthInput, ChartResult, PlaceInput
 from jyotish_engine.rules.catalogue import Sources, default_knowledge_dir
 
 P = MoonPlacement.from_pada
@@ -140,3 +142,61 @@ def test_compute_match_of_two_charts(profile: KootaProfile) -> None:
     assert len(result.dashakoota) == 10
     assert result.kuja_balanced == (result.groom_kuja.manglik == result.bride_kuja.manglik)
     assert result.profile == profile.value
+
+
+def _delhi_chart(when: datetime) -> ChartResult:
+    delhi = PlaceInput(name="New Delhi", latitude=28.6139, longitude=77.2090)
+    return compute_chart(BirthInput(local_datetime=when, place=delhi))
+
+
+def test_papasamya_counts_malefics_from_lagna_moon_and_venus() -> None:
+    chart = _delhi_chart(datetime(1990, 5, 17, 12, 0))
+    papa = papasamya(chart)
+    signs = {g.body: int(g.sign) for g in chart.grahas}
+    refs = {
+        "lagna": int(chart.ascendant.sign),
+        "Moon": signs[Body.MOON],
+        "Venus": signs[Body.VENUS],
+    }
+    expected = [
+        (body, name, (signs[body] - ref) % 12 + 1)
+        for name, ref in refs.items()
+        for body in (Body.SUN, Body.MARS, Body.SATURN, Body.RAHU, Body.KETU)
+        if (signs[body] - ref) % 12 + 1 in (1, 2, 4, 7, 8, 12)
+    ]
+    assert [(i.planet, i.reference, i.house) for i in papa.items] == expected
+    weight = {"lagna": 1.0, "Moon": 0.5, "Venus": 0.25}
+    assert all(i.points == weight[i.reference] for i in papa.items)
+    assert papa.points == sum(i.points for i in papa.items)
+
+
+def test_match_reports_papasamya_and_cross_checks() -> None:
+    groom = _delhi_chart(datetime(1990, 5, 17, 12, 0))
+    bride = _delhi_chart(datetime(1993, 11, 2, 6, 30))
+    result = compute_match(groom, bride)
+    assert result.papasamya_balanced == (result.bride_papa.points <= result.groom_papa.points)
+    checks = cross_checks(groom, bride)
+    assert [c.key for c in checks] == ["lagna_lords", "navamsa_lagnas", "groom_moon", "bride_moon"]
+    assert all(c.tone in ("good", "mixed", "hard") for c in checks)
+
+
+def test_dasha_sandhi_finds_changes_and_hostile_junctions() -> None:
+    groom = _delhi_chart(datetime(1990, 5, 17, 12, 0))
+    mahadashas = [p for p in groom.dashas.vimshottari.periods if len(p.lords) == 1]
+    change = next(p for p in mahadashas[1:] if p.start.year > 2000)
+    before = mahadashas[mahadashas.index(change) - 1]
+    today = change.start.date().replace(day=1) - timedelta(days=200)
+    sandhi = dasha_sandhi(groom, groom, today, years=2)
+    expected = f"{before.lords[0].value.title()} to {change.lords[0].value.title()}"
+    assert sandhi.groom_changes and sandhi.groom_changes[0].startswith(expected)
+    assert sandhi.within_a_year  # the same chart changes at the same time
+    pair = (before.lords[0], change.lords[0])
+    named = {(Body.RAHU, Body.JUPITER), (Body.MARS, Body.RAHU), (Body.VENUS, Body.SUN)}
+    assert bool(sandhi.hostile) == (pair in named)
+
+
+def test_vasya_porutham_wording_follows_the_result() -> None:
+    for groom in range(27):
+        for bride in range(0, 27, 4):
+            vasya = next(p for p in dashakoota(P(groom, 1), P(bride, 1)) if p.name == "vasya")
+            assert ("neither" in vasya.detail) != vasya.agrees

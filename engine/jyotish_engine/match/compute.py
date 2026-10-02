@@ -1,4 +1,4 @@
-"""Match two charts: Ashtakoota, the ten South Indian kutas, and Kuja dosha.
+"""Match two charts: Ashtakoota, the ten South Indian kutas, Kuja dosha and papasamya.
 
 Kuja dosha comes from the knowledge base (``dosha.kuja_*`` rules, from the lagna,
 the Moon and Venus, with their exceptions). A partner is manglik when any of the
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from jyotish_engine.astro.bodies import Body
 from jyotish_engine.match.ashtakoota import MoonPlacement, ashtakoota
+from jyotish_engine.match.compatibility import papasamya
 from jyotish_engine.match.dashakoota import dashakoota
 from jyotish_engine.match.tables import KootaProfile
 from jyotish_engine.models import (
@@ -97,6 +98,7 @@ def compute_match(
     kootas, doshas, poruthams = match_moons(moon_of(groom), moon_of(bride), profile)
     groom_kuja = kuja_status(ChartFacts.from_chart(groom, gender="male"))
     bride_kuja = kuja_status(ChartFacts.from_chart(bride, gender="female"))
+    groom_papa, bride_papa = papasamya(groom), papasamya(bride)
     return MatchOut(
         profile=profile.value,
         ashtakoota=kootas,
@@ -107,5 +109,13 @@ def compute_match(
         groom_kuja=groom_kuja,
         bride_kuja=bride_kuja,
         kuja_balanced=groom_kuja.manglik == bride_kuja.manglik,
-        sources=_citations((Citation(text="raman_muhurtha", locator="Kuja dosha in marriage"),)),
+        groom_papa=groom_papa,
+        bride_papa=bride_papa,
+        papasamya_balanced=bride_papa.points <= groom_papa.points,
+        sources=_citations(
+            (
+                Citation(text="raman_muhurtha", locator="Kuja dosha in marriage"),
+                Citation(text="popular_practice", locator="Papasamya"),
+            )
+        ),
     )

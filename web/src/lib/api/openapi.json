@@ -2560,6 +2560,9 @@
           "bride_kuja": {
             "$ref": "#/components/schemas/KujaOut"
           },
+          "bride_papa": {
+            "$ref": "#/components/schemas/PapasamyaOut"
+          },
           "dashakoota": {
             "items": {
               "$ref": "#/components/schemas/PoruthamOut"
@@ -2581,8 +2584,15 @@
           "groom_kuja": {
             "$ref": "#/components/schemas/KujaOut"
           },
+          "groom_papa": {
+            "$ref": "#/components/schemas/PapasamyaOut"
+          },
           "kuja_balanced": {
             "title": "Kuja Balanced",
+            "type": "boolean"
+          },
+          "papasamya_balanced": {
+            "title": "Papasamya Balanced",
             "type": "boolean"
           },
           "profile": {
@@ -2607,6 +2617,9 @@
           "groom_kuja",
           "bride_kuja",
           "kuja_balanced",
+          "groom_papa",
+          "bride_papa",
+          "papasamya_balanced",
           "sources"
         ],
         "title": "MatchOut",
@@ -3074,6 +3087,55 @@
           "place"
         ],
         "title": "PanchangaRequest",
+        "type": "object"
+      },
+      "PapasamyaItemOut": {
+        "description": "One papa point: a malefic in a papa house from the lagna, the Moon or Venus.",
+        "properties": {
+          "house": {
+            "title": "House",
+            "type": "integer"
+          },
+          "planet": {
+            "$ref": "#/components/schemas/Body"
+          },
+          "points": {
+            "title": "Points",
+            "type": "number"
+          },
+          "reference": {
+            "title": "Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "planet",
+          "reference",
+          "house",
+          "points"
+        ],
+        "title": "PapasamyaItemOut",
+        "type": "object"
+      },
+      "PapasamyaOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PapasamyaItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "points": {
+            "title": "Points",
+            "type": "number"
+          }
+        },
+        "required": [
+          "points",
+          "items"
+        ],
+        "title": "PapasamyaOut",
         "type": "object"
       },
       "Paragraph": {

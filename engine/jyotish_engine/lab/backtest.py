@@ -26,6 +26,7 @@ from datetime import date, timedelta
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.models import BirthInput, PredictionsOut
 from jyotish_engine.predict import compute_predictions
+from jyotish_engine.predict.techniques import FULL, TimingModel
 from jyotish_engine.rectify.events import EVENT_SPECS, EventKind
 from jyotish_engine.rectify.search import LifeEvent
 
@@ -113,11 +114,13 @@ def score_events(predictions: PredictionsOut, events: Sequence[LifeEvent]) -> li
     return out
 
 
-def _predictions(birth: BirthInput, until: date, gender: str | None) -> tuple[PredictionsOut, date]:
+def _predictions(
+    birth: BirthInput, until: date, gender: str | None, model: TimingModel = FULL
+) -> tuple[PredictionsOut, date]:
     chart = compute_chart(birth)
     start = birth.local_datetime.date().replace(day=1)
     end = _month(until) + timedelta(days=62)
-    return compute_predictions(chart, start, end.replace(day=1), gender=gender), start
+    return compute_predictions(chart, start, end.replace(day=1), gender=gender, model=model), start
 
 
 def _moved(events: Sequence[LifeEvent], source: BirthInput, target: BirthInput) -> list[LifeEvent]:
@@ -126,8 +129,11 @@ def _moved(events: Sequence[LifeEvent], source: BirthInput, target: BirthInput) 
     return [LifeEvent(e.kind, e.date + shift) for e in events]
 
 
-def backtest(cases: Sequence[Case], replicates: int = 5, seed: int = 0) -> LabReport:
-    """Score every case's events against its chart and against the controls."""
+def backtest(
+    cases: Sequence[Case], replicates: int = 5, seed: int = 0, model: TimingModel = FULL
+) -> LabReport:
+    """Score every case's events against its chart and against the controls, with the
+    timing techniques of ``model``."""
     rng = random.Random(seed)
     scored = [c for c in cases if any(e.kind is not EventKind.OTHER for e in c.events)]
     report = LabReport(cases=len(scored), events=0, replicates=replicates)
@@ -135,7 +141,7 @@ def backtest(cases: Sequence[Case], replicates: int = 5, seed: int = 0) -> LabRe
     truths = []
     for case in scored:
         last = max(e.date for e in case.events)
-        predictions, _ = _predictions(case.birth, last, case.gender)
+        predictions, _ = _predictions(case.birth, last, case.gender, model)
         truths.append(predictions)
         for score in score_events(predictions, case.events):
             report.events += 1
@@ -155,7 +161,7 @@ def backtest(cases: Sequence[Case], replicates: int = 5, seed: int = 0) -> LabRe
             minutes = rng.randrange(24 * 60)
             moved = case.birth.local_datetime.replace(hour=minutes // 60, minute=minutes % 60)
             control, _ = _predictions(
-                case.birth.model_copy(update={"local_datetime": moved}), last, case.gender
+                case.birth.model_copy(update={"local_datetime": moved}), last, case.gender, model
             )
             for score in score_events(control, case.events):
                 report.shuffled[score.domain].add(score)

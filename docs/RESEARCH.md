@@ -422,6 +422,31 @@ The domain score at a given time is built in three stages:
 - A timeline heat-map of past, present and future.
 - The top windows for each domain, each with its evidence and a confidence label.
 
+### 7.3 Timing techniques of the masters, as implemented
+
+`predict/techniques.py` adds the techniques leading astrologers use to narrow timing, each switchable so the Accuracy Lab can measure it:
+
+- **Divisional charts:** the dasha lord's ownership or occupation of the domain's house in its varga (D9 marriage, D10 career, D7 children, D4 property, D24 education, D12 parents, D20 spiritual life), as K.N. Rao reads marriage and career from the D9 and D10 as well as the D1.
+- **Jaimini Chara dasha (K.N. Rao):** the running sign periods support a domain when they hold or aspect by sign its chara karaka (Darakaraka for marriage, Amatyakaraka for career, Putrakaraka for children, Matrikaraka for property), its house and house lord, and the Upapada or the tenth arudha. K.N. Rao's school reads Vimshottari and Chara dasha together to narrow the margin of error.
+- **KP house groups (K.S. Krishnamurti):** an event comes in the periods of planets signifying its group of houses: marriage 2, 7, 11; job 2, 6, 10, 11; children 2, 5, 11; property 4, 11, 12; education 4, 9, 11; foreign settlement 3, 9, 12; read from Placidus cusps, occupation, ownership and star lords.
+- **Ashtakavarga in transit:** a transit counts by the planet's own bindus in the sign it crosses (4 of 8 is the middle) and that sign's sarvashtakavarga (28 is the average).
+- **Double transit (K.N. Rao):** Jupiter and Saturn both influencing the domain's house or its lord's natal sign, from the lagna and from the Moon.
+- **Annual chart (Tajika Neelakanthi):** Muntha's house in each year's Varshaphal, best in the 9th, 10th and 11th, good in the 1st, 2nd, 3rd and 5th, weak in the 4th and 7th, hard in the 6th, 8th and 12th; shown with each year ahead.
+
+Researched but not added: Bhrigu Bindu (the Moon–Rahu midpoint) and its transits, a Nadi technique with no agreed rule for which life area it marks.
+
+**Measured result:** none of these techniques, alone or together, made the timeline find the real events of 20 well-documented charts better than chance (`ACCURACY_REAL.md`). They are kept because they are what the tradition prescribes and they explain the timing as an astrologer would; they are not claimed to improve accuracy.
+
+### 7.4 Matching beyond the gunas
+
+`match/compatibility.py` adds the checks astrologers make beyond the 36 points:
+
+- **Papasamya:** malefics (Sun, Mars, Saturn, Rahu, Ketu) in the 1st, 2nd, 4th, 7th, 8th or 12th from the lagna (1 point), the Moon (½) and Venus (¼); the bride's total should not exceed the groom's. A refined method also weighs the house (7th 5 units, 8th 6, 1st, 2nd and 4th 3, 12th 1), the planet (Mars 4, Saturn 3, Sun 2, Rahu 1) and its dignity; the engine reports the simple method, which software commonly uses.
+- **Lagna lords and navamsa lagnas:** the two lagna lords' natural relationship, and the distance between the navamsa lagnas (2/12 and 6/8 hard).
+- **Each Moon in the other's chart:** angles and trines from the partner's lagna harmonious, the 6th, 8th and 12th strained.
+- **Dasha sandhi:** both partners' mahadashas changing within a year of each other; Rahu to Jupiter for the groom, Venus to the Sun for the bride and Mars to Rahu for either are named as hostile junctions.
+- **Marriage windows of both partners** in the coming ten years and where they overlap.
+
 ### 7.2 Rectification
 
 1. **Input:**
@@ -515,6 +540,20 @@ The domain score at a given time is built in three stages:
 - [CCPA dark patterns](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2268302)
 - [Drugs and Magic Remedies Act](https://en.wikipedia.org/wiki/Drugs_and_Magic_Remedies_(Objectionable_Advertisements)_Act,_1954)
 - [Apple guideline 4.3](https://www.macrumors.com/2026/06/09/app-store-guidelines-low-quality-apps/)
+
+**Timing and matching methods (researched October 2026)**
+- [K.N. Rao's double transit: research on timing marriage](https://www.jyotishpermishuri.com/transit-effects-of-slow-moving-planets-and-faster-moving-planets-for-the-timing-of-marriage/)
+- [Double transit technique](https://aaskplanets.com/rare-and-fine-tuned-technique-of-double-transit-to-time-events-vedic-astrology/)
+- [K.N. Rao, Jaimini's Chara Dasha: my approach](https://saptarishisastrology.com/jaiminis-chara-dasha-my-approach-part-1-k-n-rao/)
+- [Grouping of events in life as per KP astrology](https://www.linkedin.com/pulse/grouping-events-life-per-kp-astrology-ca-partha-pratim-mitra)
+- [KP fundamental principles (AstroSage)](https://kpastrology.astrosage.com/kp-learning-home/tutorial/chapter-2-fundamental-principles)
+- [Ashtakavarga bindus and transits](https://vidhata.app/blog/ashtakavarga-bindus-classical-house-strength)
+- [Muntha in the houses of the annual chart](https://horasarvam.blogspot.com/2017/12/tajaka-annual-charts-muntha-in-various.html)
+- [Papasamyam calculation](https://phpbb.lightonvedicastrology.com/viewtopic.php?t=20066)
+- [Papa samyam in horoscope matching](https://astrologymag.com/papa-samyam-in-horoscope-matching-kundali-milan/)
+- [Dasa sandhi in matching](https://jothishi.com/compatibility-and-dashas-dasa-sandhi-matching/)
+- [Horoscope compatibility and dasa sandhi](https://blog.indianastrologysoftware.com/horoscope-compatibility-dasasandhi/)
+- [Bhakoot dosha cancellation](https://astrofutureai.com/blog/bhakoot-dosha-cancellation)
 
 **Market**
 - [Astrotalk FY25](https://www.bwdisrupt.com/article/astrotalk-revenue-jumps-85-to-rs-1-214-cr-591016)

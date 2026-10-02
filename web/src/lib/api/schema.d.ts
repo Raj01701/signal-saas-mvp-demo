@@ -1494,6 +1494,7 @@ export interface components {
             /** Ashtakoota Total */
             ashtakoota_total: number;
             bride_kuja: components["schemas"]["KujaOut"];
+            bride_papa: components["schemas"]["PapasamyaOut"];
             /** Dashakoota */
             dashakoota: components["schemas"]["PoruthamOut"][];
             /** Dashakoota Agreements */
@@ -1501,8 +1502,11 @@ export interface components {
             /** Doshas */
             doshas: components["schemas"]["MatchDoshaOut"][];
             groom_kuja: components["schemas"]["KujaOut"];
+            groom_papa: components["schemas"]["PapasamyaOut"];
             /** Kuja Balanced */
             kuja_balanced: boolean;
+            /** Papasamya Balanced */
+            papasamya_balanced: boolean;
             /** Profile */
             profile: string;
             /** Sources */
@@ -1667,6 +1671,26 @@ export interface components {
             settings?: components["schemas"]["Settings"] | null;
             /** Zone */
             zone?: string | null;
+        };
+        /**
+         * PapasamyaItemOut
+         * @description One papa point: a malefic in a papa house from the lagna, the Moon or Venus.
+         */
+        PapasamyaItemOut: {
+            /** House */
+            house: number;
+            planet: components["schemas"]["Body"];
+            /** Points */
+            points: number;
+            /** Reference */
+            reference: string;
+        };
+        /** PapasamyaOut */
+        PapasamyaOut: {
+            /** Items */
+            items: components["schemas"]["PapasamyaItemOut"][];
+            /** Points */
+            points: number;
         };
         /** Paragraph */
         Paragraph: {

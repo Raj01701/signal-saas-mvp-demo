@@ -628,6 +628,42 @@ class KujaOut(BaseModel):
     cancelled: list[str]
 
 
+class PapasamyaItemOut(BaseModel):
+    """One papa point: a malefic in a papa house from the lagna, the Moon or Venus."""
+
+    planet: Body
+    #: "lagna", "Moon" or "Venus".
+    reference: str
+    house: int
+    points: float
+
+
+class PapasamyaOut(BaseModel):
+    points: float
+    items: list[PapasamyaItemOut]
+
+
+class CompatibilityCheckOut(BaseModel):
+    """A check beyond the kootas: lagna lords, navamsa lagnas, each Moon in the other's
+    chart."""
+
+    key: str
+    #: "good", "mixed" or "hard".
+    tone: str
+    detail: str
+
+
+class DashaSandhiOut(BaseModel):
+    """Mahadasha changes of both partners in the coming years."""
+
+    groom_changes: list[str]
+    bride_changes: list[str]
+    #: Both change within a year of each other.
+    within_a_year: bool
+    #: Junctions named as hostile for the partner concerned.
+    hostile: list[str]
+
+
 class MatchOut(BaseModel):
     """Marriage matching of two charts (groom first)."""
 
@@ -642,6 +678,11 @@ class MatchOut(BaseModel):
     bride_kuja: KujaOut
     #: Both partners manglik, or neither.
     kuja_balanced: bool
+    #: Papasamya: papa points of each chart; balanced when the bride's do not exceed the
+    #: groom's.
+    groom_papa: PapasamyaOut
+    bride_papa: PapasamyaOut
+    papasamya_balanced: bool
     sources: list[CitationOut]
 
 

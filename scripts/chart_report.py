@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from jyotish_api.narrative.evidence import build_bundle
 from jyotish_api.narrative.narrators import TemplateNarrator
 from jyotish_api.narrative.service import write_report
+from jyotish_engine.annual.varshaphal import compute_varshaphal
 from jyotish_engine.astro.bodies import Body
 from jyotish_engine.astro.time import datetime_to_jd, jd_to_datetime
 from jyotish_engine.chart import compute_chart
@@ -34,6 +35,7 @@ from jyotish_engine.predict import life_reading
 from jyotish_engine.predict.timeline import compute_predictions
 from jyotish_engine.rectify.events import EventKind
 from jyotish_engine.rectify.search import LifeEvent, rectify
+from jyotish_engine.rules.schema import Domain
 from jyotish_engine.rules.yogas import compute_yogas
 from jyotish_engine.sensitivity import compute_sensitivity
 from jyotish_engine.settings import Preset, preset
@@ -252,6 +254,124 @@ def rectify_report(request: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+#: What Muntha's house in the annual chart traditionally brings (Tajika Neelakanthi):
+#: house -> (tone, for an adult, for a child).
+MUNTHA = {
+    1: ("good", "personal initiative and fresh starts; health and confidence in focus",
+        "confidence and fresh starts"),
+    2: ("good", "income, savings and family", "family closeness and good habits"),
+    3: ("good", "courage, effort, short journeys and siblings",
+        "courage, hobbies and friendships"),
+    4: ("mixed", "home, property and mother; keep worries at home in proportion",
+        "home and family"),
+    5: ("good", "studies, creativity and children", "studies and creativity"),
+    6: ("hard", "work pressure and disputes; keep health and finances in order",
+        "keeping health and routine steady"),
+    7: ("mixed", "partnerships and marriage, which ask for patience and clear talk",
+        "patience with friends and teamwork"),
+    8: ("hard", "obstacles and delays; avoid risks and look after your health",
+        "extra care and avoiding risks"),
+    9: ("good", "one of the best placements: fortune, guidance, long journeys",
+        "good fortune and guidance from teachers"),
+    10: ("good", "one of the best placements: career, status and recognition",
+         "achievement and recognition"),
+    11: ("good", "one of the best placements: gains and wishes fulfilled",
+         "gains and wishes fulfilled"),
+    12: ("hard", "expenses, travel and rest; guard your savings", "travel, change and rest"),
+}  # fmt: skip
+#: Life areas of the year-by-year timeline, in reading order.
+TIMELINE_AREAS = (
+    (Domain.CAREER, "Career"),
+    (Domain.WEALTH, "Money"),
+    (Domain.MARRIAGE, "Marriage"),
+    (Domain.CHILDREN, "Children"),
+    (Domain.PROPERTY, "Home and property"),
+    (Domain.EDUCATION, "Studies"),
+    (Domain.TRAVEL, "Travel"),
+    (Domain.SPIRITUALITY, "Inner life"),
+)
+ADULT_AREAS = {Domain.MARRIAGE, Domain.CHILDREN}
+
+
+def annual_years(
+    chart: ChartResult, years: list[int], age_now: int, today: date
+) -> list[dict[str, Any]]:
+    """The Tajika annual chart starting on the birthday in each of ``years``: Muntha's
+    house and the lord of the year."""
+    born = chart.birth.local_datetime.year
+    out = []
+    for year in years:
+        completed = year - born
+        if completed < 0:
+            continue
+        try:
+            annual = compute_varshaphal(chart, completed)
+        except ValueError:  # outside the ephemeris
+            continue
+        house = (int(annual.muntha) - int(annual.chart.ascendant.sign)) % 12 + 1
+        tone, adult, young = MUNTHA[house]
+        out.append(
+            {
+                "year": year,
+                "from": annual.start.date().isoformat(),
+                "muntha_house": house,
+                "tone": tone,
+                "year_lord": annual.year_lord.value.title(),
+                "text": (
+                    f"From your birthday in {annual.start:%B %Y}, the annual chart (Varshaphal) "
+                    f"puts Muntha in the {house}{ordinal_suffix(house)} house: a year of "
+                    f"{adult if age_now + (year - today.year) >= 18 else young}. "
+                    f"The lord of the year is {annual.year_lord.value.title()}."
+                ),
+            }
+        )
+    return out
+
+
+def ordinal_suffix(n: int) -> str:
+    return "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+
+
+def life_timeline(
+    chart: ChartResult, today: date, gender: str | None, age: int, years_ahead: int = 10
+) -> dict[str, Any]:
+    """Each life area's emphasis by year, birth to ``years_ahead`` from now, scaled 0-1
+    within the area, with the mahadashas for a band above it."""
+    born = chart.birth.local_datetime.date()
+    end = date(today.year + years_ahead + 1, 1, 1)
+    timeline = compute_predictions(chart, born.replace(day=1), end, gender=gender)
+    first = born.year
+    years = list(range(first, end.year))
+    by_domain = {d.domain: d for d in timeline.domains}
+    rows = []
+    for domain, label in TIMELINE_AREAS:
+        if domain in ADULT_AREAS and age < 18:
+            continue
+        line = by_domain[domain]
+        # Each year's average emphasis, so one strong month does not fill the year.
+        totals, counts = [0.0] * len(years), [0] * len(years)
+        for month, score in zip(timeline.months, line.scores, strict=True):
+            index = month.year - first
+            if 0 <= index < len(years):
+                totals[index] += score
+                counts[index] += 1
+        yearly = [t / n if n else 0.0 for t, n in zip(totals, counts, strict=True)]
+        top = max(yearly) or 1.0
+        rows.append(
+            {"key": domain.value, "label": label, "values": [round(v / top, 2) for v in yearly]}
+        )
+    mahadashas = [
+        {
+            "lord": p.lords[0].value.title(),
+            "start": p.start.date().isoformat(),
+            "end": p.end.date().isoformat(),
+        }
+        for p in chart.dashas.vimshottari.periods
+        if len(p.lords) == 1 and p.end.year >= first and p.start.year < end.year
+    ]
+    return {"years": years, "today": today.isoformat(), "areas": rows, "mahadashas": mahadashas}
+
+
 def place_note(place_out: dict[str, Any], factors: list[Any]) -> str:
     """How much the birthplace's precision matters for this chart, in plain words."""
     per_km = seconds_per_km(float(place_out["latitude"]))
@@ -368,6 +488,8 @@ def report(request: dict[str, Any], today: date | None = None) -> dict[str, Any]
     interpretation = chart.time.interpretation
     return {
         "life": life.model_dump(mode="json"),
+        "annual": annual_years(chart, [y.year for y in life.future], life.age, today),
+        "timeline": life_timeline(chart, today, gender, life.age),
         "time_note": time_note(sensitivity.factors),
         "transits_ahead": transits_ahead(chart, today),
         "input": {

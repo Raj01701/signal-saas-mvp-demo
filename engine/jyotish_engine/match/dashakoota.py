@@ -91,10 +91,11 @@ def dashakoota(groom: MoonPlacement, bride: MoonPlacement) -> tuple[Porutham, ..
     stree = Porutham("stree_deergha", from_bride > 9, f"{from_bride} from the bride")
     if not stree.agrees and rasi.agrees and lords.agrees:
         stree = Porutham(stree.name, False, stree.detail, "Rasi and Rasyadhipati kutas agree")
+    amenable = groom.sign in t.VASYA_SIGNS[bride.sign] or bride.sign in t.VASYA_SIGNS[groom.sign]
     vasya = Porutham(
         "vasya",
-        groom.sign in t.VASYA_SIGNS[bride.sign] or bride.sign in t.VASYA_SIGNS[groom.sign],
-        "one sign is amenable to the other",
+        amenable,
+        ("one sign is" if amenable else "neither sign is") + " amenable to the other",
     )
     same_rajju = t.NAKSHATRA_RAJJU[groom.nakshatra] is t.NAKSHATRA_RAJJU[bride.nakshatra]
     rajju = Porutham(

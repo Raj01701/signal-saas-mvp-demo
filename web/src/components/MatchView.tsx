@@ -199,6 +199,18 @@ function MatchResult({ request }: { request: MatchRequest }) {
         </p>
       </section>
 
+      <section aria-labelledby="papa-heading" className="text-sm">
+        <h2 id="papa-heading" className="mb-2 text-lg font-semibold">{hindi ? "पापसाम्य" : "Papasamya"}</h2>
+        <p>
+          {hindi
+            ? `वर ${data.groom_papa.points}, वधू ${data.bride_papa.points} पाप अंक (लग्न से 1, चंद्र से ½, शुक्र से ¼)। `
+            : `Groom ${data.groom_papa.points}, bride ${data.bride_papa.points} papa points (1 from the lagna, ½ from the Moon, ¼ from Venus). `}
+          {hindi
+            ? data.papasamya_balanced ? "संतुलित: वधू के अंक वर से अधिक नहीं हैं।" : "असंतुलित: वधू के अंक वर से अधिक हैं।"
+            : data.papasamya_balanced ? "Balanced: the bride's points do not exceed the groom's." : "Not balanced: the bride's points exceed the groom's."}
+        </p>
+      </section>
+
       <section aria-labelledby="match-sources" className="text-sm">
         <h2 id="match-sources" className="mb-2 text-lg font-semibold">{m.sources}</h2>
         <p className="mb-1 text-zinc-600 dark:text-zinc-400">

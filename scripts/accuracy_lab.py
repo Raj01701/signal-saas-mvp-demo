@@ -2,6 +2,12 @@
 
     uv run python scripts/accuracy_lab.py --cases cases.jsonl --out docs/ACCURACY_LAB.md
     uv run python scripts/accuracy_lab.py --synthetic 12 --out docs/ACCURACY_LAB.md
+    uv run python scripts/accuracy_lab.py --cases cases.jsonl --model classic
+
+``--model`` picks the timing techniques: ``full`` (the default: Vimshottari, Yogini,
+Chara, KP, divisional charts, Ashtakavarga-weighted transits) or ``classic``
+(Vimshottari, Yogini and the slow transits only), so the two can be compared on the
+same cases.
 
 A case file has one JSON object per line: {"birth": <BirthInput>, "events":
 [{"kind": "marriage", "date": "2015-02-01"}, ...], "gender": "female"}.
@@ -23,6 +29,7 @@ from pathlib import Path
 from jyotish_engine.chart import compute_chart
 from jyotish_engine.lab import Case, backtest, render_markdown
 from jyotish_engine.models import BirthInput, PlaceInput
+from jyotish_engine.predict.techniques import CLASSIC, FULL
 from jyotish_engine.rectify import EventKind, LifeEvent
 from jyotish_engine.rectify.synthetic import synthetic_events
 
@@ -75,6 +82,7 @@ def main() -> int:
     source.add_argument("--synthetic", type=int, help="number of synthetic cases")
     parser.add_argument("--replicates", type=int, default=5)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--model", choices=("full", "classic"), default="full")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     if args.cases:
@@ -88,7 +96,9 @@ def main() -> int:
             "that the lab separates the true birth time from the controls. It says nothing about "
             "predictive validity; that needs recorded, consented events."
         )
-    report = backtest(cases, args.replicates, args.seed)
+    model = FULL if args.model == "full" else CLASSIC
+    report = backtest(cases, args.replicates, args.seed, model)
+    note += f" Timing model: {args.model}."
     text = render_markdown(report, title, note)
     if args.out:
         args.out.write_text(text, encoding="utf-8")

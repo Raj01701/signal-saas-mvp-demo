@@ -13,6 +13,11 @@ For each domain and each month (sampled mid-month):
   lords transiting its houses.
 - **Convergence:** when the running Yogini dasha lords also link to the domain, a
   second timing system agrees and the score rises by 15 %.
+- **Further techniques** (``predict/techniques.py``, each switchable for the Accuracy
+  Lab): the dasha lords' links in the domain's divisional chart; Jaimini Chara dasha
+  and KP house groups as further agreeing systems (each moves the score by up to
+  ±15 %); Jupiter's and Saturn's transits weighed by Ashtakavarga bindus; and Saturn
+  with Jupiter on the house lord (K.N. Rao's double transit).
 - **Age:** results are read in the context of age (desha-kala-patra): marriage,
   children and property from 18, career and wealth from 16, education from 4 to 35.
 
@@ -20,7 +25,8 @@ The score is ``P × A × (0.5 + 0.5 G)`` (with the convergence bonus). The tone
 (-1 to 1) says whether the emphasis is likely to feel favourable: the promise, the
 dasha lords' functional nature, and Jupiter's and Saturn's gochara from the Moon.
 Windows are runs of months in a domain's top fifth; a window is **strong** only when
-two dasha systems agree and a transit confirms, as the plan requires. All weights
+the dasha systems agree (Vimshottari with two of Yogini, Chara and KP) and a transit
+confirms. All weights
 are working values to be calibrated by the Accuracy Lab (milestone M12).
 """
 
@@ -28,7 +34,7 @@ from __future__ import annotations
 
 import bisect
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Literal
@@ -54,16 +60,36 @@ from jyotish_engine.models import (
 )
 from jyotish_engine.predict.domains import DOMAIN_SPECS, DomainSpec, karakas
 from jyotish_engine.predict.promise import Factor, clamp, domain_promise, functional_tone, name
+from jyotish_engine.predict.techniques import (
+    FULL,
+    KP_GROUPS,
+    CharaTiming,
+    Target,
+    TimingModel,
+    bindu_factor,
+    chara_label,
+    chara_targets,
+    chara_value,
+    kp_houses,
+    kp_label,
+    kp_value,
+    sav_factor,
+    varga_parts,
+)
 from jyotish_engine.rules.catalogue import Catalogue, CompiledRule, RuleResult, default_catalogue
 from jyotish_engine.rules.facts import NODES, ChartFacts
 from jyotish_engine.rules.schema import READING_CATEGORIES, Category, ordinal
 from jyotish_engine.rules.yogas import YOGA_CATEGORIES
-from jyotish_engine.strength.ashtakavarga import ashtakavarga
+from jyotish_engine.strength.ashtakavarga import Ashtakavarga, ashtakavarga
 from jyotish_engine.strength.shadbala import REQUIRED_RUPAS, compute_shadbala
 from jyotish_engine.transit.gochara import NO_VEDHA, VEDHA
 
 LEVELS = (("Mahadasha", 0.5), ("Antardasha", 0.35), ("Pratyantardasha", 0.15))
 CONVERGENCE_BONUS = 1.15
+#: How far a further system (Chara, KP) can move a month's score either way.
+SYSTEM_SWING = 0.15
+#: A further system agrees when its support reaches this share.
+AGREES = 0.6
 MAX_MONTHS = 1200
 MAX_WINDOWS = 12
 SLOW = (Body.JUPITER, Body.SATURN, Body.RAHU, Body.KETU)
@@ -79,8 +105,9 @@ SLOW_RULES = (
 )
 NOTES = [
     "Scores combine the natal promise of each domain, the running Vimshottari periods "
-    "and the monthly transits of Jupiter and Saturn; Yogini dasha agreement raises "
-    "confidence.",
+    "(also read in the domain's divisional chart) and the monthly transits of Jupiter "
+    "and Saturn weighed by Ashtakavarga; agreement of the Yogini and Chara dashas and of "
+    "the KP house groups raises confidence.",
     "Weights are working values until they are calibrated against recorded life events; "
     "read windows as periods of emphasis, not certainties.",
     "Health windows describe tendencies only and are no substitute for medical advice.",
@@ -132,9 +159,14 @@ class _Lookup:
 
 
 def _link(
-    facts: ChartFacts, spec: DomainSpec, body: Body, gender: str | None
+    facts: ChartFacts,
+    spec: DomainSpec,
+    body: Body,
+    gender: str | None,
+    chart: ChartResult | None = None,
 ) -> tuple[float, list[str]]:
-    """How strongly a dasha lord links to a domain (0-1), and how."""
+    """How strongly a dasha lord links to a domain (0-1), and how; with ``chart``, its
+    links in the domain's divisional chart count too."""
     parts: list[tuple[float, str]] = []
     for houses, own, occupy, aspect in (
         (spec.primary, 0.9, 0.7, 0.4),
@@ -170,6 +202,8 @@ def _link(
                     f"acts for its dispositor {name(dispositor)}, lord of the {ordinal(owned[0])}",
                 )
             )
+    if chart is not None:
+        parts += varga_parts(chart, spec, body)
     value = 1.0 - math.prod(1.0 - weight for weight, _ in parts)
     return value, [label for _, label in parts]
 
@@ -235,35 +269,60 @@ def _trigger(
     transits: _Transits,
     month: int,
     lords: Sequence[Body],
+    av: Ashtakavarga | None = None,
+    saturn_on_lord: bool = False,
 ) -> tuple[float, list[Factor]]:
     jupiter, saturn = transits.sign(Body.JUPITER, month), transits.sign(Body.SATURN, month)
     aspects = facts.node_aspects_5_9
     factors: list[Factor] = []
+    # With Ashtakavarga, a transit counts by the planet's own bindus in the sign it
+    # crosses and by the sarvashtakavarga of the house it reaches.
+    j_bindus = bindu_factor(av.bav, Body.JUPITER, jupiter) if av else 1.0
+    s_bindus = bindu_factor(av.bav, Body.SATURN, saturn) if av else 1.0
+    j_note = f" ({av.bav['jupiter'][jupiter]} of 8 bindus)" if av else ""
+    s_note = f" ({av.bav['saturn'][saturn]} of 8 bindus)" if av else ""
 
     def add(value: float, label: str) -> None:
         factors.append(Factor("trigger", label, value, 1.0))
 
     for house in spec.primary:
         target = facts.sign_of_house(house)
+        strength = sav_factor(av.sav, target) if av else 1.0
         j = _influences(Body.JUPITER, jupiter, target, aspects)
         s = _influences(Body.SATURN, saturn, target, aspects)
         if j and s:
             add(
-                0.45,
+                0.45 * strength * (j_bindus + s_bindus) / 2,
                 f"Jupiter and Saturn both influence the {ordinal(house)} house (double transit)",
             )
         elif j:
-            add(0.25, f"Jupiter influences the {ordinal(house)} house")
+            add(
+                0.25 * strength * j_bindus,
+                f"Jupiter influences the {ordinal(house)} house{j_note}",
+            )
         elif s:
-            add(0.15, f"Saturn influences the {ordinal(house)} house")
+            add(
+                0.15 * strength * s_bindus,
+                f"Saturn influences the {ordinal(house)} house{s_note}",
+            )
         from_moon = facts.sign_of_house(house, Body.MOON)
         if _influences(Body.JUPITER, jupiter, from_moon, aspects) and _influences(
             Body.SATURN, saturn, from_moon, aspects
         ):
             add(0.15, f"double transit on the {ordinal(house)} from the Moon")
         lord = facts.lord(house)
-        if _influences(Body.JUPITER, jupiter, facts.signs[lord], aspects):
+        on_lord = _influences(Body.JUPITER, jupiter, facts.signs[lord], aspects)
+        saturn_on = saturn_on_lord and _influences(Body.SATURN, saturn, facts.signs[lord], aspects)
+        if on_lord and saturn_on:
+            add(
+                0.15,
+                f"Jupiter and Saturn both influence the natal {ordinal(house)} lord "
+                f"{name(lord)} (double transit)",
+            )
+        elif on_lord:
             add(0.1, f"Jupiter influences the natal {ordinal(house)} lord {name(lord)}")
+        elif saturn_on:
+            add(0.05, f"Saturn influences the natal {ordinal(house)} lord {name(lord)}")
     targets = {facts.sign_of_house(h): h for h in spec.houses}
     for level, lord in zip(("mahadasha", "antardasha"), lords[:2], strict=False):
         sign = transits.sign(lord, month)
@@ -273,11 +332,12 @@ def _trigger(
 
 
 def _confidence(
-    activation: float, trigger: float, converges: bool
+    activation: float, trigger: float, agreeing: int, needed: int
 ) -> Literal["strong", "moderate", "weak"]:
-    if activation >= 0.5 and trigger >= 0.5 and converges:
+    """Strong needs ``needed`` systems to agree with Vimshottari and a transit to confirm."""
+    if activation >= 0.5 and trigger >= 0.5 and agreeing >= needed:
         return "strong"
-    if activation >= 0.35 and (trigger >= 0.4 or converges):
+    if activation >= 0.35 and (trigger >= 0.4 or agreeing >= 1):
         return "moderate"
     return "weak"
 
@@ -310,11 +370,13 @@ def compute_predictions(
     *,
     gender: str | None = None,
     catalogue: Catalogue | None = None,
+    model: TimingModel = FULL,
 ) -> PredictionsOut:
     """Monthly scores, tones and windows for each life domain between ``start`` and ``end``.
 
     ``start`` defaults to the birth month and ``end`` (exclusive) to 60 years later; both
     are kept within the birth and the ephemeris. At most 100 years are computed.
+    ``model`` chooses the timing techniques combined (all of them by default).
     """
     rules = catalogue or default_catalogue()
     birth_day = jd_to_datetime(chart.time.jd_ut).date().replace(day=1)
@@ -329,7 +391,8 @@ def compute_predictions(
 
     facts = ChartFacts.from_chart(chart, gender=gender)
     natal = rules.evaluate(facts, YOGA_CATEGORIES | READING_CATEGORIES)
-    sav = ashtakavarga(facts.lagna_sign, facts.signs).sav
+    av = ashtakavarga(facts.lagna_sign, facts.signs)
+    sav = av.sav
     shadbala = compute_shadbala(chart)
     ratio = {b: s.rupas / REQUIRED_RUPAS[b] for b, s in shadbala.items()}
     tones = {b: functional_tone(facts, b) for b in GRAHAS}
@@ -342,11 +405,16 @@ def compute_predictions(
     chains = [vimshottari.at(m.jd_ut).lords for m in months]
     yogini_lords = [yogini.at(m.jd_ut).lords for m in months]
     evidence = _PeriodEvidence(facts, rules, transits)
+    chara_signs = [CharaTiming(chart, until).at(m.jd_ut) for m in months] if model.chara else []
+    signified = kp_houses(chart) if model.kp else {}
+    level_weights = [w for _, w in LEVELS]
 
     domains = []
     for spec in DOMAIN_SPECS:
         promise, promise_factors = domain_promise(spec, facts, sav, ratio, natal, gender)
-        links = {b: _link(facts, spec, b, gender) for b in GRAHAS}
+        links = {b: _link(facts, spec, b, gender, chart if model.varga else None) for b in GRAHAS}
+        targets = chara_targets(chart, spec, gender) if model.chara else []
+        group = KP_GROUPS.get(spec.domain) if model.kp else None
         scores, month_tones, detail = [], [], []
         for i, chain in enumerate(chains):
             weights = [
@@ -355,18 +423,63 @@ def compute_predictions(
             activation = sum(w * link for w, link, _ in weights)
             toned = sum(w * link * tones[lord] for w, link, lord in weights)
             period_tone = toned / activation if activation else 0.0
-            trigger, trigger_factors = _trigger(facts, spec, transits, i, chain)
+            trigger, trigger_factors = _trigger(
+                facts,
+                spec,
+                transits,
+                i,
+                chain,
+                av if model.ashtakavarga else None,
+                model.saturn_on_lord,
+            )
             second = max(links[lord][0] for lord in yogini_lords[i])
             converges = second >= 0.5
+            chara = chara_value(chara_signs[i], targets) if targets else 0.0
+            kp = kp_value(signified, group, chain, level_weights) if group else 0.0
+            agreeing = converges + (chara >= AGREES) + (kp >= AGREES)
             age = (months[i].jd_ut - chart.time.jd_ut) / 365.25
             score = promise * activation * (0.5 + 0.5 * trigger) * spec.plausible(age)
+            if targets:
+                score *= 1.0 - SYSTEM_SWING + 2 * SYSTEM_SWING * chara
+            if group:
+                score *= 1.0 - SYSTEM_SWING + 2 * SYSTEM_SWING * kp
             score = min(1.0, score * (CONVERGENCE_BONUS if converges else 1.0))
             tone = clamp(0.5 * (2 * promise - 1) + 0.3 * period_tone + 0.2 * gochara[i][0])
             scores.append(score)
             month_tones.append(tone)
-            detail.append((activation, trigger, trigger_factors, converges))
+            detail.append((activation, trigger, trigger_factors, converges, agreeing))
+
+        def further(
+            month: int,
+            targets: list[Target] = targets,
+            group: tuple[int, ...] | None = group,
+        ) -> list[Factor]:
+            """The Chara and KP agreement behind a window's peak month."""
+            out = []
+            if targets:
+                label = chara_label(chara_signs[month], targets)
+                if label:
+                    value = chara_value(chara_signs[month], targets)
+                    out.append(Factor("convergence", label, value, 1.0))
+            if group:
+                label = kp_label(signified, group, chains[month])
+                if label:
+                    value = kp_value(signified, group, chains[month], level_weights)
+                    out.append(Factor("convergence", label, value, 1.0))
+            return out
+
         windows = _windows(
-            spec, months, scores, month_tones, detail, chains, yogini_lords, links, evidence
+            spec,
+            months,
+            scores,
+            month_tones,
+            detail,
+            chains,
+            yogini_lords,
+            links,
+            evidence,
+            further,
+            model.systems,
         )
         domains.append(
             DomainTimelineOut(
@@ -435,11 +548,13 @@ def _windows(
     months: Sequence[_Month],
     scores: Sequence[float],
     tones: Sequence[float],
-    detail: Sequence[tuple[float, float, list[Factor], bool]],
+    detail: Sequence[tuple[float, float, list[Factor], bool, int]],
     chains: Sequence[tuple[Body, ...]],
     yogini_lords: Sequence[tuple[Body, ...]],
     links: dict[Body, tuple[float, list[str]]],
     evidence: _PeriodEvidence,
+    further: Callable[[int], list[Factor]],
+    systems: int,
 ) -> list[PredictionWindowOut]:
     threshold = max(0.15, float(np.quantile(scores, 0.8)))
     runs: list[tuple[int, int]] = []
@@ -454,7 +569,7 @@ def _windows(
     out = []
     for first, stop in sorted(best):
         peak = max(range(first, stop), key=lambda i: scores[i])
-        activation, trigger, trigger_factors, converges = detail[peak]
+        activation, trigger, trigger_factors, converges, agreeing = detail[peak]
         chain = chains[peak]
         factors = [
             Factor(
@@ -471,6 +586,7 @@ def _windows(
             lord = max(yogini_lords[peak], key=lambda b: links[b][0])
             label = f"Yogini dasha of {name(lord)} also links: " + "; ".join(links[lord][1])
             factors.append(Factor("convergence", label, links[lord][0], 1.0))
+        factors.extend(further(peak))
         rules = [
             r
             for r in evidence.dasha_rules(chain) + evidence.transit_rules(peak)
@@ -483,7 +599,7 @@ def _windows(
                 peak=months[peak].start,
                 score=round(scores[peak], 3),
                 tone=round(tones[peak], 3),
-                confidence=_confidence(activation, trigger, converges),
+                confidence=_confidence(activation, trigger, agreeing, min(2, systems)),
                 dasha=list(chain),
                 factors=[_factor_out(f) for f in factors],
                 rules=[_rule_out(r) for r in rules],
